@@ -41,7 +41,9 @@ impl Atari2600 {
             }
         }
 
-        let memory = memory::memory::Memory::new(Box::new(cartridge));
+        let stella = graphics::stella::Stella::new();
+        let riot = memory::riot::Riot::new();
+        let memory = memory::memory::Memory::new(Box::new(cartridge), Box::new(stella), Box::new(riot));
 
         let ports = ports::Ports::new();
 

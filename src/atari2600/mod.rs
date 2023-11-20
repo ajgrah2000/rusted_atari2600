@@ -6,3 +6,4 @@ pub mod inputs;
 pub mod memory;
 pub mod ports;
 pub mod atari2600;
+pub mod io;
