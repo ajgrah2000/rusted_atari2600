@@ -2,6 +2,7 @@ use super::clocks;
 use super::ports;
 use super::inputs;
 use super::graphics;
+use super::memory;
 
 use sdl2::pixels;
 
@@ -10,7 +11,7 @@ pub struct Core {
 }
 
 impl Core {
-  pub fn new(ports: ports::Ports) -> Self {
+  pub fn new(clock: clocks::Clock, memory: memory::memory::Memory, ports: ports::Ports) -> Self {
       Self {
           ports
       }
@@ -27,8 +28,23 @@ pub struct Atari2600 {
 
 impl Atari2600 {
     pub fn build_atari2600(cartridge_name: String) -> Core {
+
+        let clock = clocks::Clock::new();
+        let mut memory = memory::memory::Memory::new();
+        let mut cartridge = memory::cartridge::GenericCartridge::new(&cartridge_name);
+        match cartridge.load() {
+            Ok(()) => {
+                println!("Ok");
+            }
+            _ => {
+                println!("Error loading cartridge.");
+            }
+        }
         let ports = ports::Ports::new();
-        Core::new(ports)
+
+        memory.set_cartridge(&cartridge);
+
+        Core::new(clock, memory, ports)
     }
 
     pub fn power_atari2600(&mut self) {
@@ -69,6 +85,9 @@ impl Atari2600 {
 
         'running: loop {
             for event in event_pump.poll_iter() {
+
+                graphics::display::SDLUtility::handle_events(&event, &mut window_size);
+
                 if !inputs::Input::handle_events(event, &mut self.core.ports.joysticks) {
                     break 'running;
                 };
