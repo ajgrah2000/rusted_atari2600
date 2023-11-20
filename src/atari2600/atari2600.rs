@@ -30,8 +30,8 @@ impl Atari2600 {
     pub fn build_atari2600(cartridge_name: String) -> Core {
 
         let clock = clocks::Clock::new();
-        let mut memory = memory::memory::Memory::new();
-        let mut cartridge = memory::cartridge::GenericCartridge::new(&cartridge_name);
+        // Default Cartridge.
+        let mut cartridge = memory::cartridge::GenericCartridge::new(&cartridge_name, 8, 0x1000, 0xFF9, 0x0);
         match cartridge.load() {
             Ok(()) => {
                 println!("Ok");
@@ -40,9 +40,10 @@ impl Atari2600 {
                 println!("Error loading cartridge.");
             }
         }
-        let ports = ports::Ports::new();
 
-        memory.set_cartridge(&cartridge);
+        let memory = memory::memory::Memory::new(Box::new(cartridge));
+
+        let ports = ports::Ports::new();
 
         Core::new(clock, memory, ports)
     }

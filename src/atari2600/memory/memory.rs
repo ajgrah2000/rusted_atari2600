@@ -1,14 +1,14 @@
 use super::cartridge;
 
 pub struct Memory {
+    cartridge: Box<dyn cartridge::Cartridge>,
 }
 
 impl Memory {
-    pub fn new() -> Self{
+    pub fn new(cartridge: Box<dyn cartridge::Cartridge>) -> Self{
         Self{
+            cartridge: cartridge,
         }
     }
-    pub fn set_cartridge(&mut self, cartridge: &dyn cartridge::Cartridge) {
-        // TODO
-    }
+
 }
