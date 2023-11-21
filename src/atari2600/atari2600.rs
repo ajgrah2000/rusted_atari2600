@@ -1,4 +1,5 @@
 use super::clocks;
+use super::cpu;
 use super::ports;
 use super::inputs;
 use super::graphics;
@@ -11,7 +12,7 @@ pub struct Core {
 }
 
 impl Core {
-  pub fn new(clock: clocks::Clock, memory: memory::memory::Memory, ports: ports::Ports) -> Self {
+  pub fn new(clock: clocks::Clock, memory: memory::memory::Memory, pc_state: cpu::pc_state::PcState, ports: ports::Ports) -> Self {
       Self {
           ports
       }
@@ -30,6 +31,7 @@ impl Atari2600 {
     pub fn build_atari2600(cartridge_name: String) -> Core {
 
         let clock = clocks::Clock::new();
+        let pc_state = cpu::pc_state::PcState::new();
         // Default Cartridge.
         let mut cartridge = memory::cartridge::GenericCartridge::new(&cartridge_name, 8, 0x1000, 0xFF9, 0x0);
         match cartridge.load() {
@@ -47,7 +49,7 @@ impl Atari2600 {
 
         let ports = ports::Ports::new();
 
-        Core::new(clock, memory, ports)
+        Core::new(clock, memory, pc_state, ports)
     }
 
     pub fn power_atari2600(&mut self) {

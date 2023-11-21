@@ -28,3 +28,4 @@ Build and run:
 Rust dependencies:
         cargo add argh
         cargo add sdl2
+        cargo add bitfield
