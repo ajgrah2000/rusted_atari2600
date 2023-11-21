@@ -30,8 +30,8 @@ impl Core {
             ports,
             raw_display: vec![
                 0;
-                (graphics::stella::Constants::BLIT_WIDTH as usize)
-                    * (graphics::stella::Constants::BLIT_HEIGHT as usize)
+                (graphics::stella::Constants::ATARI2600_WIDTH as usize)
+                    * (graphics::stella::Constants::ATARI2600_HEIGHT as usize)
                     * (graphics::display::SDLUtility::bytes_per_pixel() as usize)
             ],
             start_time: time::SystemTime::now(),

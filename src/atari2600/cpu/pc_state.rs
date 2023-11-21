@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn test_display_pc_state() {
         let mut pc_state = PcState::new();
-        println!("{}", pc_state);
+        assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:0 V:0 N:0)");
 
         let mut pc_state_flags = pc_state.get_flags();
 
@@ -135,6 +135,7 @@ mod tests {
 
         pc_state.set_flags(pc_state_flags); 
 
-        println!("{}", pc_state);
+        // Use the formatted state to check the output.
+        assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:1 V:0 N:0)");
     }
 }

@@ -3,9 +3,12 @@ use super::cpu;
 use super::ports;
 use super::inputs;
 use super::graphics;
+use super::audio::sound;
 use super::memory;
 
 use sdl2::pixels;
+use sdl2::render;
+use sdl2::video;
 
 pub struct Core {
     pub ports: ports::Ports,
@@ -28,6 +31,8 @@ pub struct Atari2600 {
 }
 
 impl Atari2600 {
+    const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 1; // Number of display updates per key press event. (reduces texture creation overhead).
+
     pub fn build_atari2600(cartridge_name: String) -> Core {
 
         let clock = clocks::Clock::new();
@@ -73,6 +78,17 @@ impl Atari2600 {
         Self { core, debug, realtime, stop_clock, fullscreen }
     }
 
+    pub fn draw_loop(
+        &mut self,
+        canvas: &mut render::Canvas<video::Window>,
+        pixel_format: pixels::PixelFormatEnum,
+        window_size: &graphics::display::WindowSize,
+        iterations: u32,
+        audio_queue: &mut sound::SoundQueueType,
+    ) -> bool {
+        true
+    }
+
     pub fn main_loop(&mut self, mut window_size: graphics::display::WindowSize, pixel_format: pixels::PixelFormatEnum) {
         let mut sdl_context = sdl2::init().unwrap();
 
@@ -86,6 +102,11 @@ impl Atari2600 {
 
         canvas.set_logical_size(window_size.console_width as u32, window_size.console_height as u32).unwrap();
 
+        let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context).unwrap();
+
+        audio_queue.clear(); 
+        audio_queue.resume(); // Start the audio (nothing in the queue at this point).
+
         let mut event_pump = sdl_context.event_pump().unwrap();
 
         'running: loop {
@@ -96,6 +117,11 @@ impl Atari2600 {
                 if !inputs::Input::handle_events(event, &mut self.core.ports.joysticks) {
                     break 'running;
                 };
+            }
+
+            // First loop, draw FRAMES_PER_KEY_EVENT frames at a time.
+            if !self.draw_loop(&mut canvas, pixel_format, &window_size, Atari2600::DISPLAY_UPDATES_PER_KEY_EVENT, &mut audio_queue) {
+                break 'running;
             }
         }
     }
