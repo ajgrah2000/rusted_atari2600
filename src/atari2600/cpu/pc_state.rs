@@ -118,6 +118,14 @@ impl PcState {
     pub fn set_p(&mut self, input: u8) {
         self.p_reg = input;
     }
+
+    pub fn increment_reg(register: &mut Reg16, increment: i8) {
+        *register = (*register as i16).wrapping_add(increment as i16) as u16;
+    }
+
+    pub fn increment_pc(&mut self, increment: i8) {
+        Self::increment_reg(&mut self.pc_reg, increment);
+    }
 }
 
 

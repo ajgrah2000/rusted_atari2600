@@ -3,6 +3,7 @@ use super::super::clocks;
 use super::super::ports;
 use super::super::graphics;
 use super::super::memory::memory;
+use super::instructions;
 use std::time;
 
 pub struct Core {
@@ -40,15 +41,29 @@ impl Core {
 
     pub fn step(&mut self, debug: bool, realtime:bool) {
 
+        let op_code = self.memory.read(self.pc_state.get_pc());
+
         if debug {
             print!(
-                "{} {:x} ({:x}) ",
+                "{} {:x} {:x} ({:x}) ",
                 self.clock.cycles,
+                op_code,
                 self.pc_state.get_pc(),
-                self.memory.read(self.pc_state.get_pc() + 1)
+                self.memory.read(self.pc_state.get_pc().wrapping_add(1))
             );
             println!("{}", self.pc_state);
         }
+
+        self.pc_state.increment_pc(1);
+
+        instructions::Instruction::execute(
+            op_code,
+            &mut self.clock,
+            &mut self.memory,
+            &mut self.pc_state,
+            &mut self.ports,
+        );
+
     }
 
     pub fn generate_display(&mut self, buffer: &mut [u8]) {
