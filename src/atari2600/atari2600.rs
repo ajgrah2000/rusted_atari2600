@@ -7,23 +7,12 @@ use super::audio::sound;
 use super::memory;
 
 use sdl2::pixels;
+use sdl2::rect;
 use sdl2::render;
 use sdl2::video;
 
-pub struct Core {
-    pub ports: ports::Ports,
-}
-
-impl Core {
-  pub fn new(clock: clocks::Clock, memory: memory::memory::Memory, pc_state: cpu::pc_state::PcState, ports: ports::Ports) -> Self {
-      Self {
-          ports
-      }
-  }
-}
-
 pub struct Atari2600 {
-    core: Core,
+    core: cpu::core::Core,
     debug: bool,
     realtime: bool,
     stop_clock: clocks::ClockType,
@@ -32,8 +21,9 @@ pub struct Atari2600 {
 
 impl Atari2600 {
     const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 1; // Number of display updates per key press event. (reduces texture creation overhead).
+    const CPU_STEPS_PER_AUDIO_UPDATE:    u32 = 50; // Number of times to step the CPU before updating the audio.
 
-    pub fn build_atari2600(cartridge_name: String) -> Core {
+    pub fn build_atari2600(cartridge_name: String) -> cpu::core::Core {
 
         let clock = clocks::Clock::new();
         let pc_state = cpu::pc_state::PcState::new();
@@ -54,7 +44,7 @@ impl Atari2600 {
 
         let ports = ports::Ports::new();
 
-        Core::new(clock, memory, pc_state, ports)
+        cpu::core::Core::new(clock, memory, pc_state, ports)
     }
 
     pub fn power_atari2600(&mut self) {
@@ -86,6 +76,54 @@ impl Atari2600 {
         iterations: u32,
         audio_queue: &mut sound::SoundQueueType,
     ) -> bool {
+        // Number of iterations to do before getting a new texture.
+        // These loops will update the display, but currently events aren't checked in this time.
+        
+        // Creating the texture creator and texture is slow, so perform multiple display updates per creation.
+        let texture_creator = graphics::display::SDLUtility::texture_creator(canvas);
+        let mut texture;
+        texture = graphics::display::SDLUtility::create_texture(
+            &texture_creator,
+            pixel_format,
+            window_size.console_width,
+            window_size.console_height,
+            );
+
+        let mut audio_steps = 0;
+        let mut display_refreshes = 0;
+        while display_refreshes < iterations {
+
+            if self.stop_clock > 0 && self.core.clock.cycles > self.stop_clock {
+                return false;
+            }
+            self.core.step(self.debug, self.realtime);
+
+            if 0 == audio_steps % Atari2600::CPU_STEPS_PER_AUDIO_UPDATE {
+                // Top-up the audio queue
+                // TODO
+            }
+            audio_steps += 1;
+
+            {
+                // TODO: Display
+
+                canvas.clear();
+                canvas
+                    .copy(
+                        &texture,
+                        None,
+                        Some(rect::Rect::new(
+                                0,
+                                0,
+                                window_size.console_width as u32,
+                                window_size.console_height as u32,
+                                )),
+                                )
+                    .unwrap();
+                canvas.present();
+                display_refreshes += 1;
+            }
+        }
         true
     }
 
