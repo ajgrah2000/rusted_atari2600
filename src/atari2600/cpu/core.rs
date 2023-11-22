@@ -68,8 +68,6 @@ impl Core {
             &mut self.ports,
         );
 
-        self.pc_state.increment_pc(1);
-
     }
 
     pub fn generate_display(&mut self, buffer: &mut [u8]) {

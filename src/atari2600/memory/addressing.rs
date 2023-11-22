@@ -69,4 +69,42 @@ impl ReadData for MemoryRead {
     }
 }
 
+pub trait WriteData {
+    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
+    fn get_writing_time(&self) -> u8;
+}
+
+pub struct MemoryWrite {}
+
+impl MemoryWrite {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WriteData for MemoryWrite {
+    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        memory.write(address, data);
+    }
+
+    fn get_writing_time(&self) -> u8 {
+        2 * pc_state::PcState::CYCLES_TO_CLOCK
+    }
+}
+
+// TODO: Fix Null write
+pub struct MemoryNull {}
+
+impl MemoryNull {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WriteData for MemoryNull {
+    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) { }
+    fn get_writing_time(&self) -> u8 { 0 }
+}
+
+
 
