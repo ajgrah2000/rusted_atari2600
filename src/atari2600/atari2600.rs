@@ -44,7 +44,10 @@ impl Atari2600 {
 
         let ports = ports::Ports::new();
 
-        cpu::core::Core::new(clock, memory, pc_state, ports)
+        let mut core = cpu::core::Core::new(clock, memory, pc_state, ports);
+        core.reset();
+
+        core
     }
 
     pub fn power_atari2600(&mut self) {

@@ -63,15 +63,15 @@ impl Memory {
       self.cartridge.read(address & Memory::ROM_MASK)
     }
 
-    fn read16(&mut self, address:u16) -> u16 {
+    pub fn read16(&mut self, address:u16) -> u16 {
         self.read(address) as u16 + ((self.read(address + 1) as u16) << 8)
     }
 
-    fn read_sp(&mut self, address:u16) -> u8 {
+    pub fn read_sp(&mut self, address:u16) -> u8 {
         self.read(address + Memory::STACK_LENGTH)
     }
 
-    fn write_sp(&mut self, address:u16, data:u8) {
+    pub fn write_sp(&mut self, address:u16, data:u8) {
         self.write(address + Memory::STACK_LENGTH, data);
     }
 

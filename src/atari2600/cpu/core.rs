@@ -16,6 +16,7 @@ pub struct Core {
 }
 
 impl Core {
+    const PROGRAM_ENTRY_ADDR:u16 = 0xFFFC;
 
     pub fn new(
         clock: clocks::Clock,
@@ -39,13 +40,18 @@ impl Core {
         }
     }
 
+    pub fn reset(&mut self) {
+        // Initialise the PC state with the program entry point.
+        self.pc_state.set_pc(self.memory.read16(Core::PROGRAM_ENTRY_ADDR));
+    }
+
     pub fn step(&mut self, debug: bool, realtime:bool) {
 
         let op_code = self.memory.read(self.pc_state.get_pc());
 
         if debug {
             print!(
-                "{} {:x} {:x} ({:x}) ",
+                "{} 0x{:x} {:x} (0x{:x}) ",
                 self.clock.cycles,
                 op_code,
                 self.pc_state.get_pc(),
@@ -54,8 +60,6 @@ impl Core {
             println!("{}", self.pc_state);
         }
 
-        self.pc_state.increment_pc(1);
-
         instructions::Instruction::execute(
             op_code,
             &mut self.clock,
@@ -63,6 +67,8 @@ impl Core {
             &mut self.pc_state,
             &mut self.ports,
         );
+
+        self.pc_state.increment_pc(1);
 
     }
 

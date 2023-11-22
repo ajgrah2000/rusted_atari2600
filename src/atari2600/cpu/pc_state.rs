@@ -43,12 +43,12 @@ pub struct PcState {
     pub pc_reg: Reg16,
 
     pub s_reg:  Reg8,
-    pub p_reg:  Reg8,
+    pub p_reg:  PcStatusFlagFields,
 }
 
 impl fmt::Display for PcState {
     fn fmt(&self, dest: &mut fmt::Formatter) -> fmt::Result {
-        write!(dest, "PC:{} X:{} Y:{} A:{} {}",
+        write!(dest, "PC:{:x} X:{:x} Y:{:x} A:{:x} {}",
                 self.get_pc(), self.get_x(), self.get_y(), 
                 self.get_a(), self.get_flags())
     }
@@ -56,6 +56,8 @@ impl fmt::Display for PcState {
 
 
 impl PcState {
+    pub const CYCLES_TO_CLOCK:u8 = 3;
+
     pub fn new() -> Self {
         Self {
             a_reg:  0,
@@ -63,7 +65,7 @@ impl PcState {
             y_reg:  0,
             pc_reg: 0,
             s_reg:  0,
-            p_reg:  0,
+            p_reg:  PcStatusFlagFields(0),
         }
     }
 
@@ -86,11 +88,75 @@ impl PcState {
     }
 
     pub fn get_p(&self) -> u8 {
-        self.p_reg
+        self.p_reg.0
     }
 
     pub fn get_flags(&self) -> PcStatusFlagFields {
-        PcStatusFlagFields(self.p_reg)
+        PcStatusFlagFields(self.p_reg.0)
+    }
+
+    pub fn get_flag_c(&self) -> bool {
+        self.p_reg.get_c() != 0
+    }
+
+    pub fn get_flag_z(&self) -> bool {
+        self.p_reg.get_z() != 0
+    }
+
+    pub fn get_flag_i(&self) -> bool {
+        self.p_reg.get_i() != 0
+    }
+
+    pub fn get_flag_d(&self) -> bool {
+        self.p_reg.get_d() != 0
+    }
+
+    pub fn get_flag_b(&self) -> bool {
+        self.p_reg.get_b() != 0
+    }
+
+    pub fn get_flag_x1(&self) -> bool {
+        self.p_reg.get_x1() != 0
+    }
+
+    pub fn get_flag_v(&self) -> bool {
+        self.p_reg.get_v() != 0
+    }
+
+    pub fn get_flag_n(&self) -> bool {
+        self.p_reg.get_n() != 0
+    }
+
+    pub fn set_flag_c(&mut self, value:bool) {
+        self.p_reg.set_c(value as u8);
+    }
+
+    pub fn set_flag_z(&mut self, value:bool) {
+        self.p_reg.set_z(value as u8);
+    }
+
+    pub fn set_flag_i(&mut self, value:bool) {
+        self.p_reg.set_i(value as u8);
+    }
+
+    pub fn set_flag_d(&mut self, value:bool) {
+        self.p_reg.set_d(value as u8);
+    }
+
+    pub fn set_flag_b(&mut self, value:bool) {
+        self.p_reg.set_b(value as u8);
+    }
+
+    pub fn set_flag_x1(&mut self, value:bool) {
+        self.p_reg.set_x1(value as u8);
+    }
+
+    pub fn set_flag_v(&mut self, value:bool) {
+        self.p_reg.set_v(value as u8);
+    }
+
+    pub fn set_flag_n(&mut self, value:bool) {
+        self.p_reg.set_n(value as u8);
     }
 
     pub fn set_a(&mut self, input: u8) {
@@ -111,12 +177,8 @@ impl PcState {
         self.s_reg = input;
     }
 
-    pub fn set_flags(&mut self, input: PcStatusFlagFields) {
-        self.p_reg = input.0;
-    }
-
     pub fn set_p(&mut self, input: u8) {
-        self.p_reg = input;
+        self.p_reg.0 = input;
     }
 
     pub fn increment_reg(register: &mut Reg16, increment: i8) {
@@ -128,6 +190,11 @@ impl PcState {
     }
 }
 
+pub fn set_status_nz(pc_state: &mut PcState, value:u8) {
+    pc_state.set_flag_n(0x80 == 0x80 & value);
+    pc_state.set_flag_z(0x00 == 0xFF & value);
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -137,11 +204,7 @@ mod tests {
         let mut pc_state = PcState::new();
         assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:0 V:0 N:0)");
 
-        let mut pc_state_flags = pc_state.get_flags();
-
-        pc_state_flags.set_x1(1); 
-
-        pc_state.set_flags(pc_state_flags); 
+        pc_state.set_x1(true);
 
         // Use the formatted state to check the output.
         assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:1 V:0 N:0)");
