@@ -10,6 +10,8 @@ pub fn noop(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
 
 pub fn single_byte_instruction <R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, u8) -> u8 > (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, read:R, write: W, instruction: I) where
 R: pc_state::ReadReg8, W: pc_state::WriteReg8 {
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+
     let data = read.get(pc_state);
     let result = instruction(clock, pc_state, data);
     write.set(pc_state, result);

@@ -51,8 +51,8 @@ impl Core {
 
         if debug {
             print!(
-                "{} 0x{:x} {:x} (0x{:x}) ",
-                self.clock.cycles,
+                "cycles:{} 0x{:x} {:x} (0x{:x}) ",
+                self.clock.cycles/pc_state::PcState::CYCLES_TO_CLOCK as u64, //
                 op_code,
                 self.pc_state.get_pc(),
                 self.memory.read(self.pc_state.get_pc().wrapping_add(1))
