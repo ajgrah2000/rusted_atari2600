@@ -195,6 +195,8 @@ pub fn set_status_nz(pc_state: &mut PcState, value:u8) {
     pc_state.set_flag_z(0x00 == 0xFF & value);
 }
 
+
+// Register read/write trait functions.
 pub trait ReadReg8 {
     fn get(&self, pc_state: &PcState) -> u8;
 }

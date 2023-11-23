@@ -9,7 +9,12 @@ pub struct Instruction {}
 
 // There's likely a better way to specify the memory types, but this achieves the intent.
 const ADDR_IMM:addressing::AddressingIMM = addressing::AddressingIMM::new();
+const ADDR_ZPX:addressing::AddressingZPX = addressing::AddressingZPX::new();
+
+const NULL_READ:addressing::NullRead = addressing::NullRead::new();
 const MEMORY_READ:addressing::MemoryRead = addressing::MemoryRead::new();
+const MEMORY_WRITE:addressing::MemoryWrite = addressing::MemoryWrite::new();
+const REG_WRITE:addressing::RegisterWrite = addressing::RegisterWrite::new();
 const MEMORY_NULL:addressing::MemoryNull = addressing::MemoryNull::new();
 
 const READ_NULL: pc_state::ReadNull = pc_state::ReadNull::new();
@@ -31,6 +36,10 @@ impl Instruction {
             0xA2 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
 
             0xA9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+
+            //STA
+            0x95 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, NULL_READ, REG_WRITE, instruction_set::sta); }
+
 
             0x18 => { instruction_set::single_byte_instruction(clock, pc_state, READ_NULL, WRITE_NULL, instruction_set::clc); }
             0xD8 => { instruction_set::single_byte_instruction(clock, pc_state, READ_NULL, WRITE_NULL, instruction_set::cld); }

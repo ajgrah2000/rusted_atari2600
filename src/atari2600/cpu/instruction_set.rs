@@ -21,7 +21,7 @@ R: pc_state::ReadReg8, W: pc_state::WriteReg8 {
     pc_state.increment_pc(1);
 }
 
-pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8)>
+pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8 >
         (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A, read: R, write: W, instruction: I) 
     where A: addressing::Address16, 
         R: addressing::ReadData, 
@@ -30,12 +30,12 @@ pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state:
     let addr = address.address16(pc_state, memory);
     let mut execute_time = address.get_addressing_time();
 
-    let data = read.read(pc_state, memory, addr);
+    let value = read.read(pc_state, memory, addr);
     execute_time += read.get_reading_time();
 
     execute_time += write.get_writing_time();
 
-    instruction(clock, pc_state, memory, data);
+    let data = instruction(clock, pc_state, memory, value);
 
     clock.increment(execute_time as u32);
 
@@ -44,14 +44,32 @@ pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state:
     pc_state.increment_pc((address.get_addressing_size() + 1) as i8);
 }
 
-pub fn ldx (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) {
+pub fn ldx (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_x(data);
     pc_state::set_status_nz(pc_state, data);
+    0
 }
 
-pub fn lda (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) {
+pub fn lda (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_a(data);
     pc_state::set_status_nz(pc_state, data);
+    0
+}
+
+pub fn sta (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.get_a()
+}
+
+pub fn sty (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.get_y()
+}
+
+pub fn stx (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.get_x()
+}
+
+pub fn sax (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.get_a() & pc_state.get_x()
 }
 
 pub fn clc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {

@@ -37,6 +37,40 @@ impl AddressingIMM {
     }
 }
 
+pub struct AddressingZP {
+    addressing:Addressing,
+}
+
+impl AddressingZP {
+    pub const fn new() -> Self {
+        Self {
+            addressing:Addressing::new(1, 1),
+        }
+    }
+
+    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        memory.read(pc_state.get_pc().wrapping_add(1)) as u16
+    }
+}
+
+pub struct AddressingIZY {
+    addressing:Addressing,
+}
+
+impl AddressingIZY {
+    pub const fn new() -> Self {
+        Self {
+            addressing:Addressing::new(1, 3),
+        }
+    }
+
+    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let tmp8 = memory.read(pc_state.get_pc().wrapping_add(1));
+                
+        memory.read16(tmp8 as u16).wrapping_add(pc_state.get_y() as u16)
+    }
+}
+
 pub struct AddressingIZX {
     addressing:Addressing,
 }
@@ -51,6 +85,38 @@ impl AddressingIZX {
     pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
         let tmp8 = memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x());
         memory.read16(tmp8 as u16)
+    }
+}
+
+pub struct AddressingZPX {
+    addressing:Addressing,
+}
+
+impl AddressingZPX {
+    pub const fn new() -> Self {
+        Self {
+            addressing:Addressing::new(1, 2),
+        }
+    }
+
+    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        (memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x().wrapping_add(1))) as u16
+    }
+}
+
+pub struct AddressingZPY {
+    addressing:Addressing,
+}
+
+impl AddressingZPY {
+    pub const fn new() -> Self {
+        Self {
+            addressing:Addressing::new(1, 2),
+        }
+    }
+
+    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        (memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
     }
 }
 
@@ -69,8 +135,13 @@ macro_rules! impl_addressing {
     };
 }
 
+impl_addressing!(AddressingIZY);
 impl_addressing!(AddressingIMM);
 impl_addressing!(AddressingIZX);
+
+impl_addressing!(AddressingZP);
+impl_addressing!(AddressingZPX);
+impl_addressing!(AddressingZPY);
 
 pub trait ReadData {
     fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
@@ -91,6 +162,21 @@ impl MemoryRead {
     }
 }
 
+pub struct NullRead {
+    cycles:u8,
+}
+
+impl NullRead {
+    pub const fn new() -> Self {
+        Self {cycles: 1}
+    }
+
+    fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
+        0
+    }
+}
+
+
 macro_rules! impl_read_data {
     ($type:ty)  => {
         impl ReadData for $type {
@@ -106,6 +192,7 @@ macro_rules! impl_read_data {
 }
 
 impl_read_data!(MemoryRead);
+impl_read_data!(NullRead);
 
 pub trait WriteData {
     fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
@@ -115,12 +202,24 @@ pub trait WriteData {
 pub struct MemoryWrite { cycles:u8}
 
 impl MemoryWrite {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {cycles:2}
     }
 
     fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
         memory.write(address, data);
+    }
+}
+
+pub struct RegisterWrite { cycles:u8}
+
+impl RegisterWrite {
+    pub const fn new() -> Self {
+        Self {cycles:1}
+    }
+
+    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        // No write
     }
 }
 
@@ -139,6 +238,7 @@ macro_rules! impl_write_data {
 }
 
 impl_write_data!(MemoryWrite); 
+impl_write_data!(RegisterWrite); 
 
 // TODO: Fix Null write
 pub struct MemoryNull {}
