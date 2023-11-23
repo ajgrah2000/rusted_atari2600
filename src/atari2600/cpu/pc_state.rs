@@ -195,6 +195,65 @@ pub fn set_status_nz(pc_state: &mut PcState, value:u8) {
     pc_state.set_flag_z(0x00 == 0xFF & value);
 }
 
+pub trait ReadReg8 {
+    fn get(&self, pc_state: &PcState) -> u8;
+}
+
+pub trait WriteReg8 {
+    fn set(&self, pc_state: &mut PcState, data:u8);
+}
+
+pub struct ReadNull { }
+impl ReadNull {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
+
+impl ReadReg8 for ReadNull {
+    fn get(&self, pc_state: &PcState) -> u8 {
+        0
+    }
+}
+
+pub struct ReadX { }
+impl ReadX {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
+
+impl ReadReg8 for ReadX {
+    fn get(&self, pc_state: &PcState) -> u8 {
+        pc_state.get_x()
+    }
+}
+
+pub struct WriteNull { }
+impl WriteNull {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WriteReg8 for WriteNull {
+    fn set(&self, pc_state: &mut PcState, data: u8) {
+    }
+}
+
+
+pub struct WriteX { }
+impl WriteX {
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
+
+impl WriteReg8 for WriteX {
+    fn set(&self, pc_state: &mut PcState, data: u8) {
+        pc_state.set_x(data);
+    }
+}
 
 #[cfg(test)]
 mod tests {

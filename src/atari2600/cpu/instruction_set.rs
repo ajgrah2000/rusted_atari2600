@@ -8,56 +8,83 @@ pub fn noop(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
     clock.increment(4);
 }
 
-pub fn single_byte_instruction <I: Fn(&mut clocks::Clock, &mut pc_state::PcState)>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, instruction: I) {
-    instruction(clock, pc_state);
+pub fn single_byte_instruction <R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, u8) -> u8 > (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, read:R, write: W, instruction: I) where
+R: pc_state::ReadReg8, W: pc_state::WriteReg8 {
+    let data = read.get(pc_state);
+    let result = instruction(clock, pc_state, data);
+    write.set(pc_state, result);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 
     pc_state.increment_pc(1);
 }
 
-pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, &A, R, W)>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A, read: R, write: W, instruction: I) where A: addressing::Address16, R: addressing::ReadData, W: addressing::WriteData {
-    instruction(clock, pc_state, memory, address, read, write);
+pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8)>
+        (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A, read: R, write: W, instruction: I) 
+    where A: addressing::Address16, 
+        R: addressing::ReadData, 
+        W: addressing::WriteData 
+{
+    let addr = address.address16(pc_state, memory);
+    let mut execute_time = address.get_addressing_time();
+
+    let data = read.read(pc_state, memory, addr);
+    execute_time += read.get_reading_time();
+
+    execute_time += write.get_writing_time();
+
+    instruction(clock, pc_state, memory, data);
+
+    clock.increment(execute_time as u32);
+
+    write.write(pc_state, memory ,addr, data);
 
     pc_state.increment_pc((address.get_addressing_size() + 1) as i8);
 }
 
-pub fn ldx <A, R, W>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A, read: R, write: W) where A: addressing::Address16, R: addressing::ReadData, W: addressing::WriteData  {
-    let value = read.read(pc_state, memory, address.address16(pc_state, memory));
-    pc_state.set_x(value);
-    pc_state::set_status_nz(pc_state, value);
+pub fn ldx (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) {
+    pc_state.set_x(data);
+    pc_state::set_status_nz(pc_state, data);
 }
 
-pub fn lda <A, R, W>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A, read: R, write: W) where A: addressing::Address16, R: addressing::ReadData, W: addressing::WriteData {
-    let value = read.read(pc_state, memory, address.address16(pc_state, memory));
-    pc_state.set_a(value);
-    pc_state::set_status_nz(pc_state, value);
+pub fn lda (clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) {
+    pc_state.set_a(data);
+    pc_state::set_status_nz(pc_state, data);
 }
 
-pub fn clc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn clc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_c(false);
+    0
 }
 
-pub fn cld(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn cld(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_d(false);
+    0
 }
 
-pub fn cli(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn cli(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_i(false);
+    0
 }
 
-pub fn clv(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn clv(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_v(false);
+    0
 }
 
-pub fn sec(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn sec(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_c(true);
+    0
 }
 
-pub fn sei(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn sei(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_i(true);
+    0
 }
 
-pub fn sed(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState) {
+pub fn sed(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state.set_flag_d(true);
+    0
 }
 
 
