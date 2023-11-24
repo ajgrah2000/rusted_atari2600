@@ -14,6 +14,12 @@ const ADDR_ZPX:addressing::AddressingZPX = addressing::AddressingZPX::new();
 const ADDR_IZX:addressing::AddressingIZX = addressing::AddressingIZX::new();
 const ADDR_IZY:addressing::AddressingIZY = addressing::AddressingIZY::new();
 
+const ADDR_ABS:addressing::AddressingAbs = addressing::AddressingAbs::new();
+const ADDR_INDIRECT:addressing::AddressingIndirect = addressing::AddressingIndirect::new();
+const ADDR_ABY:addressing::AddressingAby = addressing::AddressingAby::new();
+const ADDR_ABX:addressing::AddressingAbx = addressing::AddressingAbx::new();
+const ADDR_ACCUMULATOR:addressing::AddressingAccumulator = addressing::AddressingAccumulator::new();
+
 const NULL_READ:addressing::NullRead = addressing::NullRead::new();
 const MEMORY_READ:addressing::MemoryRead = addressing::MemoryRead::new();
 const MEMORY_WRITE:addressing::MemoryWrite = addressing::MemoryWrite::new();
