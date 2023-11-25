@@ -28,8 +28,15 @@ const MEMORY_NULL:addressing::MemoryNull = addressing::MemoryNull::new();
 
 const READ_NULL: pc_state::ReadNull = pc_state::ReadNull::new();
 const READ_REG_X: pc_state::ReadX = pc_state::ReadX::new();
+const READ_REG_Y: pc_state::ReadY = pc_state::ReadY::new();
+const READ_REG_A: pc_state::ReadA = pc_state::ReadA::new();
+const READ_REG_S: pc_state::ReadS = pc_state::ReadS::new();
+
 const WRITE_NULL: pc_state::WriteNull = pc_state::WriteNull::new();
 const WRITE_REG_X: pc_state::WriteX = pc_state::WriteX::new();
+const WRITE_REG_Y: pc_state::WriteY = pc_state::WriteY::new();
+const WRITE_REG_A: pc_state::WriteA = pc_state::WriteA::new();
+const WRITE_REG_S: pc_state::WriteS = pc_state::WriteS::new();
 
 impl Instruction {
 
@@ -41,6 +48,9 @@ impl Instruction {
         pc_state: &mut pc_state::PcState,
         ports: &mut ports::Ports) {
         match op_code {
+
+            0xE8 => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_X, WRITE_REG_X, instruction_set::inc); }
+            0xC8 => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_Y, WRITE_REG_Y, instruction_set::inc); }
 
             0xA2 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
 
@@ -61,6 +71,15 @@ impl Instruction {
             0x38 => { instruction_set::single_byte_instruction(clock, pc_state, READ_NULL, WRITE_NULL, instruction_set::sec); }
             0x78 => { instruction_set::single_byte_instruction(clock, pc_state, READ_NULL, WRITE_NULL, instruction_set::sei); }
             0xF8 => { instruction_set::single_byte_instruction(clock, pc_state, READ_NULL, WRITE_NULL, instruction_set::sed); }
+
+            // Register Transfers
+            0x9A => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_X, WRITE_REG_S, instruction_set::t_no_status); }
+            0xBA => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_S, WRITE_REG_X, instruction_set::t_no_status); }
+            0x8A => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_X, WRITE_REG_A, instruction_set::t_status); }
+            0xAA => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_A, WRITE_REG_X, instruction_set::t_status); }
+            0xA8 => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_A, WRITE_REG_Y, instruction_set::t_status); }
+            0x98 => { instruction_set::single_byte_instruction(clock, pc_state, READ_REG_Y, WRITE_REG_A, instruction_set::t_status); }
+
             _ => {
                 panic!("Opcode not implemented: 0x{:x}", op_code);
             }

@@ -107,4 +107,21 @@ pub fn sed(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8)
     0
 }
 
+pub fn inc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
+    let incremented = data + 1;
+    pc_state::set_status_nz(pc_state, incremented);
+    incremented
+}
+
+pub fn t_no_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
+    data
+}
+
+pub fn t_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
+    pc_state::set_status_nz(pc_state, data);
+    data
+}
+
+
+
 

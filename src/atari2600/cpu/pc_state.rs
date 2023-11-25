@@ -218,18 +218,27 @@ impl ReadReg8 for ReadNull {
     }
 }
 
-pub struct ReadX { }
-impl ReadX {
-    pub const fn new() -> Self {
-        Self {}
-    }
+macro_rules! impl_read_register{
+     ($new_struct:ident, $func_name:tt)  => {
+        pub struct $new_struct { }
+        impl $new_struct {
+            pub const fn new() -> Self {
+                Self {}
+            }
+        }
+        
+        impl ReadReg8 for $new_struct {
+            fn get(&self, pc_state: &PcState) -> u8 {
+                pc_state.$func_name()
+            }
+        }
+     };
 }
 
-impl ReadReg8 for ReadX {
-    fn get(&self, pc_state: &PcState) -> u8 {
-        pc_state.get_x()
-    }
-}
+impl_read_register!(ReadX, get_x);
+impl_read_register!(ReadY, get_y);
+impl_read_register!(ReadA, get_a);
+impl_read_register!(ReadS, get_s);
 
 pub struct WriteNull { }
 impl WriteNull {
@@ -244,18 +253,27 @@ impl WriteReg8 for WriteNull {
 }
 
 
-pub struct WriteX { }
-impl WriteX {
-    pub const fn new() -> Self {
-        Self {}
-    }
+macro_rules! impl_read_register{
+    ($new_struct:ident, $func_name:tt)  => {
+        pub struct $new_struct { }
+        impl $new_struct {
+            pub const fn new() -> Self {
+                Self {}
+            }
+        }
+        
+        impl WriteReg8 for $new_struct {
+            fn set(&self, pc_state: &mut PcState, data: u8) {
+                pc_state.$func_name(data);
+            }
+        }
+    };
 }
 
-impl WriteReg8 for WriteX {
-    fn set(&self, pc_state: &mut PcState, data: u8) {
-        pc_state.set_x(data);
-    }
-}
+impl_read_register!(WriteX, set_x);
+impl_read_register!(WriteY, set_y);
+impl_read_register!(WriteA, set_a);
+impl_read_register!(WriteS, set_s);
 
 #[cfg(test)]
 mod tests {
