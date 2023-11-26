@@ -220,11 +220,11 @@ impl_addressing!(AddressingZP);
 impl_addressing!(AddressingZPX);
 impl_addressing!(AddressingZPY);
 
-//impl_addressing!(AddressingAbs);
-//impl_addressing!(AddressingIndirect);
-//impl_addressing!(AddressingAby);
-//impl_addressing!(AddressingAbx);
-//impl_addressing!(AddressingAccumulator);
+impl_addressing!(AddressingAbs);
+impl_addressing!(AddressingIndirect);
+impl_addressing!(AddressingAby);
+impl_addressing!(AddressingAbx);
+impl_addressing!(AddressingAccumulator);
 
 pub trait ReadData {
     fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
@@ -302,7 +302,7 @@ impl RegisterWrite {
     }
 
     fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
-        // No write
+        memory.write(address, data);
     }
 }
 

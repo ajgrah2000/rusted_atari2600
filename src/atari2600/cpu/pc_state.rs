@@ -83,6 +83,14 @@ impl PcState {
         self.pc_reg
     }
 
+    pub fn get_pch(&self) -> u8 {
+        (self.get_pc() >> 8) as u8
+    }
+
+    pub fn get_pcl(&self) -> u8 {
+        (self.get_pc() & 0xFF) as u8
+    }
+
     pub fn get_s(&self) -> u8 {
         self.s_reg
     }
@@ -181,11 +189,19 @@ impl PcState {
         self.p_reg.0 = input;
     }
 
-    pub fn increment_reg(register: &mut Reg16, increment: i8) {
-        *register = (*register as i16).wrapping_add(increment as i16) as u16;
+    pub fn increment_reg8(register: &mut Reg8, increment: i8) {
+        *register = (*register as i8).wrapping_add(increment as i8) as u8;
     }
 
-    pub fn increment_pc(&mut self, increment: i8) {
+    pub fn increment_reg(register: &mut Reg16, increment: i16) {
+        *register = (*register as i16).wrapping_add(increment) as u16;
+    }
+
+    pub fn increment_s(&mut self, increment: i8) {
+        Self::increment_reg8(&mut self.s_reg, increment);
+    }
+
+    pub fn increment_pc(&mut self, increment: i16) {
         Self::increment_reg(&mut self.pc_reg, increment);
     }
 }
