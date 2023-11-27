@@ -48,7 +48,7 @@ pub struct PcState {
 
 impl fmt::Display for PcState {
     fn fmt(&self, dest: &mut fmt::Formatter) -> fmt::Result {
-        write!(dest, "PC:{:x} X:{:x} Y:{:x} A:{:x} {}",
+        write!(dest, "PC:{:X} X:{:X} Y:{:X} A:{:X} {}",
                 self.get_pc(), self.get_x(), self.get_y(), 
                 self.get_a(), self.get_flags())
     }

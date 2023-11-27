@@ -1,8 +1,9 @@
+use super::super::clocks;
 use super::super::cpu::pc_state;
 use super::memory;
 
 pub trait Address16 {
-    fn address16(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
+    fn address16(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
     fn get_addressing_size(&self) -> u8;
     fn get_addressing_time(&self) -> u8;
 }
@@ -32,7 +33,7 @@ impl AddressingIMM {
         }
     }
 
-    pub fn address(&self, pc_state: &pc_state::PcState, _: &memory::Memory) -> u16 {
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, _: &memory::Memory) -> u16 {
         pc_state.get_pc() + 1
     }
 }
@@ -48,8 +49,8 @@ impl AddressingZP {
         }
     }
 
-    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        memory.read(pc_state.get_pc().wrapping_add(1)) as u16
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        memory.read(clock, pc_state.get_pc().wrapping_add(1)) as u16
     }
 }
 
@@ -64,10 +65,10 @@ impl AddressingIZY {
         }
     }
 
-    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let tmp8 = memory.read(pc_state.get_pc().wrapping_add(1));
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1));
                 
-        memory.read16(tmp8 as u16).wrapping_add(pc_state.get_y() as u16)
+        memory.read16(clock, tmp8 as u16).wrapping_add(pc_state.get_y() as u16)
     }
 }
 
@@ -82,9 +83,9 @@ impl AddressingIZX {
         }
     }
 
-    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let tmp8 = memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x());
-        memory.read16(tmp8 as u16)
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x());
+        memory.read16(clock, tmp8 as u16)
     }
 }
 
@@ -99,8 +100,8 @@ impl AddressingZPX {
         }
     }
 
-    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x().wrapping_add(1))) as u16
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x().wrapping_add(1))) as u16
     }
 }
 
@@ -115,34 +116,34 @@ impl AddressingZPY {
         }
     }
 
-    pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
+    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
     }
 }
 
-pub fn address_abs(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-    memory.read16(pc_state.get_pc().wrapping_add(1))
+pub fn address_abs(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+    memory.read16(clock, pc_state.get_pc().wrapping_add(1))
 }
 
 pub struct AllAddressingModes {
 }
 
 impl AllAddressingModes {
-    pub fn address_zpy(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
+    pub fn address_zpy(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
     }
 
-    pub fn address_abs(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        memory.read16(pc_state.get_pc().wrapping_add(1))
+    pub fn address_abs(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        memory.read16(clock, pc_state.get_pc().wrapping_add(1))
     }
 
-    pub fn address_indirect(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let indirect_addr = memory.read16(pc_state.get_pc().wrapping_add(1));
-        memory.read16(indirect_addr)
+    pub fn address_indirect(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let indirect_addr = memory.read16(clock, pc_state.get_pc().wrapping_add(1));
+        memory.read16(clock, indirect_addr)
     }
 
-    pub fn address_aby(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let address_tmp = memory.read16(pc_state.get_pc().wrapping_add(1));
+    pub fn address_aby(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let address_tmp = memory.read16(clock, pc_state.get_pc().wrapping_add(1));
         let tmp16:u16 = address_tmp + pc_state.get_y() as u16;
 
         // TODO: Add page delays
@@ -152,8 +153,8 @@ impl AllAddressingModes {
         return tmp16
     }
 
-    pub fn address_abx(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let address_tmp = memory.read16(pc_state.get_pc().wrapping_add(1));
+    pub fn address_abx(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+        let address_tmp = memory.read16(clock, pc_state.get_pc().wrapping_add(1));
         let tmp16:u16 = address_tmp + pc_state.get_x() as u16;
 
         // TODO: Add page delays
@@ -163,7 +164,7 @@ impl AllAddressingModes {
         return tmp16
     }
 
-    pub fn address_accumulator(pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+    pub fn address_accumulator(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
         // TODO: Check implementation.
         0
     }
@@ -183,8 +184,8 @@ macro_rules! impl_addressing_struct {
                 }
             }
         
-            pub fn address(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-                AllAddressingModes::$fn_name(pc_state, memory)
+            pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+                AllAddressingModes::$fn_name(clock, pc_state, memory)
             }
         }
     };
@@ -202,8 +203,8 @@ impl_addressing_struct!(AddressingAccumulator, 0, 0, address_accumulator);
 macro_rules! impl_addressing {
      ($type:ty)  => {
             impl Address16 for $type {
-               fn address16(&self, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-                   self.address(pc_state, memory)
+               fn address16(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+                   self.address(clock, pc_state, memory)
                }
 
                fn get_addressing_size(&self) -> u8 { self.addressing.size }
@@ -227,7 +228,7 @@ impl_addressing!(AddressingAbx);
 impl_addressing!(AddressingAccumulator);
 
 pub trait ReadData {
-    fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
+    fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
     fn get_reading_time(&self) -> u8;
 }
 
@@ -240,8 +241,8 @@ impl MemoryRead {
         Self {cycles: 2}
     }
 
-    fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
-        memory.read(address)
+    fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
+        memory.read(clock, address)
     }
 }
 
@@ -254,7 +255,7 @@ impl NullRead {
         Self {cycles: 1}
     }
 
-    fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
+    fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
         0
     }
 }
@@ -263,8 +264,8 @@ impl NullRead {
 macro_rules! impl_read_data {
     ($type:ty)  => {
         impl ReadData for $type {
-            fn read(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
-                self.read(pc_state, memory, address)
+            fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
+                self.read(clock, pc_state, memory, address)
             }
         
             fn get_reading_time(&self) -> u8 {
@@ -278,7 +279,7 @@ impl_read_data!(MemoryRead);
 impl_read_data!(NullRead);
 
 pub trait WriteData {
-    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
+    fn write(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
     fn get_writing_time(&self) -> u8;
 }
 
@@ -289,8 +290,8 @@ impl MemoryWrite {
         Self {cycles:2}
     }
 
-    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
-        memory.write(address, data);
+    fn write(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        memory.write(clock, address, data);
     }
 }
 
@@ -301,16 +302,16 @@ impl RegisterWrite {
         Self {cycles:1}
     }
 
-    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
-        memory.write(address, data);
+    fn write(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        memory.write(clock, address, data);
     }
 }
 
 macro_rules! impl_write_data {
     ($type:ty)  => {
         impl WriteData for $type {
-            fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
-                self.write(pc_state, memory, address, data);
+            fn write(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+                self.write(clock, pc_state, memory, address, data);
             }
         
             fn get_writing_time(&self) -> u8 {
@@ -333,7 +334,7 @@ impl MemoryNull {
 }
 
 impl WriteData for MemoryNull {
-    fn write(&self, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) { }
+    fn write(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) { }
     fn get_writing_time(&self) -> u8 { 0 }
 }
 

@@ -27,10 +27,10 @@ pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state:
         R: addressing::ReadData, 
         W: addressing::WriteData 
 {
-    let addr = address.address16(pc_state, memory);
+    let addr = address.address16(clock, pc_state, memory);
     let mut execute_time = address.get_addressing_time();
 
-    let value = read.read(pc_state, memory, addr);
+    let value = read.read(clock, pc_state, memory, addr);
     execute_time += read.get_reading_time();
 
     execute_time += write.get_writing_time();
@@ -39,7 +39,7 @@ pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state:
 
     clock.increment(execute_time as u32);
 
-    write.write(pc_state, memory ,addr, data);
+    write.write(clock, pc_state, memory ,addr, data);
 
     pc_state.increment_pc((address.get_addressing_size() + 1) as i16);
 }
@@ -50,21 +50,21 @@ pub fn jump_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc
     pc_state.increment_pc(1);
     
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
-    let adl = memory.read(pc_state.get_pc());
+    let adl = memory.read(clock, pc_state.get_pc());
     
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     
     // Increment before store, to catch low to high carry.
     pc_state.increment_pc(1);
-    memory.write(pc_state.get_s() as u16, pc_state.get_pch());
+    memory.write(clock, pc_state.get_s() as u16, pc_state.get_pch());
     pc_state.increment_s(-1);
     
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
-    memory.write(pc_state.get_s() as u16, pc_state.get_pcl());
+    memory.write(clock, pc_state.get_s() as u16, pc_state.get_pcl());
     pc_state.increment_s(-1);
     
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
-    let adh = memory.read(pc_state.get_pc());
+    let adh = memory.read(clock, pc_state.get_pc());
     
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     pc_state.set_pc(adl as u16 + ((adh as u16) << 8));
@@ -76,7 +76,7 @@ pub fn branch_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::Pc
 
     if (pc_state.get_p() & condition_mask) == condition {
 //        tmp16 = self.pc_state.PC
-        let delta = memory.read(pc_state.get_pc().wrapping_add(1));
+        let delta = memory.read(clock, pc_state.get_pc().wrapping_add(1));
         if delta & 0x80 != 0 {
 //            pc_state.increment_pc(delta - 0x100);
             pc_state.increment_pc((delta as i8) as i16);

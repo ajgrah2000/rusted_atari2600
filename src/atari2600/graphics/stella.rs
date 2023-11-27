@@ -1,4 +1,5 @@
 use super::super::io;
+use super::super::clocks;
 
 pub struct Constants {}
 
@@ -20,20 +21,20 @@ impl Stella {
         Self {}
     }
 
-    pub fn write(&mut self, address: u16, data: u8) {
+    pub fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
         // TODO
     }
-    pub fn read(&mut self, address: u16) -> u8 {
+    pub fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
         // TODO
         0
     }
 }
 
 impl io::ReadWriteMemory for Stella{
-    fn write(&mut self, address: u16, data: u8) {
-        self.write(address, data);
+    fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
+        self.write(clock, address, data);
     }
-    fn read(&mut self, address: u16) -> u8 {
-        self.read(address)
+    fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
+        self.read(clock, address)
     }
  }
