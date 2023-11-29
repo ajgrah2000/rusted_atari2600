@@ -68,12 +68,12 @@ impl Memory {
         self.read(clock, address) as u16 + ((self.read(clock, address + 1) as u16) << 8)
     }
 
-    pub fn read_sp(&mut self, clock: &clocks::Clock, address:u16) -> u8 {
-        self.read(clock, address + Memory::STACK_LENGTH)
+    pub fn read_sp(&mut self, clock: &clocks::Clock, address:u8) -> u8 {
+        self.read(clock, address as u16 + Memory::STACK_LENGTH)
     }
 
-    pub fn write_sp(&mut self, clock: &clocks::Clock, address:u16, data:u8) {
-        self.write(clock, address + Memory::STACK_LENGTH, data);
+    pub fn write_sp(&mut self, clock: &clocks::Clock, address:u8, data:u8) {
+        self.write(clock, address as u16 + Memory::STACK_LENGTH, data);
     }
 
 }

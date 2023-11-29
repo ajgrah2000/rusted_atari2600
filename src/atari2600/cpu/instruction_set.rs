@@ -70,6 +70,30 @@ pub fn jump_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc
     pc_state.set_pc(adl as u16 + ((adh as u16) << 8));
 }
 
+pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) 
+{
+    // T1 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    // T2 - Stack Ptr
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    // T3 - Stack Ptr + 1 -> PCL
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_pcl(memory.read(clock, pc_state.get_s() as u16));
+    // T4 - Stack Ptr + 1 -> PCL
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_pch(memory.read(clock, pc_state.get_s() as u16));
+    // T5 - discarded
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.read(clock, pc_state.get_pc());
+    // T0 - Next instruction
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    
+}
+
 pub fn branch_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, condition_mask: u8, condition: u8) 
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
@@ -111,13 +135,97 @@ pub fn lsr(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8)
 
 pub fn ldx(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_x(data);
-    pc_state::set_status_nz(pc_state, data);
+    pc_state::set_status_nz(pc_state, pc_state.get_x());
+    0
+}
+
+pub fn ldy(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.set_y(data);
+    pc_state::set_status_nz(pc_state, pc_state.get_y());
     0
 }
 
 pub fn lda(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_a(data);
     pc_state::set_status_nz(pc_state, data);
+    0
+}
+
+pub fn and(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.set_a(pc_state.get_a() & data);
+    pc_state::set_status_nz(pc_state, pc_state.get_a());
+    0
+}
+
+pub fn eor(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.set_a(pc_state.get_a() ^ data);
+    pc_state::set_status_nz(pc_state, pc_state.get_a());
+    0
+}
+
+pub fn or(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.set_a(pc_state.get_a() | data);
+    pc_state::set_status_nz(pc_state, pc_state.get_a());
+    0
+}
+
+pub fn add_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
+    let result;
+
+    if false == pc_state.get_flag_d() {
+        let mut r  = a as i16 + b as i16 + c as i16;
+        let rc = a.wrapping_add(b).wrapping_add(c) as i16;
+        pc_state.set_flag_n(0x80 == (rc & 0x80));
+        pc_state.set_flag_z(rc == 0x0);
+        pc_state.set_flag_v(rc != r); // Overflow
+
+        r = a.wrapping_add(b) as i16 + c as i16;
+        pc_state.set_flag_c(0x100 == (r & 0x100));
+        result = a.wrapping_add(b).wrapping_add(c);
+    } else {
+        // Decimal Addition
+        // FIXME need to fix flags
+        let r = (((a >> 4) & 0xF) * 10 + ((a & 0xF) % 10) + (( b >> 4) & 0xF)* 10 + ((b & 0xF) %10) + c) as u16;
+        let rc = a.wrapping_add(b).wrapping_add(c) as u16; // ???? TODO
+        pc_state.set_flag_n(false);
+        pc_state.set_flag_z(rc == 0x0);
+// TODO: Check not needed        pc_state.set_flag_v(rc != r); // Overflow
+        pc_state.set_flag_c(r > 99);
+        result = ((((r/10 % 10) << 4) & 0xf0) + (r%10)) as u8;
+    }
+
+    result
+}
+
+pub fn adc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    let result = add_carry(pc_state, pc_state.get_a(), data, pc_state.get_flag_c() as u8);
+    pc_state.set_a(result);
+    0
+}
+
+pub fn compare(pc_state: &mut pc_state::PcState, a:u8, b:u8) {
+    // TODO: Check/test
+    let rs = a.wrapping_sub(b);
+    println!("{} {} {}", a, b, rs);
+    pc_state.set_flag_n(0x80 == (rs & 0x80)); // Negative
+    pc_state.set_flag_z(rs == 0); // Zero
+    let r = a as i16 - b as i16;
+    pc_state.set_flag_c(0x100 != (r & 0x100));  // Carry (not borrow)
+}
+
+pub fn cpx(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    compare(pc_state, pc_state.get_x(), data);
+    0
+}
+
+pub fn cpy(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    compare(pc_state, pc_state.get_y(), data);
+    0
+}
+
+
+pub fn cmp(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    compare(pc_state, pc_state.get_a(), data);
     0
 }
 
@@ -191,6 +299,34 @@ pub fn t_no_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, 
 pub fn t_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, data:u8) -> u8 {
     pc_state::set_status_nz(pc_state, data);
     data
+}
+
+pub fn pha_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {
+    // T1 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    // T2 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.write_sp(clock, pc_state.get_s(), pc_state.get_a());
+    pc_state.increment_s(-1);
+    // T0 - Next kid
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+}
+
+pub fn pla_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {
+    // T1 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    // T2 Stack Ptr. (Discard data)
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.read_sp(clock, pc_state.get_s());
+    // T3 Stack Ptr + 1.
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_a(memory.read_sp(clock, pc_state.get_s()));
+    pc_state::set_status_nz(pc_state, pc_state.get_a());
+    // T0 - Next instruction
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 }
 
 

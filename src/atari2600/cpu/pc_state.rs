@@ -181,6 +181,14 @@ impl PcState {
         self.pc_reg = input;
     }
 
+    pub fn set_pch(&mut self, input:u8) {
+        self.pc_reg = self.pc_reg & 0xFF | (input as u16) << 8;
+    }
+
+    pub fn set_pcl(&mut self, input:u8) {
+        self.pc_reg = self.pc_reg & 0xFF00 | input as u16;
+    }
+
     pub fn set_s(&mut self, input:u8) {
         self.s_reg = input;
     }
