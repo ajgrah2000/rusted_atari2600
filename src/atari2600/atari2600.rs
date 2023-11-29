@@ -51,7 +51,7 @@ impl Atari2600 {
     }
 
     pub fn power_atari2600(&mut self) {
-        inputs::Input::print_keys();
+        inputs::UserInput::print_keys();
 
         let mut frame_width = graphics::stella::Constants::BLIT_WIDTH;
         // If not in full screen, default to using a bigger window.
@@ -96,7 +96,7 @@ impl Atari2600 {
         let mut display_refreshes = 0;
         while display_refreshes < iterations {
 
-            if self.stop_clock > 0 && self.core.clock.cycles > self.stop_clock {
+            if self.stop_clock > 0 && self.core.clock.ticks > self.stop_clock {
                 return false;
             }
             self.core.step(self.debug, self.realtime);
@@ -155,7 +155,7 @@ impl Atari2600 {
 
                 graphics::display::SDLUtility::handle_events(&event, &mut window_size);
 
-                if !inputs::Input::handle_events(event, &mut self.core.ports.joysticks) {
+                if !inputs::UserInput::handle_events(event, &mut self.core.ports.joysticks) {
                     break 'running;
                 };
             }
