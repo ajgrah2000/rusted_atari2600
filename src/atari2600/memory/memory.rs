@@ -26,7 +26,7 @@ impl Memory {
         }
     }
 
-    pub fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
+    pub fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         if ((address & 0xFFEF) & Memory::STELLA_MASK) == Memory::STELLA_ADDR {
             self.stella.write(clock, address & !Memory::STELLA_MASK, data);
         } else if (address & Memory::RIOT_MASK) == Memory::RIOT_ADDR {
@@ -72,7 +72,7 @@ impl Memory {
         self.read(clock, address as u16 + Memory::STACK_LENGTH)
     }
 
-    pub fn write_sp(&mut self, clock: &clocks::Clock, address:u8, data:u8) {
+    pub fn write_sp(&mut self, clock: &mut clocks::Clock, address:u8, data:u8) {
         self.write(clock, address as u16 + Memory::STACK_LENGTH, data);
     }
 

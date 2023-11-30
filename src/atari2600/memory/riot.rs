@@ -120,7 +120,7 @@ impl Riot {
 }
 
 impl io::ReadWriteMemory for Riot {
-    fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
+    fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         self.write(clock, address, data);
     }
     fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
