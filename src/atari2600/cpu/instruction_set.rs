@@ -39,7 +39,7 @@ pub fn read_write_instruction <A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state:
 
     clock.increment(execute_time as u32);
 
-    write.write(clock, pc_state, memory ,addr, data);
+    write.write(clock, pc_state, memory, addr, data);
 
     pc_state.increment_pc((address.get_addressing_size() + 1) as i16);
 }
@@ -203,10 +203,49 @@ pub fn adc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
     0
 }
 
+pub fn sbc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    let result = sub_carry(pc_state, pc_state.get_a(), data, !pc_state.get_flag_c() as u8);
+    pc_state.set_a(result);
+    0
+}
+
+pub fn sub_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
+
+    let result;
+    if false == pc_state.get_flag_d() {
+        let mut r  = a as i16 - b as i16 - c as i16;
+        let rs = a.wrapping_sub(b).wrapping_sub(c as u8);
+        pc_state.set_flag_n(0x80 == (rs & 0x80)); // Negative
+        pc_state.set_flag_z(rs == 0);   // Zero
+        pc_state.set_flag_v(r != rs as i16);   // Overflow
+
+        r = a.wrapping_sub(b).wrapping_sub(c as u8) as i16;
+        pc_state.set_flag_c(0x100 != (r & 0x100)); // Carry (not borrow
+        result = a.wrapping_sub(b).wrapping_sub(c);
+    } else {
+        // Decimal subtraction
+        // FIXME need to fix flags
+
+        let r = (((a >> 4) & 0xF) * 10 + ((a & 0xF) %10)) as i16 - (((b>>4) & 0xF)* 10 + ((b & 0xF) %10)) as i16  - c as i16 ;
+
+        // rc = a + b + c
+        pc_state.set_flag_n(r < 0);
+        pc_state.set_flag_z(r == 0x0);
+        //  Need to check/fix conditions for V
+        // self.pc_state.P.V = (rc != r) ? 1:0;   # Overflow
+        pc_state.set_flag_v(true);   // Overflow
+
+        pc_state.set_flag_c((r >= 0) && (r <= 99));
+        result = (((((r/10) % 10) << 4) & 0xf0) + (r%10)) as u8;
+    }
+
+    result
+}
+
+
 pub fn compare(pc_state: &mut pc_state::PcState, a:u8, b:u8) {
     // TODO: Check/test
     let rs = a.wrapping_sub(b);
-    println!("{} {} {}", a, b, rs);
     pc_state.set_flag_n(0x80 == (rs & 0x80)); // Negative
     pc_state.set_flag_z(rs == 0); // Zero
     let r = a as i16 - b as i16;

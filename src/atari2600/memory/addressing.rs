@@ -101,7 +101,7 @@ impl AddressingZPX {
     }
 
     pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x().wrapping_add(1))) as u16
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x())) as u16
     }
 }
 
@@ -117,7 +117,7 @@ impl AddressingZPY {
     }
 
     pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y().wrapping_add(1))) as u16
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y())) as u16
     }
 }
 

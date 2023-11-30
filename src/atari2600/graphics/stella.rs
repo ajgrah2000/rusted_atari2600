@@ -26,6 +26,7 @@ impl Stella {
     }
     pub fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
         // TODO
+        println!("Stella read: {:X}", address);
         0
     }
 }

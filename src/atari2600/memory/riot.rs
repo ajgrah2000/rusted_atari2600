@@ -76,7 +76,7 @@ impl Riot {
             } else {
                 // Calculate ticks past zero, may not be quite right
                 // The interval was passed, value counts down from 255.
-                value = (0x100 - ((future_clock - self.expiration_time)/Riot::CYCLES_TO_CLOCK) as u16) as u8;
+                value = (0x100 as i16).wrapping_sub(((future_clock - self.expiration_time)/Riot::CYCLES_TO_CLOCK) as i16) as u8;
             }
         }
         else if test == Riot::RIOT_INTERRUPT {
