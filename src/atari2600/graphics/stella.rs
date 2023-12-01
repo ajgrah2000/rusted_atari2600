@@ -54,9 +54,10 @@ impl Stella {
 
     pub fn write_rsync(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) 
     {
-        let FUDGE = 3;
+        let fudge = 3;
+
         if (clock.ticks - self.screen_start_clock) > 3 {
-            clock.ticks += Stella::HORIZONTAL_TICKS as u64 - (clock.ticks - self.screen_start_clock + FUDGE) % Stella::HORIZONTAL_TICKS as u64
+            clock.ticks += Stella::HORIZONTAL_TICKS as u64 - (clock.ticks - self.screen_start_clock + fudge) % Stella::HORIZONTAL_TICKS as u64
         }
     }
 }

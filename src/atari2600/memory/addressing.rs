@@ -291,6 +291,18 @@ impl MemoryWrite {
     }
 }
 
+pub struct AccumulatorWrite { cycles:u8}
+
+impl AccumulatorWrite {
+    pub const fn new() -> Self {
+        Self {cycles:0}
+    }
+
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        memory.write(clock, address, data);
+    }
+}
+
 pub struct RegisterWrite { cycles:u8}
 
 impl RegisterWrite {
@@ -317,6 +329,7 @@ macro_rules! impl_write_data {
         };
 }
 
+impl_write_data!(AccumulatorWrite); 
 impl_write_data!(MemoryWrite); 
 impl_write_data!(RegisterWrite); 
 

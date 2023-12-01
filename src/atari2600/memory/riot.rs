@@ -57,7 +57,6 @@ impl Riot {
         let future_clock = clock.ticks + 12;
 
         if 0 == (address & Riot::NOT_RAMSELECT) {
-            println!("riot read ram");
             return self.ram[(address as u8 & Riot::RIOT_ADDRMASK) as usize];
         }
 
@@ -98,7 +97,6 @@ impl Riot {
 
     pub fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
         if 0 == (address & Riot::NOT_RAMSELECT) {
-            println!("riot write ram");
             self.ram[(address as u8 & Riot::RIOT_ADDRMASK) as usize] = data;
         } else {
             let test = address as u8 & Riot::RIOT_ADDRMASK;

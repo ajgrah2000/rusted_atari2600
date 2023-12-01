@@ -104,6 +104,16 @@ pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: 
     
 }
 
+pub fn jump_instruction<A>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A) 
+    where A: addressing::Address16, 
+{
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    let addr  = address.address16(clock, pc_state, memory);
+    let execute_time = address.get_addressing_time();
+    clock.increment(execute_time as u32);
+    pc_state.set_pc(addr);
+}
+
 pub fn branch_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, condition_mask: u8, condition: u8) 
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
@@ -142,6 +152,14 @@ pub fn lsr(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
     pc_state::set_status_nz(pc_state, right_shift);
     right_shift
 }
+
+pub fn ror(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    let t8 = ((data >> 1) | ((pc_state.get_flag_c() as u8) << 7)) & 0xFF;
+    pc_state.set_flag_c(1 == data & 1);
+    pc_state::set_status_nz(pc_state, t8);
+    t8
+}
+
 
 pub fn ldx(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_x(data);
@@ -223,14 +241,15 @@ pub fn sub_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
 
     let result;
     if false == pc_state.get_flag_d() {
-        let mut r  = a as i16 - b as i16 - c as i16;
-        let rs = a.wrapping_sub(b).wrapping_sub(c as u8);
-        pc_state.set_flag_n(0x80 == (rs & 0x80)); // Negative
+//        let mut r  = (a as i16).wrapping_sub(b as i16).wrapping_sub(c as i16) as i16;
+        let mut r  = (a as i16) - (b as i16) - (c as i16);
+        let rs = a.wrapping_sub(b).wrapping_sub(c as u8) as i8;
+        pc_state.set_flag_n(0x80 == (rs as u8 & 0x80)); // Negative
         pc_state.set_flag_z(rs == 0);   // Zero
         pc_state.set_flag_v(r != rs as i16);   // Overflow
 
-        r = a.wrapping_sub(b).wrapping_sub(c as u8) as i16;
-        pc_state.set_flag_c(0x100 != (r & 0x100)); // Carry (not borrow
+        r = (a as i16) - (b as i16) - (c as i16);
+        pc_state.set_flag_c(0x100 != (r as u16 & 0x100)); // Carry (not borrow
         result = a.wrapping_sub(b).wrapping_sub(c);
     } else {
         // Decimal subtraction
@@ -275,6 +294,12 @@ pub fn cpy(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
 
 pub fn cmp(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     compare(pc_state, pc_state.get_a(), data);
+    0
+}
+pub fn bit(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    pc_state.set_flag_n(0x80 == (data & 0x80));
+    pc_state.set_flag_v(0x40 == (data & 0x40));
+    pc_state.set_flag_z((pc_state.get_a() & data) == 0x0);
     0
 }
 
