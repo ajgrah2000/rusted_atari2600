@@ -40,8 +40,8 @@ impl Riot {
     pub fn new() -> Self {
         Self {
             input:inputs::Input::new(),
-            interval:Interval::Tim1,
-            expiration_time: 0,
+            interval:Interval::Tim1024,
+            expiration_time: 1000000,
             ram: vec![0; Riot::RAMSIZE as usize],
         }
     }
@@ -57,6 +57,7 @@ impl Riot {
         let future_clock = clock.ticks + 12;
 
         if 0 == (address & Riot::NOT_RAMSELECT) {
+            println!("riot read ram");
             return self.ram[(address as u8 & Riot::RIOT_ADDRMASK) as usize];
         }
 
@@ -97,6 +98,7 @@ impl Riot {
 
     pub fn write(&mut self, clock: &clocks::Clock, address: u16, data: u8) {
         if 0 == (address & Riot::NOT_RAMSELECT) {
+            println!("riot write ram");
             self.ram[(address as u8 & Riot::RIOT_ADDRMASK) as usize] = data;
         } else {
             let test = address as u8 & Riot::RIOT_ADDRMASK;

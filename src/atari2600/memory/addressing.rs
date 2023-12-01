@@ -121,10 +121,6 @@ impl AddressingZPY {
     }
 }
 
-pub fn address_abs(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-    memory.read16(clock, pc_state.get_pc().wrapping_add(1))
-}
-
 pub struct AllAddressingModes {
 }
 
