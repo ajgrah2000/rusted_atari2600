@@ -9,3 +9,6 @@ edition = "2021"
 argh = "0.1.12"
 bitfield = "0.14.0"
 sdl2 = "0.35.2"
+
+[profile.release]
+debug = 1

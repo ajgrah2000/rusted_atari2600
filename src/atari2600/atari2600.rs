@@ -107,7 +107,13 @@ impl Atari2600 {
             }
             audio_steps += 1;
 
-            {
+            if self.core.export() {
+                texture
+                    .with_lock(None, |buffer: &mut [u8], _pitch: usize| {
+                        self.core.generate_display(buffer)
+                    })
+                .unwrap();
+
                 // TODO: Display
 
                 canvas.clear();

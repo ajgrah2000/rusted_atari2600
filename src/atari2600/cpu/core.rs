@@ -32,8 +32,8 @@ impl Core {
             ports,
             raw_display: vec![
                 0;
-                (graphics::stella::Constants::ATARI2600_WIDTH as usize)
-                    * (graphics::stella::Constants::ATARI2600_HEIGHT as usize)
+                (graphics::stella::Constants::BLIT_WIDTH as usize)
+                    * (graphics::stella::Constants::BLIT_HEIGHT as usize)
                     * (graphics::display::SDLUtility::bytes_per_pixel() as usize)
             ],
             start_time: time::SystemTime::now(),
@@ -68,6 +68,12 @@ impl Core {
             &mut self.ports,
         );
 
+    }
+
+    pub fn export(&mut self) -> bool {
+        // TODO
+        // Add trigger for re-drawing stella graphics
+        false
     }
 
     pub fn generate_display(&mut self, buffer: &mut [u8]) {
