@@ -3,6 +3,8 @@ use sdl2::render;
 use sdl2::video;
 use sdl2::event;
 
+use std::fmt;
+
 pub struct WindowSize {
     pub frame_width: u16,
     pub frame_height: u16,
@@ -22,6 +24,46 @@ impl WindowSize {
         }
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct Colour {
+    // Simple RGB store and conversion at a per colour level.
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
+impl Colour {
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+
+    pub fn convert_rgb444(&self, dst: &mut [u8]) {
+        // RGB444
+        dst[0] = (self.g & 0xF0) | (self.b >> 4);
+        dst[1] = self.r >> 4;
+    }
+
+    pub fn convert_rgb24(&self, dst: &mut [u8]) {
+        dst[0] = self.r;
+        dst[1] = self.g;
+        dst[2] = self.b;
+    }
+
+    pub fn convert_rgb888(&self, dst: &mut [u8]) {
+        dst[0] = self.b;
+        dst[1] = self.g;
+        dst[2] = self.r;
+    }
+}
+
+impl fmt::Display for Colour {
+    fn fmt(&self, dest: &mut fmt::Formatter) -> fmt::Result {
+        write!( dest, "R:{} G:{} B:{}", self.r, self.g, self.b)
+    }
+}
+
+
 
 pub struct SDLUtility {}
 
