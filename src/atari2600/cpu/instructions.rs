@@ -235,7 +235,7 @@ impl Instruction {
             // BMI case 0x30: if (self.pc_state.P.status.N == 1)
             0x30 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x80, 0x80); }
             // BVC case 0x50: if (self.pc_state.P.status.V == 0)
-            0x50 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x80); }
+            0x50 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x00); }
             // BVS case 0x70: if (self.pc_state.P.status.V == 1)
             0x70 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x40); }
             // BCC case 0x90: if (self.pc_state.P.status.C == 0)

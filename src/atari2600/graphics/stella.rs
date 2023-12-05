@@ -202,7 +202,7 @@ impl Stella {
         } else {
             if Constants::VSYNC_OFF == (data & Constants::VSYNC_MASK) {
                 self.is_vsync = false;
-                self.screen_start_clock = clock.ticks - Stella::HORIZONTAL_TICKS + (Stella::HORIZONTAL_TICKS - clock.ticks + self.screen_start_clock) % Stella::HORIZONTAL_TICKS;
+                self.screen_start_clock = clock.ticks.wrapping_sub(Stella::HORIZONTAL_TICKS).wrapping_add((Stella::HORIZONTAL_TICKS.wrapping_sub(clock.ticks).wrapping_add(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS);
                 self.last_screen_update_clock = self.screen_start_clock;
             }
         }

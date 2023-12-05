@@ -114,23 +114,30 @@ pub fn jump_instruction<A>(clock: &mut clocks::Clock, pc_state: &mut pc_state::P
     pc_state.set_pc(addr);
 }
 
+
+pub fn branch_page_delay(clock: &mut clocks::Clock, start_address: u16, end_address: u16) 
+{
+    // If pages don't match, add a cycle.
+    if (start_address & 0xF00) != (end_address & 0xF00) {
+        clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    }
+}
+
 pub fn branch_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, condition_mask: u8, condition: u8) 
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 
     if (pc_state.get_p() & condition_mask) == condition {
-//        tmp16 = self.pc_state.PC
+        let initial_pc = pc_state.get_pc();
         let delta = memory.read(clock, pc_state.get_pc().wrapping_add(1));
         if delta & 0x80 != 0 {
-//            pc_state.increment_pc(delta - 0x100);
             pc_state.increment_pc((delta as i8) as i16);
         } else {
             pc_state.increment_pc(delta as i16);
         }
-//        # If branch to same page add 1, else add 2
-//        # TODO: Confirm if starting address is 'tmp16' or 'tmp16+2'
-// TODO: page clock delay.
-//        self.page_clocks_delay(tmp16+2, self.pc_state.PC+2)
+        // If branch to same page add 1, else add 2
+        // TODO: Confirm if starting address is 'tmp16' or 'tmp16+2'
+        branch_page_delay(clock, initial_pc.wrapping_add(2), pc_state.get_pc().wrapping_add(2));
 
         clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     }
@@ -202,10 +209,10 @@ pub fn add_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
 
     if false == pc_state.get_flag_d() {
         let mut r  = a as i16 + b as i16 + c as i16;
-        let rc = a.wrapping_add(b).wrapping_add(c) as i16;
-        pc_state.set_flag_n(0x80 == (rc & 0x80));
+        let rc = a.wrapping_add(b).wrapping_add(c) as i8;
+        pc_state.set_flag_n(rc < 0);
         pc_state.set_flag_z(rc == 0x0);
-        pc_state.set_flag_v(rc != r); // Overflow
+        pc_state.set_flag_v(rc as i16 != r); // Overflow
 
         r = a.wrapping_add(b) as i16 + c as i16;
         pc_state.set_flag_c(0x100 == (r & 0x100));
@@ -241,10 +248,9 @@ pub fn sub_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
 
     let result;
     if false == pc_state.get_flag_d() {
-//        let mut r  = (a as i16).wrapping_sub(b as i16).wrapping_sub(c as i16) as i16;
-        let mut r  = (a as i16) - (b as i16) - (c as i16);
+        let mut r  = (a as i8 as i16) - (b as i8 as i16) - (c as i8 as i16);
         let rs = a.wrapping_sub(b).wrapping_sub(c as u8) as i8;
-        pc_state.set_flag_n(0x80 == (rs as u8 & 0x80)); // Negative
+        pc_state.set_flag_n(rs < 0); // Negative
         pc_state.set_flag_z(rs == 0);   // Zero
         pc_state.set_flag_v(r != rs as i16);   // Overflow
 

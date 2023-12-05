@@ -20,7 +20,7 @@ pub struct Atari2600 {
 }
 
 impl Atari2600 {
-    const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 1; // Number of display updates per key press event. (reduces texture creation overhead).
+    const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 1000; // Number of display updates per key press event. (reduces texture creation overhead).
     const CPU_STEPS_PER_AUDIO_UPDATE:    u32 = 50; // Number of times to step the CPU before updating the audio.
 
     pub fn build_atari2600(cartridge_name: String) -> cpu::core::Core {
@@ -130,8 +130,8 @@ impl Atari2600 {
                                 )
                     .unwrap();
                 canvas.present();
-                display_refreshes += 1;
             }
+            display_refreshes += 1;
         }
         true
     }
