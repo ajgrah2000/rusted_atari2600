@@ -333,6 +333,8 @@ pub struct Stella {
     is_input_latched:bool,
     is_update_time:bool,
 
+    colours: Colours,
+
     display_lines: Vec< Vec<display::Colour> >,
 
     collision_state: CollisionState,
@@ -372,6 +374,7 @@ impl Stella {
             is_blank:false,
             is_input_latched:false,
             is_update_time:false,
+            colours: colours,
             display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y - Stella::START_DRAW_Y + 1) as usize],
             collision_state: CollisionState::new(),
             playfield_state: PlayfieldState::new(),
@@ -536,26 +539,27 @@ impl Stella {
     }
 
     fn write_colump0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.next_line.p_colour.0 = self.colours.get_color(data);
     }
 
     fn write_colump1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.next_line.p_colour.1 = self.colours.get_color(data);
     }
 
     fn write_colupf(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.next_line.playfield_colour = self.colours.get_color(data);
     }
 
     fn write_colubk(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.next_line.background_colour = self.colours.get_color(data);
     }
 
     fn write_ctrlpf(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         // TODO
 
-//            self.nextLine.ctrlpf        = data
+        self.next_line.ctrlpf  = data;
         self.playfield_state.update_ctrlpf(data);
+        // TODO
 //            self.ball.update_ctrlpf(data)
     }
 
@@ -792,5 +796,17 @@ impl io::DebugClock for Stella{
 }
 
 impl io::StellaIO for Stella{
-    // No additional function implementations required.
+    fn export(&mut self) -> bool {
+        true
+    }
+
+    fn generate_display(&mut self, buffer: &mut [u8]) {
+        let mut index = 0;
+        for y in &self.display_lines {
+            for x in y {
+                x.convert_rgb888(&mut buffer[index..(index + display::SDLUtility::bytes_per_pixel() as usize)]);
+                index += display::SDLUtility::bytes_per_pixel() as usize;
+            }
+        }
+    }
 }

@@ -107,10 +107,11 @@ impl Atari2600 {
             }
             audio_steps += 1;
 
-            if self.core.export() {
+//            if self.core.export() {
+            if self.core.memory.stella.export() {
                 texture
                     .with_lock(None, |buffer: &mut [u8], _pitch: usize| {
-                        self.core.generate_display(buffer)
+                        self.core.memory.stella.generate_display(buffer)
                     })
                 .unwrap();
 

@@ -9,4 +9,7 @@ pub trait DebugClock {
     fn debug_clock(&mut self) -> clocks::ClockType;
 }
 
-pub trait StellaIO: ReadWriteMemory + DebugClock {}
+pub trait StellaIO: ReadWriteMemory + DebugClock {
+    fn export(&mut self) -> bool;
+    fn generate_display(&mut self, buffer: &mut [u8]);
+}

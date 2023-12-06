@@ -8,7 +8,7 @@ use std::time;
 
 pub struct Core {
     pub clock: clocks::Clock,
-    memory: memory::Memory,
+    pub memory: memory::Memory,
     pc_state: pc_state::PcState,
     pub ports: ports::Ports,
     raw_display: Vec<u8>,
