@@ -52,7 +52,7 @@ impl Core {
         if debug {
             print!(
                 "cycles:{} 0x{:X} {:X} (0x{:X}) ",
-                self.clock.ticks/pc_state::PcState::CYCLES_TO_CLOCK as u64,
+                (self.clock.ticks.wrapping_sub(self.memory.stella.debug_clock()))/pc_state::PcState::CYCLES_TO_CLOCK as u64,
                 op_code,
                 self.pc_state.get_pc(),
                 self.memory.read(&self.clock, self.pc_state.get_pc().wrapping_add(1))
