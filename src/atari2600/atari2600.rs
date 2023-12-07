@@ -60,7 +60,7 @@ impl Atari2600 {
         const BLIT_WIDTH:  u16 = graphics::stella::Constants::ATARI2600_WIDTH  * graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u16 * (PIXEL_WIDTH  as u16);
         const BLIT_HEIGHT: u16 = graphics::stella::Constants::ATARI2600_HEIGHT * (PIXEL_HEIGHT as u16);
 
-        let mut frame_width = BLIT_WIDTH;
+        let frame_width = BLIT_WIDTH;
         let frame_height = ((frame_width as u32) * (BLIT_HEIGHT as u32) / (BLIT_WIDTH as u32)) as u16;
 
         println!("powering on Atari 2600 Emulator.");
