@@ -135,6 +135,95 @@ impl PlayfieldState {
 }
 
 pub struct BallState {
+        enabl:u8,
+        enabl_old:u8,
+        vdelbl:u8,
+        resbl:u8,
+        ctrlpf:u8,
+
+        x_min:u16,
+        x_max:u16,
+
+        enabled:bool,
+
+        scan_line: Vec<bool>,
+}
+
+impl BallState {
+
+    fn new() -> Self {
+        Self {
+            enabl:     0,
+            enabl_old:  0,
+            vdelbl:    0,
+            resbl:     0,
+            ctrlpf:    0,
+
+            x_min:     0,
+            x_max:     0,
+
+            enabled:   false,
+
+            scan_line: vec![false; Stella::FRAME_WIDTH as usize],
+        }
+    }
+
+    fn update(&mut self) {
+        if 0 == (self.vdelbl & 0x1) {
+            self.enabled = 0 != (self.enabl & 0x02);
+        } else {
+            self.enabled = 0 != (self.enabl_old & 0x02);
+        }
+
+        let width = 1 << ((self.ctrlpf & 0x30) >> 4);
+
+        self.x_min = self.resbl as u16 - Stella::HORIZONTAL_BLANK;
+        self.x_max = self.resbl as u16 - Stella::HORIZONTAL_BLANK  + width;
+
+        self.calc_ball_scan()
+    }
+
+    fn update_resbl(&mut self, data:u8) {
+        self.resbl = data;
+        self.update();
+    }
+        
+    fn update_enabl_old(&mut self, data:u8) {
+        self.enabl_old = data;
+        self.update();
+    }
+
+    fn update_enabl(&mut self, data:u8) {
+        self.enabl = data;
+        self.update();
+    }
+
+    fn update_vdelbl(&mut self, data:u8) {
+        self.vdelbl = data;
+        self.update();
+    }
+
+    fn update_ctrlpf(&mut self, data:u8) {
+        self.ctrlpf = data;
+        self.update();
+    }
+
+    fn calc_ball_scan(&mut self) {
+        // Calculate an entire scanline for the ball, re-calculated on
+        // parameter change. 
+        // Default scan to false.
+        self.scan_line = vec![false; Stella::FRAME_WIDTH as usize];
+
+        if self.enabled {
+            for x in self.x_min..self.x_max {
+               self.scan_line[(x % Stella::FRAME_WIDTH) as usize] = true;
+            }
+        }
+    }
+
+    fn get_ball_scan(&self) -> Vec<bool> {
+        self.scan_line.clone()
+    }
 }
 
 pub struct MissileState {
@@ -335,6 +424,7 @@ pub struct Stella {
 
     collision_state: CollisionState,
     playfield_state: PlayfieldState,
+    ball: BallState,
 }
 
 impl Stella {
@@ -374,6 +464,7 @@ impl Stella {
             display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y - Stella::START_DRAW_Y + 1) as usize],
             collision_state: CollisionState::new(),
             playfield_state: PlayfieldState::new(),
+            ball: BallState::new(),
         }
     }
 
@@ -596,7 +687,7 @@ impl Stella {
     }
 
     fn write_resbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.ball.update_resbl(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
     fn write_grp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -605,6 +696,9 @@ impl Stella {
 
     fn write_grp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         // TODO
+//            self.p1_state.update_p(data)
+//            self.p0_state.update_pOld(self.p0_state.p)
+            self.ball.update_enabl_old(self.ball.enabl);
     }
 
     fn write_enam0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -616,7 +710,7 @@ impl Stella {
     }
 
     fn write_enabl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.ball.update_enabl(data);
     }
 
     fn write_hmp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -636,7 +730,7 @@ impl Stella {
     }
 
     fn write_hmbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.next_line.hmbl = data;
     }
 
     fn write_hmove(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -656,7 +750,7 @@ impl Stella {
     }
 
     fn write_vdelbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.ball.update_vdelbl(data);
     }
 
     fn write_cxclr(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -687,7 +781,7 @@ impl Stella {
         let pf_scan = self.playfield_state.get_playfield_scan();
         let m0_scan = vec![false; Stella::FRAME_WIDTH as usize]; //self.missile0.get_missile_scan();
         let m1_scan = vec![false; Stella::FRAME_WIDTH as usize]; //self.missile1.get_missile_scan();
-        let bl_scan = vec![false; Stella::FRAME_WIDTH as usize]; //self.ball.get_ball_scan();
+        let bl_scan = self.ball.get_ball_scan();
 
         let mut x_start = 0;
         if (last_screen_pos % Stella::HORIZONTAL_TICKS as u16) >= Stella::HORIZONTAL_BLANK {
@@ -774,6 +868,29 @@ impl Stella {
 
       self.last_screen_update_clock = clock.ticks + future_pixels as u64;
     }
+
+    fn _hmove(&mut self) {
+//        self.p0_state.resp  = (self.p0_state.resp - self._hmove_clocks(self.nextLine.hmp[0])) % Stella.HORIZONTAL_TICKS
+//        self.p1_state.resp  = (self.p1_state.resp - self._hmove_clocks(self.nextLine.hmp[1])) % Stella.HORIZONTAL_TICKS
+//        self.missile0.resm  = (self.missile0.resm - self._hmove_clocks(self.nextLine.hmm[0])) % Stella.HORIZONTAL_TICKS
+//        self.missile1.resm  = (self.missile1.resm - self._hmove_clocks(self.nextLine.hmm[1])) % Stella.HORIZONTAL_TICKS
+        self.ball.resbl     = (self.ball.resbl.wrapping_add(Stella::hmove_clocks(self.next_line.hmbl))) % Stella::HORIZONTAL_TICKS as u8;
+//
+//        self.p0_state.update()
+//        self.p1_state.update()
+//        self.missile0.update()
+//        self.missile1.update()
+        self.ball.update()
+    }
+
+    fn hmove_clocks(hm:u8) -> u8{
+        // hm - int8
+        // Need to ensure 'hm' maintains negative when shifted.
+        // 'hm >= 0x80' is negative move.
+        let clock_shift = hm >> 4;
+        clock_shift
+    }
+
 }
 
 impl io::ReadWriteMemory for Stella{
