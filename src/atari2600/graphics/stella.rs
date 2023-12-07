@@ -7,14 +7,10 @@ use std::io::BufRead;
 pub struct Constants {}
 
 impl Constants {
-    pub const ATARI2600_WIDTH:  u16 = 160;
-    pub const ATARI2600_HEIGHT: u16 = 280;
+    pub const ATARI2600_WIDTH:  u16 = Stella::FRAME_WIDTH;
+    pub const ATARI2600_HEIGHT: u16 = Stella::FRAME_HEIGHT;
 
-    pub const PIXEL_WIDTH:  u8 = 4;
-    pub const PIXEL_HEIGHT: u8 = 2;
-
-    pub const BLIT_WIDTH:  u16 = Constants::ATARI2600_WIDTH  * (Constants::PIXEL_WIDTH  as u16);
-    pub const BLIT_HEIGHT: u16 = Constants::ATARI2600_HEIGHT * (Constants::PIXEL_HEIGHT as u16);
+    pub const PIXEL_WIDTH_STRETCH: u8 = 2;
 
     pub const VSYNC_MASK:u8 = 0x2;
     pub const VSYNC_ON:u8   = 0x2;
@@ -802,8 +798,9 @@ impl io::StellaIO for Stella{
 
     fn generate_display(&mut self, buffer: &mut [u8]) {
         let mut index = 0;
-        for y in &self.display_lines {
-            for x in y {
+        for y in 0..Stella::FRAME_HEIGHT {
+            let display_line = &self.display_lines[(y + Stella::START_DRAW_Y) as usize];
+            for x in display_line {
                 x.convert_rgb888(&mut buffer[index..(index + display::SDLUtility::bytes_per_pixel() as usize)]);
                 index += display::SDLUtility::bytes_per_pixel() as usize;
             }

@@ -53,14 +53,19 @@ impl Atari2600 {
     pub fn power_atari2600(&mut self) {
         inputs::UserInput::print_keys();
 
-        let mut frame_width = graphics::stella::Constants::BLIT_WIDTH;
-        // If not in full screen, default to using a bigger window.
-        if !self.fullscreen {frame_width *= 1;}
-        let frame_height = ((frame_width as u32) * (graphics::stella::Constants::BLIT_HEIGHT as u32) / (graphics::stella::Constants::BLIT_WIDTH as u32)) as u16;
+        // Default scaling (if not full screen)
+        const PIXEL_WIDTH:  u8 = 2;
+        const PIXEL_HEIGHT: u8 = 2;
+
+        const BLIT_WIDTH:  u16 = graphics::stella::Constants::ATARI2600_WIDTH  * graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u16 * (PIXEL_WIDTH  as u16);
+        const BLIT_HEIGHT: u16 = graphics::stella::Constants::ATARI2600_HEIGHT * (PIXEL_HEIGHT as u16);
+
+        let mut frame_width = BLIT_WIDTH;
+        let frame_height = ((frame_width as u32) * (BLIT_HEIGHT as u32) / (BLIT_WIDTH as u32)) as u16;
 
         println!("powering on Atari 2600 Emulator.");
 
-        let window_size = graphics::display::WindowSize::new(frame_width, frame_height, graphics::stella::Constants::BLIT_WIDTH as u16, graphics::stella::Constants::BLIT_HEIGHT as u16, self.fullscreen);
+        let window_size = graphics::display::WindowSize::new(frame_width, frame_height, graphics::stella::Constants::ATARI2600_WIDTH as u16, graphics::stella::Constants::ATARI2600_HEIGHT as u16, self.fullscreen);
 
         self.main_loop(window_size, graphics::display::SDLUtility::PIXEL_FORMAT);
     }
@@ -125,7 +130,7 @@ impl Atari2600 {
                         Some(rect::Rect::new(
                                 0,
                                 0,
-                                window_size.console_width as u32,
+                                graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_width as u32,
                                 window_size.console_height as u32,
                                 )),
                                 )
@@ -148,7 +153,7 @@ impl Atari2600 {
             window_size.fullscreen,
         );
 
-        canvas.set_logical_size(window_size.console_width as u32, window_size.console_height as u32).unwrap();
+        canvas.set_logical_size(graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_width as u32, window_size.console_height as u32).unwrap();
 
         let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context).unwrap();
 
