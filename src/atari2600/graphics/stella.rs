@@ -690,6 +690,8 @@ pub struct Stella {
     missile0: MissileState,
     missile1: MissileState,
     ball: BallState,
+
+    scanline_debug: bool,
 }
 
 impl Stella {
@@ -711,7 +713,7 @@ impl Stella {
     pub const START_DRAW_Y:u16 = 0;
     pub const END_DRAW_Y:u16 = Stella::VBLANK_LINES + Stella::FRAME_HEIGHT + Stella::OVERSCAN_LINES;
 
-    pub fn new() -> Self {
+    pub fn new(scanline_debug:bool) -> Self {
         let mut colours = Colours::new();
         colours.load("palette.dat");
 
@@ -734,6 +736,7 @@ impl Stella {
             missile0: MissileState::new(),
             missile1: MissileState::new(),
             ball: BallState::new(),
+            scanline_debug: scanline_debug,
         }
     }
 
@@ -959,7 +962,8 @@ impl Stella {
     }
 
     fn write_grp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.p0_state.update_p(data);
+        self.p1_state.update_p_old(self.p1_state.p);
     }
 
     fn write_grp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1122,14 +1126,16 @@ impl Stella {
                 self.collision_state.update_collisions(p0, p1, m0, m1, bl, pf);
             }
 
-            // Display scan 'start position'.
-            let ps0 = self.p0_state.pos_start;
-            let ps1 = self.p1_state.pos_start;
-            if x as u16 == ps0 {
-                pixel_colour = self.colours.get_colour(2);
-            }
-            if x as u16 == ps1 {
-                pixel_colour = self.colours.get_colour(3);
+            if self.scanline_debug {
+                // Display scan 'start position'.
+                let ps0 = self.p0_state.pos_start;
+                let ps1 = self.p1_state.pos_start;
+                if x as u16 == ps0 {
+                    pixel_colour = self.colours.get_colour(2);
+                }
+                if x as u16 == ps1 {
+                    pixel_colour = self.colours.get_colour(3);
+                }
             }
 
             current_y_line[x] = pixel_colour;
@@ -1198,12 +1204,10 @@ impl io::DebugClock for Stella{
 
 impl io::StellaIO for Stella{
     fn export(&mut self) -> bool {
-        if self.is_update_time {
-            self.is_update_time = false;
-            true
-        } else {
-            false
-        }
+        // If it's time to update, then return the current value and clear it.
+        let result = self.is_update_time;
+        self.is_update_time = false;
+        result 
     }
 
     fn generate_display(&mut self, buffer: &mut [u8]) {
