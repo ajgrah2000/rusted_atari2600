@@ -12,7 +12,7 @@ enum Interval {
 
 pub struct Riot {
 //inputs:
-    input:inputs::Input,   // Interval holds the values
+    input:inputs::Input,
     interval:Interval,   // Interval holds the values
     expiration_time: clocks::ClockType,
     ram: Vec<u8>,
@@ -44,11 +44,6 @@ impl Riot {
             expiration_time: 1000000,
             ram: vec![0; Riot::RAMSIZE as usize],
         }
-    }
-
-    pub fn set_inputs(&mut self, inputs: inputs::Input) {
-        // TODO: Call this function from somewhere.
-        self.input = inputs;
     }
 
     pub fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
@@ -127,3 +122,10 @@ impl io::ReadWriteMemory for Riot {
         self.read(clock, address)
     }
 }
+
+impl io::RiotIO for Riot {
+    fn set_inputs(&mut self, inputs: inputs::Input) {
+        self.input = inputs;
+    }
+}
+

@@ -5,7 +5,7 @@ use super::super::io;
 pub struct Memory {
     cartridge: Box<dyn cartridge::Cartridge>,
     pub stella: Box<dyn io::StellaIO>,
-    riot: Box<dyn io::ReadWriteMemory>,
+    pub riot: Box<dyn io::RiotIO>,
 }
 
 impl Memory {
@@ -18,7 +18,7 @@ impl Memory {
     const ROM_MASK:u16     = 0xD000;
     const ROM_ADDRLINE:u16 = 0x1000;
 
-    pub fn new(cartridge: Box<dyn cartridge::Cartridge>, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::ReadWriteMemory>) -> Self{
+    pub fn new(cartridge: Box<dyn cartridge::Cartridge>, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::RiotIO>) -> Self{
         Self{
             cartridge: cartridge,
             stella: stella,
@@ -54,7 +54,7 @@ impl Memory {
       }
 
       if (address & Memory::STELLA_MASK) == Memory::STELLA_ADDR {
-          return self.stella.read(clock, address & Memory::STELLA_MASK);
+          return self.stella.read(clock, address & !Memory::STELLA_MASK);
       }
 
       if (address >= Memory::STACK_OFFSET) && (address < Memory::STACK_OFFSET + Memory::STACK_LENGTH) {

@@ -170,8 +170,8 @@ impl Atari2600 {
                 if !inputs::UserInput::handle_events(event, &mut self.core.ports.joysticks) {
                     break 'running;
                 };
-              // TODO: Call this function from somewhere.
-              // self.memory.riot.set_inputs(self.core.ports.joystick.input);
+                self.core.memory.riot.set_inputs(self.core.ports.joysticks.input);
+                self.core.memory.stella.set_inputs(self.core.ports.joysticks.input);
             }
 
             // First loop, draw FRAMES_PER_KEY_EVENT frames at a time.

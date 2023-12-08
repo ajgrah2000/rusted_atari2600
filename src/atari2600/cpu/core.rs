@@ -5,6 +5,16 @@ use super::super::graphics;
 use super::super::memory::memory;
 use super::instructions;
 use std::time;
+use std::thread;
+
+struct Constants {
+}
+
+impl Constants {
+    
+    pub const CLOCK_HZ: u32 = 1190000 * pc_state::PcState::CYCLES_TO_CLOCK as u32; // set to 6507 clock speed for atari 2600 to 1.19 MHz
+}
+
 
 pub struct Core {
     pub clock: clocks::Clock,
@@ -46,6 +56,14 @@ impl Core {
     }
 
     pub fn step(&mut self, debug: bool, realtime:bool) {
+
+        if realtime {
+            let in_ms:u64 = self.start_time.elapsed().expect("Error getting eplapsed").as_millis() as u64;
+            if 1000 * self.clock.ticks as u64/ Constants::CLOCK_HZ as u64 > in_ms as u64{
+                let required_sleep = (1000 * self.clock.ticks as u64/ Constants::CLOCK_HZ as u64) - in_ms;
+                thread::sleep(time::Duration::from_millis(required_sleep));
+            }
+        }
 
         let op_code = self.memory.read(&self.clock, self.pc_state.get_pc());
 

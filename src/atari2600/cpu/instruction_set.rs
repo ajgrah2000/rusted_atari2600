@@ -160,13 +160,19 @@ pub fn lsr(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
     right_shift
 }
 
+pub fn rol(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    let t8 = (data << 1) | pc_state.get_flag_c() as u8;
+    pc_state.set_flag_c(1 == (data >> 7) & 1);
+    pc_state::set_status_nz(pc_state, t8);
+    t8
+}
+
 pub fn ror(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     let t8 = ((data >> 1) | ((pc_state.get_flag_c() as u8) << 7)) & 0xFF;
     pc_state.set_flag_c(1 == data & 1);
     pc_state::set_status_nz(pc_state, t8);
     t8
 }
-
 
 pub fn ldx(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.set_x(data);

@@ -183,13 +183,19 @@ impl Instruction {
             0x1D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
             0x19 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
 
+            // ROL
+            0x26 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
+            0x36 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
+            0x2E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
+            0x3E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
+            0x2A => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ACCUMULATOR, MEMORY_READ, ACCUMULATOR_WRITE, instruction_set::rol); }
+
             // ROR
             0x66 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
             0x76 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
             0x6E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
             0x7E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
             0x6A => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ACCUMULATOR, MEMORY_READ, ACCUMULATOR_WRITE, instruction_set::ror); }
-
 
             // SBC
             0xE1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }

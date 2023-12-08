@@ -1,5 +1,6 @@
 use super::super::io;
 use super::super::clocks;
+use super::super::inputs;
 use super::display;
 use std;
 use std::io::BufRead;
@@ -177,8 +178,8 @@ impl BallState {
 
         let width = 1 << ((self.ctrlpf & 0x30) >> 4);
 
-        self.x_min = self.resbl as u16 - Stella::HORIZONTAL_BLANK;
-        self.x_max = self.resbl as u16 - Stella::HORIZONTAL_BLANK  + width;
+        self.x_min = (self.resbl as u16).wrapping_sub(Stella::HORIZONTAL_BLANK);
+        self.x_max = (self.resbl as u16).wrapping_sub(Stella::HORIZONTAL_BLANK).wrapping_add(width);
 
         self.calc_ball_scan()
     }
@@ -669,6 +670,7 @@ impl Colours {
 }
 
 pub struct Stella {
+    input:inputs::Input,
     pub vsync_debug_output_clock:clocks::ClockType,
     screen_start_clock:clocks::ClockType,
     paddle_start_clock:clocks::ClockType,
@@ -718,6 +720,7 @@ impl Stella {
         colours.load("palette.dat");
 
         Self { 
+            input:inputs::Input::new(),
             vsync_debug_output_clock: 0,
             screen_start_clock: 0,
             paddle_start_clock: 0,
@@ -775,8 +778,8 @@ impl Stella {
 //                // paddle3 stuff
 //                result = self._inpt[2];
 //            }
-//            0xB => { result = self.inputs.get_input7(); }
-//            0xC => { result = self.inputs.get_input7(); }
+            0xB => { result = self.input.input7; }
+            0xC => { result = self.input.input7; }
 //            0xD => { result = self._inpt[5]; }
             _ => { println!("Stella read: {:X}", address); 
                 result = 0;
@@ -1203,6 +1206,10 @@ impl io::DebugClock for Stella{
 }
 
 impl io::StellaIO for Stella{
+    fn set_inputs(&mut self, inputs: inputs::Input) {
+        self.input = inputs;
+    }
+
     fn export(&mut self) -> bool {
         // If it's time to update, then return the current value and clear it.
         let result = self.is_update_time;

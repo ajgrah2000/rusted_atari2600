@@ -24,7 +24,7 @@ impl Input {
 
 #[derive(Clone,Copy)]
 pub struct Joystick {
-    input:Input,
+    pub input:Input,
 }
 
 impl Joystick {
@@ -34,17 +34,26 @@ impl Joystick {
         }
     }
 
-    pub fn j1_up    (&mut self, value:bool) {}
-    pub fn j1_down  (&mut self, value:bool) {}
-    pub fn j1_left  (&mut self, value:bool) {}
-    pub fn j1_right (&mut self, value:bool) {}
-    pub fn j1_fire  (&mut self, value:bool) {}
+    pub fn set_input (value:bool, initial:&mut u8, mask:u8) {
+        if value { 
+            *initial &= !mask;
+        } else {
+            *initial |= mask;
+        }
+    }
+
+    pub fn j1_up    (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x10); }
+    pub fn j1_down  (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x20); }
+    pub fn j1_left  (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x40); }
+    pub fn j1_right (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x80); }
+    pub fn j1_fire  (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.input7, 0x80); }
     pub fn j2_up    (&mut self, value:bool) {}
     pub fn j2_down  (&mut self, value:bool) {}
     pub fn j2_left  (&mut self, value:bool) {}
     pub fn j2_right (&mut self, value:bool) {}
     pub fn j2_fire  (&mut self, value:bool) {}
-    pub fn reset    (&mut self, value:bool) {}
+    pub fn select   (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swchb, 0x01); }
+    pub fn reset    (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swchb, 0x02); }
 }
 
 pub struct UserInput {
@@ -57,6 +66,7 @@ impl UserInput {
     const KEY_RIGHT:keyboard::Keycode  = keyboard::Keycode::Right;
     const KEY_FIRE:keyboard::Keycode   = keyboard::Keycode::Z;
     const KEY_RESET:keyboard::Keycode  = keyboard::Keycode::R;
+    const KEY_SELECT:keyboard::Keycode  = keyboard::Keycode::S;
     const KEY_QUIT:keyboard::Keycode   = keyboard::Keycode::Escape;
 
     pub fn print_keys() {
@@ -74,19 +84,21 @@ impl UserInput {
             event::Event::Quit { .. } | 
             event::Event::KeyDown { keycode: Some(UserInput::KEY_QUIT), ..  } => { return false }
 
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_UP), .. }     => { joystick.j1_up(false); }
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_DOWN), .. }   => { joystick.j1_down(false); }
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_LEFT), .. }   => { joystick.j1_left(false); }
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_RIGHT), .. }  => { joystick.j1_right(false); }
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_FIRE), .. }   => { joystick.j1_fire(false); }
-            event::Event::KeyDown { keycode: Some(UserInput::KEY_RESET), .. }  => { joystick.reset(false); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_UP), .. }     => { joystick.j1_up(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_DOWN), .. }   => { joystick.j1_down(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_LEFT), .. }   => { joystick.j1_left(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_RIGHT), .. }  => { joystick.j1_right(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_FIRE), .. }   => { joystick.j1_fire(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_RESET), .. }  => { joystick.reset(true); }
+            event::Event::KeyDown { keycode: Some(UserInput::KEY_SELECT), .. }  => { joystick.select(true); }
 
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_UP), .. }     => { joystick.j1_up(true); }
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_DOWN), .. }   => { joystick.j1_down(true); }
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_LEFT), .. }   => { joystick.j1_left(true); }
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_RIGHT), .. }  => { joystick.j1_right(true); }
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_FIRE), .. }   => { joystick.j1_fire(true); }
-            event::Event::KeyUp { keycode: Some(UserInput::KEY_RESET), .. }  => { joystick.reset(true); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_UP), .. }     => { joystick.j1_up(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_DOWN), .. }   => { joystick.j1_down(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_LEFT), .. }   => { joystick.j1_left(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_RIGHT), .. }  => { joystick.j1_right(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_FIRE), .. }   => { joystick.j1_fire(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_RESET), .. }  => { joystick.reset(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_SELECT), .. }  => { joystick.select(false); }
 
             _ => {return true}
         }
