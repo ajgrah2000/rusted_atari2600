@@ -607,35 +607,35 @@ impl CollisionState {
         }
     }
 
-    pub fn get_cxmp_0(&mut self, ) -> u8 {
+    pub fn get_cxmp_0(&mut self) -> u8 {
         self.cxmp.0
     }
 
-    pub fn get_cxmp_1(&mut self, ) -> u8 {
+    pub fn get_cxmp_1(&mut self) -> u8 {
         self.cxmp.1
     }
 
-    pub fn get_cxpfb_0(&mut self, ) -> u8 {
+    pub fn get_cxpfb_0(&mut self) -> u8 {
         self.cxpfb.0
     }
 
-    pub fn get_cxpfb_1(&mut self, ) -> u8 {
+    pub fn get_cxpfb_1(&mut self) -> u8 {
         self.cxpfb.1
     }
 
-    pub fn get_cxmfb_0(&mut self, ) -> u8 {
+    pub fn get_cxmfb_0(&mut self) -> u8 {
         self.cxmfb.0
     }
 
-    pub fn get_cxmfb_1(&mut self, ) -> u8 {
+    pub fn get_cxmfb_1(&mut self) -> u8 {
         self.cxmfb.1
     }
 
-    pub fn get_cxblpf(&mut self, ) -> u8 {
+    pub fn get_cxblpf(&mut self) -> u8 {
         self.cxblpf
     }
 
-    pub fn get_cxppmm(&mut self, ) -> u8 {
+    pub fn get_cxppmm(&mut self) -> u8 {
         self.cxppmm
     }
 }
@@ -727,7 +727,7 @@ impl Stella {
             last_screen_update_clock: 0,
             next_line: LineState::new(),
             is_vsync:false,
-            is_blank:false,
+            is_blank:true,
             is_input_latched:false,
             is_update_time:false,
             colours: colours,
@@ -838,7 +838,7 @@ impl Stella {
             0x27 => {self.write_vdelbl(clock, address, data); }
             0x2C => {self.write_cxclr(clock, address, data); }
             _ => { 
-                println!("Stella write not supported 0x{:X}", address & 0x3F);
+//                println!("Stella write not supported 0x{:X}", address & 0x3F);
             }
         }
     }
@@ -961,7 +961,7 @@ impl Stella {
     }
 
     fn write_resbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.ball.update_resbl(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+        self.ball.update_resbl(((clock.ticks.wrapping_add(4).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
     fn write_grp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1032,19 +1032,18 @@ impl Stella {
     }
 
     fn write_cxclr(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+        self.collision_state.clear();
     }
 
-//    pub fn screen_scan(&mut self, clock: &mut clocks::Clock, next_line:& LineState, display_lines: &mut Vec< Vec<display::Colour> >) {
     pub fn screen_scan(&mut self, clock: &mut clocks::Clock) {
 
       let future_pixels = 1;
     
-      let last_screen_pos = (self.last_screen_update_clock - self.screen_start_clock) as u16;
-      let screen_pos:u16 = ((clock.ticks - self.screen_start_clock) as u16).wrapping_add(future_pixels);
+      let last_screen_pos = self.last_screen_update_clock - self.screen_start_clock;
+      let screen_pos = (clock.ticks - self.screen_start_clock).wrapping_add(future_pixels as clocks::ClockType);
     
-      let y_start = (last_screen_pos/Stella::HORIZONTAL_TICKS as u16) - Stella::START_DRAW_Y;
-      let y_stop  = (screen_pos/Stella::HORIZONTAL_TICKS as u16) - Stella::START_DRAW_Y;
+      let y_start = (last_screen_pos/Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::START_DRAW_Y;
+      let y_stop  = (screen_pos/Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::START_DRAW_Y;
 
       if y_stop < (Stella::END_DRAW_Y - Stella::START_DRAW_Y) {
 
@@ -1062,13 +1061,13 @@ impl Stella {
         let bl_scan = self.ball.get_ball_scan();
 
         let mut x_start = 0;
-        if (last_screen_pos % Stella::HORIZONTAL_TICKS as u16) >= Stella::HORIZONTAL_BLANK {
-            x_start = (last_screen_pos % Stella::HORIZONTAL_TICKS as u16) - Stella::HORIZONTAL_BLANK;
+        if ((last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16) >= Stella::HORIZONTAL_BLANK {
+            x_start = (last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::HORIZONTAL_BLANK;
         }
 
         let mut last_x_stop = 0;
-        if (screen_pos % Stella::HORIZONTAL_TICKS as u16) >= Stella::HORIZONTAL_BLANK {
-          last_x_stop = screen_pos % Stella::HORIZONTAL_TICKS as u16 - Stella::HORIZONTAL_BLANK;
+        if ((screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16) >= Stella::HORIZONTAL_BLANK {
+          last_x_stop = (screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::HORIZONTAL_BLANK;
         }
 
         for y in y_start as u16 .. (y_stop+1) as u16 {
@@ -1167,11 +1166,11 @@ impl Stella {
     }
 
     fn hmove(&mut self) {
-        self.p0_state.resp  = (self.p0_state.resp - Stella::hmove_clocks(self.next_line.hmp.0)) % Stella::HORIZONTAL_TICKS as u8;
-        self.p1_state.resp  = (self.p1_state.resp - Stella::hmove_clocks(self.next_line.hmp.1)) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile0.resm  = self.missile0.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0)) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile1.resm  = self.missile1.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1)) % Stella::HORIZONTAL_TICKS as u8;
-        self.ball.resbl     = self.ball.resbl.wrapping_add(Stella::hmove_clocks(self.next_line.hmbl)) % Stella::HORIZONTAL_TICKS as u8;
+        self.p0_state.resp  = (self.p0_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.0) as u8)) % Stella::HORIZONTAL_TICKS as u8;
+        self.p1_state.resp  = (self.p1_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.1) as u8)) % Stella::HORIZONTAL_TICKS as u8;
+        self.missile0.resm  = self.missile0.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0) as u8) % Stella::HORIZONTAL_TICKS as u8;
+        self.missile1.resm  = self.missile1.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1) as u8) % Stella::HORIZONTAL_TICKS as u8;
+        self.ball.resbl     = self.ball.resbl.wrapping_sub(Stella::hmove_clocks(self.next_line.hmbl) as u8) % Stella::HORIZONTAL_TICKS as u8;
 
         self.p0_state.update();
         self.p1_state.update();
@@ -1180,11 +1179,11 @@ impl Stella {
         self.ball.update();
     }
 
-    fn hmove_clocks(hm:u8) -> u8 {
+    fn hmove_clocks(hm:u8) -> i8 {
         // hm - int8
         // Need to ensure 'hm' maintains negative when shifted.
         // 'hm >= 0x80' is negative move.
-        let clock_shift = hm >> 4;
+        let clock_shift = (hm as i8) >> 4;
         clock_shift
     }
 

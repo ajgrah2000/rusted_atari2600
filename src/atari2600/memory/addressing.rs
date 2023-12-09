@@ -242,6 +242,20 @@ impl MemoryRead {
     }
 }
 
+pub struct AccumulatorRead {
+    cycles:u8,
+}
+
+impl AccumulatorRead {
+    pub const fn new() -> Self {
+        Self {cycles: 2}
+    }
+
+    fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8 {
+        pc_state.get_a()
+    }
+}
+
 pub struct NullRead {
     cycles:u8,
 }
@@ -271,11 +285,12 @@ macro_rules! impl_read_data {
     };
 }
 
+impl_read_data!(AccumulatorRead);
 impl_read_data!(MemoryRead);
 impl_read_data!(NullRead);
 
 pub trait WriteData {
-    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8);
     fn get_writing_time(&self) -> u8;
 }
 
@@ -286,7 +301,7 @@ impl MemoryWrite {
         Self {cycles:2}
     }
 
-    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
         memory.write(clock, address, data);
     }
 }
@@ -298,8 +313,8 @@ impl AccumulatorWrite {
         Self {cycles:0}
     }
 
-    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
-        memory.write(clock, address, data);
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+        pc_state.set_a(data);
     }
 }
 
@@ -310,7 +325,7 @@ impl RegisterWrite {
         Self {cycles:1}
     }
 
-    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
         memory.write(clock, address, data);
     }
 }
@@ -318,7 +333,7 @@ impl RegisterWrite {
 macro_rules! impl_write_data {
     ($type:ty)  => {
         impl WriteData for $type {
-            fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
+            fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) {
                 self.write(clock, pc_state, memory, address, data);
             }
         
@@ -343,7 +358,7 @@ impl MemoryNull {
 }
 
 impl WriteData for MemoryNull {
-    fn write(&self, clock: &mut clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) { }
+    fn write(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: u16, data: u8) { }
     fn get_writing_time(&self) -> u8 { 0 }
 }
 
