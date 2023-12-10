@@ -174,6 +174,12 @@ impl Instruction {
             0xAC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
             0xBC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
 
+            // LSR
+            0x46 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x56 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x4E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x5E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+
             // OR
             0x01 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
             0x09 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
