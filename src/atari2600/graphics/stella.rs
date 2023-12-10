@@ -1,9 +1,12 @@
 use super::super::io;
 use super::super::clocks;
 use super::super::inputs;
+use super::super::audio::tiasound;
 use super::display;
 use std;
 use std::io::BufRead;
+
+use super::super::audio::soundchannel;
 
 pub struct Constants {}
 
@@ -670,6 +673,8 @@ impl Colours {
 }
 
 pub struct Stella {
+    pub tiasound: tiasound::TiaSound,
+
     input:inputs::Input,
     pub vsync_debug_output_clock:clocks::ClockType,
     screen_start_clock:clocks::ClockType,
@@ -720,6 +725,7 @@ impl Stella {
         colours.load("palette.dat");
 
         Self { 
+            tiasound:tiasound::TiaSound::new(),
             input:inputs::Input::new(),
             vsync_debug_output_clock: 0,
             screen_start_clock: 0,
@@ -1207,6 +1213,10 @@ impl io::DebugClock for Stella{
 impl io::StellaIO for Stella{
     fn set_inputs(&mut self, inputs: inputs::Input) {
         self.input = inputs;
+    }
+
+    fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType> {
+        self.tiasound.get_next_audio_chunk(length)
     }
 
     fn export(&mut self) -> bool {

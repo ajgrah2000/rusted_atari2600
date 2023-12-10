@@ -11,7 +11,7 @@ impl SDLUtility {
     const AUDIO_SAMPLE_SIZE:u16 = 1024; // 'Desired' sample size, too small and SDL buffer doesn't stay filled (pops/crackles).
     const FRACTION_FILL:f32 = 0.05; // TODO: FUDGE FACTOR.  Don't completely fill, samples a removed 1 at a time, don't fill them immediately.
 
-    const MONO_STERO_FLAG:u8 = 1; // TODO: Make this configurable 1 - mono, 2 - stereo
+    pub const MONO_STERO_FLAG:u8 = 1; // TODO: Make this configurable 1 - mono, 2 - stereo
 
     pub fn get_audio_queue (
         sdl_context: &mut sdl2::Sdl,

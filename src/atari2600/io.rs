@@ -1,5 +1,6 @@
 use super::clocks;
 use super::inputs;
+use super::audio::soundchannel;
 
 pub trait ReadWriteMemory {
     fn read(&mut self, clock: &clocks::Clock, address:u16) -> u8;
@@ -14,6 +15,7 @@ pub trait StellaIO: ReadWriteMemory + DebugClock {
     fn export(&mut self) -> bool;
     fn generate_display(&mut self, buffer: &mut [u8]);
     fn set_inputs(&mut self, inputs: inputs::Input);
+    fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType>;
 }
 
 pub trait RiotIO: ReadWriteMemory {

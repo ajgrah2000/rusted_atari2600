@@ -20,7 +20,7 @@ pub struct Atari2600 {
 }
 
 impl Atari2600 {
-    const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 1000; // Number of display updates per key press event. (reduces texture creation overhead).
+    const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 10000; // Number of display updates per key press event. (reduces texture creation overhead).
     const CPU_STEPS_PER_AUDIO_UPDATE:    u32 = 50; // Number of times to step the CPU before updating the audio.
 
     pub fn build_atari2600(cartridge_name: String, debug:bool) -> cpu::core::Core {
@@ -108,19 +108,16 @@ impl Atari2600 {
 
             if 0 == audio_steps % Atari2600::CPU_STEPS_PER_AUDIO_UPDATE {
                 // Top-up the audio queue
-                // TODO
+                sound::SDLUtility::top_up_audio_queue(audio_queue, |fill_size| {self.core.memory.stella.get_next_audio_chunk(fill_size)});
             }
             audio_steps += 1;
 
-//            if self.core.export() {
             if self.core.memory.stella.export() {
                 texture
                     .with_lock(None, |buffer: &mut [u8], _pitch: usize| {
                         self.core.memory.stella.generate_display(buffer)
                     })
                 .unwrap();
-
-                // TODO: Display
 
                 canvas.clear();
                 canvas
@@ -174,7 +171,7 @@ impl Atari2600 {
                 self.core.memory.stella.set_inputs(self.core.ports.joysticks.input);
             }
 
-            // First loop, draw FRAMES_PER_KEY_EVENT frames at a time.
+            // First loop, draw DISPLAY_UPDATES_PER_KEY_EVENT frames at a time.
             if !self.draw_loop(&mut canvas, pixel_format, &window_size, Atari2600::DISPLAY_UPDATES_PER_KEY_EVENT, &mut audio_queue) {
                 break 'running;
             }
