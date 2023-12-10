@@ -214,14 +214,13 @@ pub fn add_carry(pc_state: &mut pc_state::PcState, a:u8, b:u8, c:u8) -> u8 {
     let result;
 
     if false == pc_state.get_flag_d() {
-        let mut r  = a as i16 + b as i16 + c as i16;
-        let rc = a.wrapping_add(b).wrapping_add(c) as i8;
-        pc_state.set_flag_n(rc < 0);
+        let r  = ((a as u16).wrapping_add(b as u16) + c as u16) as u16;
+        let rc = a.wrapping_add(b).wrapping_add(c);
+        pc_state.set_flag_n(0 != rc & 0x80);
         pc_state.set_flag_z(rc == 0x0);
-        pc_state.set_flag_v(rc as i16 != r); // Overflow
-
-        r = a.wrapping_add(b) as i16 + c as i16;
+        pc_state.set_flag_v(rc as i8 as u16 != r); // Overflow
         pc_state.set_flag_c(0x100 == (r & 0x100));
+
         result = a.wrapping_add(b).wrapping_add(c);
     } else {
         // Decimal Addition
@@ -385,6 +384,35 @@ pub fn t_no_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, 
 pub fn t_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state::set_status_nz(pc_state, data);
     data
+}
+
+pub fn php_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {
+    // T1 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    // T2 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.set_flag_b(true);
+    pc_state.set_flag_x1(true);
+    memory.write_sp(clock, pc_state.get_s(), pc_state.get_p());
+    pc_state.increment_s(-1);
+    // T0 - Next kid
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+}
+
+pub fn plp_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {
+    // T1 - PC + 1 
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+    // T2 Stack Ptr. (Discard data)
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.read_sp(clock, pc_state.get_s());
+    // T3 Stack Ptr + 1.
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_p(memory.read_sp(clock, pc_state.get_s()));
+    // T0 - Next instruction
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 }
 
 pub fn pha_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {
