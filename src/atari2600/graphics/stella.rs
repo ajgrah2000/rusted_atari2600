@@ -820,13 +820,12 @@ impl Stella {
             0x12 => {self.write_resm0(clock, address, data); }
             0x13 => {self.write_resm1(clock, address, data); }
             0x14 => {self.write_resbl(clock, address, data); }
-// TODO: Add 'tiasound'            
-//            0x15 => {self.tiasound.write_audio_ctrl_0(clock, address, data); }
-//            0x16 => {self.tiasound.write_audio_ctrl_1(clock, address, data); }
-//            0x17 => {self.tiasound.write_audio_freq_0(clock, address, data); }
-//            0x18 => {self.tiasound.write_audio_freq_1(clock, address, data); }
-//            0x19 => {self.tiasound.write_audio_vol_0(clock, address, data); }
-//            0x1A => {self.tiasound.write_audio_vol_1(clock, address, data); }
+            0x15 => {self.tiasound.write_audio_ctrl_0(clock, address, data); }
+            0x16 => {self.tiasound.write_audio_ctrl_1(clock, address, data); }
+            0x17 => {self.tiasound.write_audio_freq_0(clock, address, data); }
+            0x18 => {self.tiasound.write_audio_freq_1(clock, address, data); }
+            0x19 => {self.tiasound.write_audio_vol_0(clock, address, data); }
+            0x1A => {self.tiasound.write_audio_vol_1(clock, address, data); }
             0x1B => {self.write_grp0(clock, address, data); }
             0x1C => {self.write_grp1(clock, address, data); }
             0x1D => {self.write_enam0(clock, address, data); }
