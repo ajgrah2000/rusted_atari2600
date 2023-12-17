@@ -23,7 +23,7 @@ impl Atari2600 {
     const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 10000; // Number of display updates per key press event. (reduces texture creation overhead).
     const CPU_STEPS_PER_AUDIO_UPDATE:    u32 = 50; // Number of times to step the CPU before updating the audio.
 
-    pub fn build_atari2600(cartridge_name: String, debug:bool) -> cpu::core::Core {
+    pub fn build_atari2600(cartridge_name: String, debug:bool, realtime:bool) -> cpu::core::Core {
 
         let clock = clocks::Clock::new();
         let pc_state = cpu::pc_state::PcState::new();
@@ -38,7 +38,7 @@ impl Atari2600 {
             }
         }
 
-        let stella = graphics::stella::Stella::new(debug);
+        let stella = graphics::stella::Stella::new(debug, realtime);
         let riot = memory::riot::Riot::new();
         let memory = memory::memory::Memory::new(Box::new(cartridge), Box::new(stella), Box::new(riot));
 
@@ -72,7 +72,7 @@ impl Atari2600 {
 
     pub fn new(debug: bool, realtime: bool, stop_clock:clocks::ClockType, cartridge_name: String, fullscreen: bool) -> Self {
     
-        let core = Self::build_atari2600(cartridge_name, debug);
+        let core = Self::build_atari2600(cartridge_name, debug, realtime);
         Self { core, debug, realtime, stop_clock, fullscreen }
     }
 

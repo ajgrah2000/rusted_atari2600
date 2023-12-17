@@ -4,6 +4,7 @@ use super::soundchannel;
 use super::super::cpu::core;
 
 pub struct TiaSound {
+        enabled:bool,
         volume:Vec<u8>,
         freq:Vec<u8>,
         poly4state:Vec<u8>,
@@ -26,8 +27,9 @@ impl TiaSound {
     pub const FREQ_DATA_MASK:u8 = 0x1F;
     pub const BITS:u8 = 8;
 
-    pub fn new() -> Self {
+    pub fn new(realtime:bool) -> Self {
         Self {
+            enabled:realtime, // Only enable when running in 'real-time'
             volume:vec![0; TiaSound::CHANNELS as usize],
             freq:vec![0; TiaSound::CHANNELS as usize],
             poly4state:vec![0; TiaSound::CHANNELS as usize],
@@ -163,21 +165,23 @@ impl TiaSound {
 
     // Wav
     fn pre_write_generate_sound(&mut self, clock: &mut clocks::Clock) {
-        let audio_ticks:u32 = (clock.ticks - self.last_update_time) as u32;
+        if self.enabled {
+            let audio_ticks:u32 = (clock.ticks - self.last_update_time) as u32;
 
-        let mut raw_audio:(Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
+            let mut raw_audio:(Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
 
-        raw_audio.0.append(&mut self.get_channel_data(0, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
-        raw_audio.1.append(&mut self.get_channel_data(1, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
+            raw_audio.0.append(&mut self.get_channel_data(0, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
+            raw_audio.1.append(&mut self.get_channel_data(1, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
 
-        self.last_update_time = clock.ticks;
+            self.last_update_time = clock.ticks;
 
-        while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
-            if 2 == sound::SDLUtility::MONO_STERO_FLAG {
-                self.working_stream.push(raw_audio.0.remove(0));
-                self.working_stream.push(raw_audio.1.remove(0));
-            } else {
-                self.working_stream.push(((raw_audio.0.remove(0) as u16 + raw_audio.1.remove(0) as u16)/2) as u8);
+            while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
+                if 2 == sound::SDLUtility::MONO_STERO_FLAG {
+                    self.working_stream.push(raw_audio.0.remove(0));
+                    self.working_stream.push(raw_audio.1.remove(0));
+                } else {
+                    self.working_stream.push(((raw_audio.0.remove(0) as u16 + raw_audio.1.remove(0) as u16)/2) as u8);
+                }
             }
         }
     }
