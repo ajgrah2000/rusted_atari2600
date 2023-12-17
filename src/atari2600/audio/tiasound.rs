@@ -2,9 +2,11 @@ use super::super::clocks;
 use super::sound;
 use super::soundchannel;
 use super::super::cpu::core;
+use std::time;
+use std::thread;
 
 pub struct TiaSound {
-        enabled:bool,
+        realtime:bool,
         volume:Vec<u8>,
         freq:Vec<u8>,
         poly4state:Vec<u8>,
@@ -29,7 +31,7 @@ impl TiaSound {
 
     pub fn new(realtime:bool) -> Self {
         Self {
-            enabled:realtime, // Only enable when running in 'real-time'
+            realtime:realtime, // Only enable when running in 'real-time'
             volume:vec![0; TiaSound::CHANNELS as usize],
             freq:vec![0; TiaSound::CHANNELS as usize],
             poly4state:vec![0; TiaSound::CHANNELS as usize],
@@ -46,6 +48,17 @@ impl TiaSound {
 
     pub fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType> {
         let mut stream = Vec::with_capacity((2*length) as usize);
+
+        if self.realtime {
+            // If there's too much of a backlog of sound data for the sound card, then sleep a little longer.
+            let sound_delay_ms = 1_000 * self.working_stream.len()/TiaSound::SAMPLERATE as usize;
+            if sound_delay_ms > 10 {
+                // TODO; Find a better way to manage time (in a single location).
+                // This is coupled with the sleep in 'core', it essentially
+                // relies on that sleep not quite long enough to ensure sound is correct. '(otherwise the sound queue will be starved). 
+                thread::sleep(time::Duration::from_millis(1));
+            }
+        }
 
         if length > 0 {
             for i in 0..(length * (sound::SDLUtility::MONO_STERO_FLAG as u32)) {
@@ -161,19 +174,22 @@ impl TiaSound {
     }
 
     pub fn step(&mut self, clock: &clocks::Clock) {
+        self.pre_write_generate_sound(clock);
     }
 
     // Wav
-    fn pre_write_generate_sound(&mut self, clock: &mut clocks::Clock) {
-        if self.enabled {
+    fn pre_write_generate_sound(&mut self, clock: &clocks::Clock) {
+        if self.realtime {
             let audio_ticks:u32 = (clock.ticks - self.last_update_time) as u32;
 
             let mut raw_audio:(Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
 
-            raw_audio.0.append(&mut self.get_channel_data(0, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
-            raw_audio.1.append(&mut self.get_channel_data(1, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
+            let num_samples = ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16;
+            raw_audio.0.append(&mut self.get_channel_data(0, num_samples));
+            raw_audio.1.append(&mut self.get_channel_data(1, num_samples));
 
-            self.last_update_time = clock.ticks;
+            // Update the time based on the number of samples. 
+            self.last_update_time = self.last_update_time + ((num_samples as u64 * TiaSound::CPU_CLOCK_RATE as u64)/ TiaSound::SAMPLERATE as u64) as clocks::ClockType;
 
             while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
                 if 2 == sound::SDLUtility::MONO_STERO_FLAG {

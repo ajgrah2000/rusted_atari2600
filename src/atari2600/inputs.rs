@@ -42,6 +42,10 @@ impl Joystick {
         }
     }
 
+    pub fn toggle_input (initial:&mut u8, mask:u8) {
+        *initial ^= mask;
+    }
+
     pub fn j1_up    (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x10); }
     pub fn j1_down  (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x20); }
     pub fn j1_left  (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swcha, 0x40); }
@@ -54,6 +58,8 @@ impl Joystick {
     pub fn j2_fire  (&mut self, value:bool) {}
     pub fn select   (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swchb, 0x01); }
     pub fn reset    (&mut self, value:bool) { Joystick::set_input (value, &mut self.input.swchb, 0x02); }
+    pub fn p0_difficulty (&mut self) { println!("difficulty 0"); Joystick::toggle_input (&mut self.input.swchb, 0x40); }
+    pub fn p1_difficulty (&mut self) { println!("difficulty 1"); Joystick::toggle_input (&mut self.input.swchb, 0x80); }
 }
 
 pub struct UserInput {
@@ -67,6 +73,8 @@ impl UserInput {
     const KEY_FIRE:keyboard::Keycode   = keyboard::Keycode::Z;
     const KEY_RESET:keyboard::Keycode  = keyboard::Keycode::R;
     const KEY_SELECT:keyboard::Keycode  = keyboard::Keycode::S;
+    const KEY_P0_DIFFICULTY:keyboard::Keycode = keyboard::Keycode::Num1;
+    const KEY_P1_DIFFICULTY:keyboard::Keycode = keyboard::Keycode::Num2;
     const KEY_QUIT:keyboard::Keycode   = keyboard::Keycode::Escape;
 
     pub fn print_keys() {
@@ -99,6 +107,8 @@ impl UserInput {
             event::Event::KeyUp { keycode: Some(UserInput::KEY_FIRE), .. }   => { joystick.j1_fire(false); }
             event::Event::KeyUp { keycode: Some(UserInput::KEY_RESET), .. }  => { joystick.reset(false); }
             event::Event::KeyUp { keycode: Some(UserInput::KEY_SELECT), .. }  => { joystick.select(false); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_P0_DIFFICULTY), .. } => { joystick.p0_difficulty(); }
+            event::Event::KeyUp { keycode: Some(UserInput::KEY_P1_DIFFICULTY), .. } => { joystick.p1_difficulty(); }
 
             _ => {return true}
         }

@@ -53,11 +53,11 @@ Rust dependencies:
 
 TODO:
 
-
 Sound
-    - Currently sound only somewhat works when running in realtime.  There are
-      pops/crackles as there's currently no attempt to time scale the sound/ or match realtime with the sound buffer.
+    - Currently sound only somewhat works when running in realtime.  
+      It 'can' run without any pops/crackle (added a sleep to tiasound audio, so time is linked to sound card fill buffer). 
       Ideally sound would be scaled, which would allow sound at faster/slower than real-time (as well as improve 'real-time')
+      Note: Changing 'core::Constants::CLOCK_HZ' appears to lead to reasonable scaling overall (sound doesn't seem too bad and is simpler than separate sound scaling).
 
     - Only a subset of instructions have been implemented so far (intending to expand, but don't expect all cartridges to work).
     - Only the 'basic' cartridge format has been implemented (no bank switching/Ram).

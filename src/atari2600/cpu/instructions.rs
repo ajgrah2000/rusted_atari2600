@@ -265,6 +265,8 @@ impl Instruction {
 
             // JMP, absolute (effectively immediate)
             0x4C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_ABS); }
+            // JMP, absolute (effectively absolute)
+            0x6C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_INDIRECT); }
 
             // PHP
             0x08 => { instruction_set::php_instruction(clock, pc_state, memory); }
