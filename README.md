@@ -5,6 +5,9 @@ Building/Running:
 
     Install Rust:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh	
+ 
+	For windows, see: https://www.rust-lang.org/tools/install
+
     Install SDL:
 	linux (debian based): 
 		apt-get install libsdl2-dev
@@ -21,6 +24,21 @@ Building/Running:
 		# SDL_AUDIODRIVER=pipewire 
 	OSX: 
 		brew install sdl2
+
+	Windows:
+		Install a Visual Studio Compiler:
+			https://visualstudio.microsoft.com/free-developer-offers/
+		install 'cmake': 
+			https://cmake.org/download/
+
+		git clone https://github.com/libsdl-org/SDL
+		git checkout release-2.28.5
+
+		"C:\Program Files\CMake\bin\cmake.exe"cmake .. -DCMAKE_BUILD_TYPE=Release
+		"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --parallel
+                 copy Release\SDL2.* %USERPROFILE%\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib
+
+		
 
 Build and run:
     cargo run --release <rom_file>
