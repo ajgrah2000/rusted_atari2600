@@ -154,7 +154,6 @@ impl Atari2600 {
         canvas.set_logical_size(graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_width as u32, window_size.console_height as u32).unwrap();
 
         let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context);
-//        let mut audio_queue = Box::new(sound::WaveOutput::new("SampleOutput.wav"));
 //        let mut audio_queue = Box::new(sound::HoundOutput::new("SampleOutput.wav"));
 
         let mut event_pump = sdl_context.event_pump().unwrap();

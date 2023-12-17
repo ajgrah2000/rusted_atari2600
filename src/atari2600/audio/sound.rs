@@ -44,36 +44,6 @@ impl HoundOutput {
     }
 }
 
-
-pub struct WaveOutput {
-    header: wav::header::Header,
-    out_file: std::fs::File,
-}
-
-impl WaveOutput {
-    pub fn new(filename: &str) -> Self {
-        Self {
-            header: wav::header::Header::new(wav::header::WAV_FORMAT_PCM, SDLUtility::MONO_STERO_FLAG as u16, 32_000, std::mem::size_of::<soundchannel::PlaybackType>() as u16 * 8),
-            out_file: std::fs::File::create(std::path::Path::new(&filename)).unwrap(),
-        }
-    }
- 
-    pub fn write(&mut self, data: &Vec<soundchannel::PlaybackType>) {
-        wav::write(self.header, &wav::bit_depth::BitDepth::Eight(data.to_vec()), &mut self.out_file);
-    }
-}
-
-impl SoundQueue for WaveOutput {
-    fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>) {
-        self.write(new_audio_data);
-    }
-
-    fn size(&self) -> usize {
-        // Arbitrary number, maximum size to write in once go.
-        1_000_000
-    }
-}
-
 impl SoundQueue for HoundOutput {
     fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>) {
         self.write(new_audio_data);
