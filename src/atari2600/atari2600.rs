@@ -82,7 +82,7 @@ impl Atari2600 {
         pixel_format: pixels::PixelFormatEnum,
         window_size: &graphics::display::WindowSize,
         iterations: u32,
-        audio_queue: &mut sound::SoundQueueType,
+        audio_queue: &mut dyn sound::SoundQueue,
     ) -> bool {
         // Number of iterations to do before getting a new texture.
         // These loops will update the display, but currently events aren't checked in this time.
@@ -105,6 +105,7 @@ impl Atari2600 {
                 return false;
             }
             self.core.step(self.debug, self.realtime);
+            self.core.memory.stella.step_tia_sound(&self.core.clock);
 
             if 0 == audio_steps % Atari2600::CPU_STEPS_PER_AUDIO_UPDATE {
                 // Top-up the audio queue
@@ -152,10 +153,9 @@ impl Atari2600 {
 
         canvas.set_logical_size(graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_width as u32, window_size.console_height as u32).unwrap();
 
-        let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context).unwrap();
-
-        audio_queue.clear(); 
-        audio_queue.resume(); // Start the audio (nothing in the queue at this point).
+        let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context);
+//        let mut audio_queue = Box::new(sound::WaveOutput::new("SampleOutput.wav"));
+//        let mut audio_queue = Box::new(sound::HoundOutput::new("SampleOutput.wav"));
 
         let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -172,7 +172,7 @@ impl Atari2600 {
             }
 
             // First loop, draw DISPLAY_UPDATES_PER_KEY_EVENT frames at a time.
-            if !self.draw_loop(&mut canvas, pixel_format, &window_size, Atari2600::DISPLAY_UPDATES_PER_KEY_EVENT, &mut audio_queue) {
+            if !self.draw_loop(&mut canvas, pixel_format, &window_size, Atari2600::DISPLAY_UPDATES_PER_KEY_EVENT, &mut *audio_queue) {
                 break 'running;
             }
         }

@@ -1,6 +1,7 @@
 use super::super::clocks;
 use super::sound;
 use super::soundchannel;
+use super::super::cpu::core;
 
 pub struct TiaSound {
         volume:Vec<u8>,
@@ -9,7 +10,7 @@ pub struct TiaSound {
         poly5state:Vec<u8>,
         wave_form:Vec<u8>,
 
-        freq_pos:Vec<u8>,
+        freq_pos:Vec<u32>,
 
         last_update_time: clocks::ClockType,
 
@@ -18,7 +19,7 @@ pub struct TiaSound {
 
 impl TiaSound {
     // CPU Clock rate, used to scale to real time.
-    pub const CPU_CLOCK_RATE:u32 = 3580000;
+    pub const CPU_CLOCK_RATE:u32 = core::Constants::CLOCK_HZ;
 
     pub const SAMPLERATE:u16 = 32050;
     pub const CHANNELS:u8 = 2;
@@ -47,8 +48,9 @@ impl TiaSound {
         if length > 0 {
             for i in 0..(length * (sound::SDLUtility::MONO_STERO_FLAG as u32)) {
                 if !self.working_stream.is_empty() {
-                    stream.push(self.working_stream.remove(0)); // Neutral volume
-                    stream.push(self.working_stream.remove(0)); // Neutral volume
+                    for j in 0..sound::SDLUtility::MONO_STERO_FLAG {
+                        stream.push(self.working_stream.remove(0)); // Neutral volume
+                    }
                 }
             }
         }
@@ -99,7 +101,7 @@ impl TiaSound {
         let mut stream = vec![0; length as usize];
         for i in 0..length {
     
-            if 0 == self.freq_pos[channel as usize] % (self.freq[channel as usize] + 1) {
+            if 0 == self.freq_pos[channel as usize] % (self.freq[channel as usize] as u32 + 1) {
                 let next_poly5 = TiaSound::poly5(self.wave_form[channel as usize], self.poly5state[channel as usize], self.poly4state[channel as usize]);
 
                 if TiaSound::poly5clk(self.wave_form[channel as usize], self.poly5state[channel as usize]) {
@@ -156,20 +158,27 @@ impl TiaSound {
         self.post_write_generate_sound();
     }
 
+    pub fn step(&mut self, clock: &clocks::Clock) {
+    }
+
     // Wav
     fn pre_write_generate_sound(&mut self, clock: &mut clocks::Clock) {
         let audio_ticks:u32 = (clock.ticks - self.last_update_time) as u32;
 
         let mut raw_audio:(Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
 
-        raw_audio.0.append(&mut self.get_channel_data(0, (TiaSound::SAMPLERATE as u32 *audio_ticks/TiaSound::CPU_CLOCK_RATE) as u16));
-        raw_audio.1.append(&mut self.get_channel_data(1, (TiaSound::SAMPLERATE as u32 *audio_ticks/TiaSound::CPU_CLOCK_RATE) as u16));
+        raw_audio.0.append(&mut self.get_channel_data(0, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
+        raw_audio.1.append(&mut self.get_channel_data(1, ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64)/TiaSound::CPU_CLOCK_RATE as u64) as u16));
 
         self.last_update_time = clock.ticks;
 
         while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
-            self.working_stream.push(raw_audio.0.remove(0));
-            self.working_stream.push(raw_audio.1.remove(0));
+            if 2 == sound::SDLUtility::MONO_STERO_FLAG {
+                self.working_stream.push(raw_audio.0.remove(0));
+                self.working_stream.push(raw_audio.1.remove(0));
+            } else {
+                self.working_stream.push(((raw_audio.0.remove(0) as u16 + raw_audio.1.remove(0) as u16)/2) as u8);
+            }
         }
     }
 

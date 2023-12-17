@@ -7,7 +7,7 @@ use super::instructions;
 use std::time;
 use std::thread;
 
-struct Constants {
+pub struct Constants {
 }
 
 impl Constants {

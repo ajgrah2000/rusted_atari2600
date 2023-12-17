@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 argh = "0.1.12"
 bitfield = "0.14.0"
+hound = "3.5.1"
 sdl2 = "0.35.2"
+wav = "1.0.0"
 
 [profile.release]
 debug = 1

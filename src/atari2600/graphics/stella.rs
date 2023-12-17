@@ -1218,6 +1218,10 @@ impl io::StellaIO for Stella{
         self.tiasound.get_next_audio_chunk(length)
     }
 
+    fn step_tia_sound(&mut self, clock: &clocks::Clock) {
+        self.tiasound.step(clock);
+    }
+
     fn export(&mut self) -> bool {
         // If it's time to update, then return the current value and clear it.
         let result = self.is_update_time;

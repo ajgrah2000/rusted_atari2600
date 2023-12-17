@@ -16,6 +16,7 @@ pub trait StellaIO: ReadWriteMemory + DebugClock {
     fn generate_display(&mut self, buffer: &mut [u8]);
     fn set_inputs(&mut self, inputs: inputs::Input);
     fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType>;
+    fn step_tia_sound(&mut self, clock: &clocks::Clock);
 }
 
 pub trait RiotIO: ReadWriteMemory {

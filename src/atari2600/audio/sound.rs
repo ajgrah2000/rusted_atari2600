@@ -1,21 +1,104 @@
 use sdl2::audio;
 use super::soundchannel;
+use super::super::audio::tiasound;
+
+pub trait SoundQueue {
+    fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>);
+    fn size(&self) -> usize;
+}
+
+impl SoundQueue for audio::AudioQueue<soundchannel::PlaybackType> {
+    fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>) {
+        self.queue_audio(&new_audio_data).unwrap();
+    }
+
+    fn size(&self) -> usize {
+        self.size() as usize
+    }
+}
 
 pub type SoundQueueType = audio::AudioQueue<soundchannel::PlaybackType>;
+
+pub struct HoundOutput {
+    spec: hound::WavSpec,
+    out_file: hound::WavWriter<std::io::BufWriter<std::fs::File>>,
+}
+
+impl HoundOutput {
+    pub fn new(filename: &str) -> Self {
+        let wav_spec =  hound::WavSpec{
+                                channels: SDLUtility::MONO_STERO_FLAG as u16, 
+                                sample_rate: tiasound::TiaSound::SAMPLERATE as u32,  // Setting to 'chip' frequency, to avoid conversion.
+                                bits_per_sample: std::mem::size_of::<soundchannel::PlaybackType>() as u16 * 8,
+                                sample_format: hound::SampleFormat::Int};
+        Self {
+            spec: wav_spec,
+            out_file: hound::WavWriter::create(std::path::Path::new(&filename), wav_spec).unwrap(),
+        }
+    }
+ 
+    pub fn write(&mut self, data: &Vec<soundchannel::PlaybackType>) {
+        for d in data {
+            self.out_file.write_sample(*d as i8).unwrap();
+        }
+    }
+}
+
+
+pub struct WaveOutput {
+    header: wav::header::Header,
+    out_file: std::fs::File,
+}
+
+impl WaveOutput {
+    pub fn new(filename: &str) -> Self {
+        Self {
+            header: wav::header::Header::new(wav::header::WAV_FORMAT_PCM, SDLUtility::MONO_STERO_FLAG as u16, 32_000, std::mem::size_of::<soundchannel::PlaybackType>() as u16 * 8),
+            out_file: std::fs::File::create(std::path::Path::new(&filename)).unwrap(),
+        }
+    }
+ 
+    pub fn write(&mut self, data: &Vec<soundchannel::PlaybackType>) {
+        wav::write(self.header, &wav::bit_depth::BitDepth::Eight(data.to_vec()), &mut self.out_file);
+    }
+}
+
+impl SoundQueue for WaveOutput {
+    fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>) {
+        self.write(new_audio_data);
+    }
+
+    fn size(&self) -> usize {
+        // Arbitrary number, maximum size to write in once go.
+        1_000_000
+    }
+}
+
+impl SoundQueue for HoundOutput {
+    fn add_audio(&mut self, new_audio_data: & Vec<soundchannel::PlaybackType>) {
+        self.write(new_audio_data);
+    }
+
+    fn size(&self) -> usize {
+        // Arbitrary number, maximum size to write in once go.
+        1_000_000
+    }
+}
+
 pub struct SDLUtility {}
 
 impl SDLUtility {
     // TODO: Fix up values, make them more dynamic, do better comparisons
     // Not sure how they compare on different PCs
-    const TARGET_QUEUE_LENGTH:u32 = 2048; // This drives the 'delay' in audio, but too small for the speed and they aren't filled fast enough
+    const TARGET_QUEUE_LENGTH:u32 = 4096; // This drives the 'delay' in audio, but too small for the speed and they aren't filled fast enough
     const AUDIO_SAMPLE_SIZE:u16 = 1024; // 'Desired' sample size, too small and SDL buffer doesn't stay filled (pops/crackles).
     const FRACTION_FILL:f32 = 0.05; // TODO: FUDGE FACTOR.  Don't completely fill, samples a removed 1 at a time, don't fill them immediately.
 
-    pub const MONO_STERO_FLAG:u8 = 1; // TODO: Make this configurable 1 - mono, 2 - stereo
+    pub const MONO_STERO_FLAG:u8 = 2; // TODO: Make this configurable 1 - mono, 2 - stereo
 
     pub fn get_audio_queue (
         sdl_context: &mut sdl2::Sdl,
-    ) -> Result<SoundQueueType, String> {
+    ) -> Box<dyn SoundQueue> {
         let audio_subsystem = sdl_context.audio().unwrap();
 
         let desired_spec = audio::AudioSpecDesired {
@@ -24,16 +107,22 @@ impl SDLUtility {
             samples: Some(SDLUtility::AUDIO_SAMPLE_SIZE),
         };
 
-        audio_subsystem.open_queue::<soundchannel::PlaybackType,_>(None, &desired_spec)
+        let audio_queue = audio_subsystem.open_queue::<soundchannel::PlaybackType,_>(None, &desired_spec).unwrap();
+
+        audio_queue.clear(); 
+        audio_queue.resume(); // Start the audio (nothing in the queue at this point).
+
+        Box::new(audio_queue)
     }
 
-    pub fn top_up_audio_queue<F>(audio_queue: &mut SoundQueueType, mut get_additional_buffer:F)
+    pub fn top_up_audio_queue<F>(audio_queue: &mut dyn SoundQueue, mut get_additional_buffer:F)
         where F: FnMut(u32) ->Vec<soundchannel::PlaybackType> {
-            assert!(audio_queue.size() <= SDLUtility::TARGET_QUEUE_LENGTH as u32);
-            let fill_size = ((SDLUtility::TARGET_QUEUE_LENGTH - audio_queue.size()) as f32 * SDLUtility::FRACTION_FILL) as u32;
+            let fill_size = if SDLUtility::TARGET_QUEUE_LENGTH as usize > audio_queue.size() 
+                {((SDLUtility::TARGET_QUEUE_LENGTH - audio_queue.size() as u32) as f32 * SDLUtility::FRACTION_FILL) as u32}
+                else {SDLUtility::TARGET_QUEUE_LENGTH};
             // If 'stereo' the buffer is twice as large, so just as for half as much.
             let sound_buffer = get_additional_buffer(fill_size/(SDLUtility::MONO_STERO_FLAG as u32));
-            audio_queue.queue_audio(&sound_buffer).unwrap();
+            audio_queue.add_audio(&sound_buffer);
     }
 }
 
@@ -41,7 +130,7 @@ pub struct Sound {
 }
 
 impl Sound {
-    const SAMPLERATE: u32 = 44100;
+    const SAMPLERATE: u32 = 32050;
     const BITS: u8 = 8;
 }
 
