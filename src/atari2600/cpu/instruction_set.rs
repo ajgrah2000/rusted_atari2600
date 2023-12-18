@@ -350,6 +350,13 @@ pub fn sta(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
     pc_state.get_a()
 }
 
+pub fn dcp(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
+    let decremented = data.wrapping_sub(1);
+    pc_state::set_status_nz(pc_state, decremented);
+    compare(pc_state, pc_state.get_a(), decremented);
+    decremented
+}
+
 pub fn sty(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data:u8) -> u8 {
     pc_state.get_y()
 }

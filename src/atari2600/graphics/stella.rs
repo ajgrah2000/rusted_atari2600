@@ -477,8 +477,8 @@ impl PlayerState {
                 self.reflect = 0;
             }
 
-            // TODO: Check if 'start' can go negative.
-            self.pos_start = (self.resp as u16).wrapping_sub(Stella::HORIZONTAL_BLANK).wrapping_add(self.size as u16/2);
+            // TODO: Check wrapping of 'start'. 
+            self.pos_start = (self.resp as u16).wrapping_sub(Stella::HORIZONTAL_BLANK).wrapping_add(self.size as u16/2) % Stella::FRAME_WIDTH;
             self.calc_player_scan();
         }
     }
