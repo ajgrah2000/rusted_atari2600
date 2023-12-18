@@ -70,6 +70,9 @@ impl Instruction {
             0x78 => { instruction_set::single_byte_instruction(clock, pc_state, memory, READ_NULL, WRITE_NULL, instruction_set::sei); }
             0xF8 => { instruction_set::single_byte_instruction(clock, pc_state, memory, READ_NULL, WRITE_NULL, instruction_set::sed); }
 
+            // Break instruction, software 'interrupt'
+            0x00 => { instruction_set::break_instruction(clock, pc_state, memory); }
+
             // Register Transfers
             0x9A => { instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_S, instruction_set::t_no_status); }
             0xBA => { instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_S, WRITE_REG_X, instruction_set::t_no_status); }

@@ -720,9 +720,9 @@ impl Stella {
     pub const START_DRAW_Y:u16 = 0;
     pub const END_DRAW_Y:u16 = Stella::VBLANK_LINES + Stella::FRAME_HEIGHT + Stella::OVERSCAN_LINES;
 
-    pub fn new(scanline_debug:bool, realtime:bool) -> Self {
+    pub fn new(scanline_debug:bool, realtime:bool, pal_palette:bool) -> Self {
         let mut colours = Colours::new();
-        colours.load("palette.dat");
+        colours.load(if pal_palette {"palette_pal.dat"} else {"palette_ntsc.dat"});
 
         Self { 
             tiasound:tiasound::TiaSound::new(realtime),

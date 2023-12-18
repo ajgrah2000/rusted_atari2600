@@ -69,6 +69,10 @@ Rust dependencies:
         cargo add sdl2
         cargo add bitfield
 
+
+PAL Colour palette from:
+    https://www.qotile.net/minidig/docs/tia_color.html
+
 TODO:
 
 Sound
@@ -87,3 +91,6 @@ Sound
     - No 'audio selection' via command line (wav/sound is by changing comment in code).
 
     - Lots of other stuff, adding tests, re-working layout/dependency,
+
+
+Add more references.

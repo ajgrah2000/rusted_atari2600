@@ -54,6 +54,38 @@ pub fn read_write_instruction_additional_delay <A, R, W, I: Fn(&mut clocks::Cloc
     pc_state.increment_pc((address.get_addressing_size() + 1) as i16);
 }
 
+pub fn break_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) 
+{
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    let adl = memory.read(clock, 0xFFFE);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.write(clock, pc_state.get_s() as u16, pc_state.get_pch());
+    pc_state.increment_s(-1);
+
+    pc_state.increment_pc(1);
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.write(clock, pc_state.get_s() as u16, pc_state.get_pcl());
+    pc_state.increment_s(-1);
+
+    // The 'B' flag, only alters the value on the stack, not ongoing status.
+    pc_state.set_flag_b(true);
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.write(clock, pc_state.get_s() as u16, pc_state.get_p());
+    pc_state.increment_s(-1);
+    pc_state.set_flag_b(false);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    let adh = memory.read(clock, 0xFFFF);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.set_pc(adl as u16 + ((adh as u16) << 8));
+}
+
+
 pub fn jump_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) 
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);

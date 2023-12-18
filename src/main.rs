@@ -28,6 +28,10 @@ struct RustAtari2600Args {
     #[argh(switch, short='f')]
     fullscreen: bool,
 
+    /// use PAL palette (instead of NTSC)
+    #[argh(switch, short='p')]
+    pal_palette: bool,
+
     /// list SDL drivers
     #[argh(switch, short='l')]
     list_drivers: bool,
@@ -64,7 +68,7 @@ fn main() {
         println!("{}", full_description_string());
     }
 
-    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.fullscreen);
+    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.fullscreen, args.pal_palette);
 
     atari_machine.power_atari2600();
 
