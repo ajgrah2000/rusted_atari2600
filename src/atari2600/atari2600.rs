@@ -23,12 +23,12 @@ impl Atari2600 {
     const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 10000; // Number of display updates per key press event. (reduces texture creation overhead).
     const CPU_STEPS_PER_AUDIO_UPDATE:    u32 = 50; // Number of times to step the CPU before updating the audio.
 
-    pub fn build_atari2600(cartridge_name: String, debug:bool, realtime:bool, pal_palette:bool) -> cpu::core::Core {
+    pub fn build_atari2600(cartridge_name: String, cartridge_type: memory::cartridge::CartridgeType, debug:bool, realtime:bool, pal_palette:bool) -> cpu::core::Core {
 
         let clock = clocks::Clock::new();
         let pc_state = cpu::pc_state::PcState::new();
         // Default Cartridge.
-        let mut cartridge = memory::cartridge::GenericCartridge::new(&cartridge_name, 8, 0x1000, 0xFF9, 0x0);
+        let mut cartridge = memory::cartridge::get_new_carterage(cartridge_name, cartridge_type);
         match cartridge.load() {
             Ok(()) => {
                 println!("Ok");
@@ -70,9 +70,9 @@ impl Atari2600 {
         self.main_loop(window_size, graphics::display::SDLUtility::PIXEL_FORMAT);
     }
 
-    pub fn new(debug: bool, realtime: bool, stop_clock:clocks::ClockType, cartridge_name: String, fullscreen: bool, pal_palette: bool) -> Self {
+    pub fn new(debug: bool, realtime: bool, stop_clock:clocks::ClockType, cartridge_name: String, cartridge_type: memory::cartridge::CartridgeType, fullscreen: bool, pal_palette: bool) -> Self {
     
-        let core = Self::build_atari2600(cartridge_name, debug, realtime, pal_palette);
+        let core = Self::build_atari2600(cartridge_name, cartridge_type, debug, realtime, pal_palette);
         Self { core, debug, realtime, stop_clock, fullscreen }
     }
 

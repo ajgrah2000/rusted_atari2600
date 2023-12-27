@@ -5,6 +5,8 @@
 mod atari2600;
 
 use argh::FromArgs;
+use std::str::FromStr;
+use strum::IntoEnumIterator;
 
 pub struct Core {
 }
@@ -44,9 +46,20 @@ struct RustAtari2600Args {
     #[argh(option, short='r')]
     replay_file: Option<String>,
 
-    /// cartridge type
-    #[argh(option, short='c')]
-    cartridge_type: Option<String>,
+    /// cartridge type.  (Specifying an invalid option will display available options).
+    #[argh(option, short='c', default="atari2600::memory::cartridge::CartridgeType::Default", from_str_fn(parse_cartridge))]
+    cartridge_type: atari2600::memory::cartridge::CartridgeType,
+}
+
+fn cartridge_type_help_fn() -> String {
+    atari2600::memory::cartridge::CartridgeType::iter().into_iter().fold("cartridge type: ".to_owned(), |all, value| {format!("{} {:?}", all, value)})
+}
+fn parse_cartridge(value: &str) -> Result<atari2600::memory::cartridge::CartridgeType, String> {
+    match atari2600::memory::cartridge::CartridgeType::from_str(value) {
+        Ok(x) => {Ok(x)},
+        Err(x) => {
+            Err(format!("Supplied {}. Error: {}\n{}", value, x, cartridge_type_help_fn()))},
+    }
 }
 
 fn full_description_string() -> String {
@@ -68,7 +81,7 @@ fn main() {
         println!("{}", full_description_string());
     }
 
-    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.fullscreen, args.pal_palette);
+    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette);
 
     atari_machine.power_atari2600();
 

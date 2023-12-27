@@ -1,11 +1,22 @@
 use std::fs::File;
 use std::io::Read;
+use strum_macros::EnumIter;
+use strum_macros::EnumString;
 
 type BankSizeType = u16;
 type NumBanksType = u8;
 
 const BANK_SIZE: BankSizeType = 0x0400;
 const MAX_BANKS: NumBanksType = 8;
+
+#[derive(Debug, EnumIter, EnumString)]
+pub enum CartridgeType {
+    Default,
+    F4,
+    FE,
+    CBS,
+    SUPER,
+}
 
 #[derive(Clone)]
 pub struct Bank {
@@ -164,6 +175,16 @@ impl Cartridge for GenericCartridge {
         self.write(address, data);
     }
 
+}
+
+pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> GenericCartridge {
+    match cartridge_type {
+        CartridgeType::Default => {GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, 0x0)},
+        CartridgeType::F4      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, 0x000)}
+        CartridgeType::FE      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, 0x080)}
+        CartridgeType::CBS     => {GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, 0x100)}
+        CartridgeType::SUPER   => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, 0x080)}
+    }
 }
 
 #[cfg(test)]
