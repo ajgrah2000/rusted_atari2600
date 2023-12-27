@@ -3,6 +3,7 @@ use super::super::clocks;
 use super::super::inputs;
 use super::super::audio::tiasound;
 use super::display;
+use super::super::cpu::pc_state;
 use std;
 use std::io::BufRead;
 
@@ -459,7 +460,7 @@ impl PlayerState {
         }
 
         if 0 == self.grp {
-            self.scan_line = vec![false; 160];
+            self.scan_line = vec![false; Stella::FRAME_WIDTH as usize];
         }
         else {
             let (number, size, gap) = Stella::nusize(self.nusiz);
@@ -685,6 +686,7 @@ pub struct Stella {
     is_blank:bool,
     is_input_latched:bool,
     is_update_time:bool,
+    is_hmove_scan:bool,
 
     colours: Colours,
 
@@ -705,6 +707,7 @@ impl Stella {
     pub const FRAME_WIDTH:u16 = 160;
     pub const FRAME_HEIGHT:u16 = 280;
     pub const HORIZONTAL_BLANK:u16 = 68;
+    pub const LATE_HORIZONTAL_BLANK:u16 = 76;
     pub const HORIZONTAL_TICKS:clocks::ClockType = (Stella::FRAME_WIDTH + Stella::HORIZONTAL_BLANK) as clocks::ClockType;
     pub const INPUT_45_LATCH_MASK:u8 = 0x40;
     pub const BLANK_PADDLE_RECHARGE:u8 = 0x80;
@@ -736,6 +739,7 @@ impl Stella {
             is_blank:true,
             is_input_latched:false,
             is_update_time:false,
+            is_hmove_scan:false,
             colours: colours,
             display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y - Stella::START_DRAW_Y + 1) as usize],
             collision_state: CollisionState::new(),
@@ -950,7 +954,8 @@ impl Stella {
     }
 
     fn write_resp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.p0_state.update_resp(((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+        let resp_value = ((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
+        self.p0_state.update_resp(resp_value);
     }
 
     fn write_resp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1013,7 +1018,7 @@ impl Stella {
     }
 
     fn write_hmove(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.hmove();
+        self.hmove(clock);
     }
 
     fn write_hclr(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1076,79 +1081,90 @@ impl Stella {
         }
 
         for y in y_start as u16 .. (y_stop+1) as u16 {
-    
-          let x_stop;
-          if y == y_stop {
-            x_stop = last_x_stop;
-          } else {
-            x_stop = Stella::FRAME_WIDTH - 1;
-          }
-    
-          let current_y_line = &mut self.display_lines[y as usize];
-          for x in x_start as usize ..x_stop as usize  {
-    
-            let pf = pf_scan[x];
-            let bl = bl_scan[x];
-            let m1 = m1_scan[x];
-            let p1 = p1_scan[x];
-            let m0 = m0_scan[x];
-            let p0 = p0_scan[x];
 
-            // Priorities (bit 2 set):  Priorities (bit 2 clear):
-            //  PF, BL                   P0, M0
-            //  P0, M0                   P1, M1
-            //  P1, M1                   PF, BL
-            //  BK                       BK
-            let mut pixel_colour = nl_bg_colour;
-            let mut hits = 0;
-            if priority_ctrl {
-              if pf || bl {
-                  pixel_colour = nl_pf_colour;
-                  hits += bl as u8 + pf as u8;
-              }
-              if p1 || m1 {
-                  pixel_colour = nl_p_colour1;
-                  hits += m1 as u8 + p1 as u8;
-              }
-              if p0 || m0 {
-                  pixel_colour = nl_p_colour0;
-                  hits += m0 as u8 + p0 as u8;
-              }
+            let x_stop;
+            if y == y_stop {
+                x_stop = last_x_stop;
             } else {
-              if p1 || m1 {
-                  pixel_colour = nl_p_colour1;
-                  hits += m1 as u8 + p1 as u8;
-              }
-              if p0 || m0 {
-                  pixel_colour = nl_p_colour0;
-                  hits += m0 as u8 + p0 as u8;
-              }
-              if pf || bl {
-                  pixel_colour = nl_pf_colour;
-                  hits += bl as u8 + pf as u8;
-              }
+                x_stop = Stella::FRAME_WIDTH - 1;
             }
 
-            if hits > 1 {
-                self.collision_state.update_collisions(p0, p1, m0, m1, bl, pf);
-            }
-
-            if self.scanline_debug {
-                // Display scan 'start position'.
-                let ps0 = self.p0_state.pos_start;
-                let ps1 = self.p1_state.pos_start;
-                if x as u16 == ps0 {
-                    pixel_colour = self.colours.get_colour(2);
-                }
-                if x as u16 == ps1 {
-                    pixel_colour = self.colours.get_colour(3);
+            if self.is_hmove_scan {
+                // If 'hmove' was used, then there's an additional '8 pixels' of blanking.
+                // Clear the flag once we've passed the additional blanking.
+                let blanking_pixels = Stella::LATE_HORIZONTAL_BLANK - Stella::HORIZONTAL_BLANK;
+                x_start = std::cmp::max(x_start, blanking_pixels);
+                if x_stop >= blanking_pixels {
+                    self.is_hmove_scan = false;
                 }
             }
 
-            current_y_line[x] = pixel_colour;
-          }
 
-          x_start = 0;
+            let current_y_line = &mut self.display_lines[y as usize];
+            for x in x_start as usize ..x_stop as usize  {
+
+                let pf = pf_scan[x];
+                let bl = bl_scan[x];
+                let m1 = m1_scan[x];
+                let p1 = p1_scan[x];
+                let m0 = m0_scan[x];
+                let p0 = p0_scan[x];
+
+                // Priorities (bit 2 set):  Priorities (bit 2 clear):
+                //  PF, BL                   P0, M0
+                //  P0, M0                   P1, M1
+                //  P1, M1                   PF, BL
+                //  BK                       BK
+                let mut pixel_colour = nl_bg_colour;
+                let mut hits = 0;
+                if priority_ctrl {
+                    if pf || bl {
+                        pixel_colour = nl_pf_colour;
+                        hits += bl as u8 + pf as u8;
+                    }
+                    if p1 || m1 {
+                        pixel_colour = nl_p_colour1;
+                        hits += m1 as u8 + p1 as u8;
+                    }
+                    if p0 || m0 {
+                        pixel_colour = nl_p_colour0;
+                        hits += m0 as u8 + p0 as u8;
+                    }
+                } else {
+                    if p1 || m1 {
+                        pixel_colour = nl_p_colour1;
+                        hits += m1 as u8 + p1 as u8;
+                    }
+                    if p0 || m0 {
+                        pixel_colour = nl_p_colour0;
+                        hits += m0 as u8 + p0 as u8;
+                    }
+                    if pf || bl {
+                        pixel_colour = nl_pf_colour;
+                        hits += bl as u8 + pf as u8;
+                    }
+                }
+
+                if hits > 1 {
+                    self.collision_state.update_collisions(p0, p1, m0, m1, bl, pf);
+                }
+
+                if self.scanline_debug {
+                    // Display scan 'start position'.
+                    let ps0 = self.p0_state.pos_start;
+                    let ps1 = self.p1_state.pos_start;
+                    if x as u16 == ps0 {
+                        pixel_colour = self.colours.get_colour(0x0E);
+                    }
+                    if x as u16 == ps1 {
+                        pixel_colour = self.colours.get_colour(0x78);
+                    }
+                }
+
+                current_y_line[x] = pixel_colour;
+            }
+
+            x_start = 0;
         }
       }
 
@@ -1170,12 +1186,15 @@ impl Stella {
         }
     }
 
-    fn hmove(&mut self) {
-        self.p0_state.resp  = (self.p0_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.0) as u8)) % Stella::HORIZONTAL_TICKS as u8;
-        self.p1_state.resp  = (self.p1_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.1) as u8)) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile0.resm  = self.missile0.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0) as u8) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile1.resm  = self.missile1.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1) as u8) % Stella::HORIZONTAL_TICKS as u8;
-        self.ball.resbl     = self.ball.resbl.wrapping_sub(Stella::hmove_clocks(self.next_line.hmbl) as u8) % Stella::HORIZONTAL_TICKS as u8;
+    fn hmove(&mut self, clock: &clocks::Clock) {
+        self.is_hmove_scan = true;
+
+        let clock_ticks_from_scan =  ((clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
+        self.p0_state.resp  = (self.p0_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.0, clock_ticks_from_scan) as u8)) % Stella::HORIZONTAL_TICKS as u8;
+        self.p1_state.resp  = (self.p1_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.1, clock_ticks_from_scan) as u8)) % Stella::HORIZONTAL_TICKS as u8;
+        self.missile0.resm  = self.missile0.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
+        self.missile1.resm  = self.missile1.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
+        self.ball.resbl     = self.ball.resbl.wrapping_sub(Stella::hmove_clocks(self.next_line.hmbl, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
 
         self.p0_state.update();
         self.p1_state.update();
@@ -1184,11 +1203,22 @@ impl Stella {
         self.ball.update();
     }
 
-    fn hmove_clocks(hm:u8) -> i8 {
+    fn hmove_clocks(hm:u8, ticks_since_scan_start: u8) -> i8 {
         // hm - int8
         // Need to ensure 'hm' maintains negative when shifted.
         // 'hm >= 0x80' is negative move.
         let clock_shift = (hm as i8) >> 4;
+
+        // TODO: Fix 73/74 clock approximation of 'hmove'
+        let horizontal_scan_count = ticks_since_scan_start/pc_state::PcState::CYCLES_TO_CLOCK as u8;
+        match horizontal_scan_count as u8 {
+            0..=4 => {clock_shift }
+            73 => { clock_shift + 8 },
+            74 => { clock_shift + 8 },
+            75 => {clock_shift } // Treat as 'zero'
+            _ => { println!("hmove called outside of handled range: scan horizontal count {}", horizontal_scan_count);
+                   0 }
+        };
         clock_shift
     }
 

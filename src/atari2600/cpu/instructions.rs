@@ -13,13 +13,18 @@ const ADDR_ZP:addressing::AddressingZP = addressing::AddressingZP::new();
 const ADDR_ZPX:addressing::AddressingZPX = addressing::AddressingZPX::new();
 const ADDR_ZPY:addressing::AddressingZPY = addressing::AddressingZPY::new();
 const ADDR_IZX:addressing::AddressingIZX = addressing::AddressingIZX::new();
-const ADDR_IZY:addressing::AddressingIZY = addressing::AddressingIZY::new();
+const ADDR_IZY:addressing::AddressingIZY = addressing::AddressingIZY::new(false);
 
 const ADDR_ABS:addressing::AddressingAbs = addressing::AddressingAbs::new();
 const ADDR_INDIRECT:addressing::AddressingIndirect = addressing::AddressingIndirect::new();
 const ADDR_ABY:addressing::AddressingAby = addressing::AddressingAby::new();
 const ADDR_ABX:addressing::AddressingAbx = addressing::AddressingAbx::new();
 const ADDR_ACCUMULATOR:addressing::AddressingAccumulator = addressing::AddressingAccumulator::new();
+
+// Page Delay version of addressing modes (only applicable to some indexed modes, that can carry).)
+const ADDR_IZY_PAGE_DELAY:addressing::AddressingIZY = addressing::AddressingIZY::new(true);
+const ADDR_ABY_PAGE_DELAY:addressing::AddressingAbyPageDelay = addressing::AddressingAbyPageDelay::new();
+const ADDR_ABX_PAGE_DELAY:addressing::AddressingAbxPageDelay = addressing::AddressingAbxPageDelay::new();
 
 const NULL_READ:addressing::NullRead = addressing::NullRead::new();
 const MEMORY_READ:addressing::MemoryRead = addressing::MemoryRead::new();
@@ -82,30 +87,30 @@ impl Instruction {
             0x98 => { instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_A, instruction_set::t_status); }
 
             // ADC
-            0x61 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x69 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x65 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x75 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x71 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x6D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x7D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
-            0x79 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x61 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x69 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x65 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x75 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x71 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x6D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x7D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
+            0x79 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::adc); }
 
             // ASL
-            0x06 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
-            0x16 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
-            0x0E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
-            0x1E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
+            0x06 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
+            0x16 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
+            0x0E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
+            0x1E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, instruction_set::asl); }
 
             // AND
-            0x21 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x29 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x25 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x35 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x31 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x2D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x3D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
-            0x39 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x21 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x29 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x25 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x35 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x31 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x2D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x3D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
+            0x39 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::and); }
 
             // CPX
             0xE0 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::cpx); }
@@ -122,20 +127,20 @@ impl Instruction {
             0x2C => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::bit); }
 
             // CMP
-            0xC1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xC9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xC5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xD5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xD1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xCD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xDD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
-            0xD9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xC1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xC9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xC5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xD5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xD1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xCD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xDD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
+            0xD9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::cmp); }
 
             // DEC
-            0xC6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
-            0xD6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
-            0xCE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
-            0xDE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
+            0xC6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
+            0xD6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
+            0xCE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
+            0xDE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, instruction_set::dec); }
 
             // EOR
             0x41 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::eor); }
@@ -151,71 +156,73 @@ impl Instruction {
             0xE6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_WRITE, instruction_set::inc); }
             0xF6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, instruction_set::inc); }
             0xEE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, instruction_set::inc); }
-            0xFE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, instruction_set::inc); }
+            0xFE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, instruction_set::inc); }
 
             // LDA
-            0xA1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xA9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xA5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xB5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xB1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xAD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xBD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
-            0xB9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xA1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xA9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xA5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xB5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xB1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xAD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xBD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
+            0xB9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::lda); }
 
             // LDX
-            0xA2 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
-            0xA6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
-            0xB6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPY, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
-            0xAE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
-            0xBE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
+            0xA2 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
+            0xA6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
+            0xB6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPY,            MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
+            0xAE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
+            0xBE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::ldx); }
 
             // LDY
-            0xA0 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
-            0xA4 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
-            0xB4 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
-            0xAC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
-            0xBC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
+            0xA0 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
+            0xA4 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
+            0xB4 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
+            0xAC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
+            0xBC => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
 
             // LSR
-            0x46 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
-            0x56 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
-            0x4E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
-            0x5E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x46 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x56 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x4E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
+            0x5E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, instruction_set::lsr); }
 
             // OR
-            0x01 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x09 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x05 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x15 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x11 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x0D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x1D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
-            0x19 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x01 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x09 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x05 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x15 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x11 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x0D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x1D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
+            0x19 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::or); }
 
-            // ROL
-            0x26 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
-            0x36 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
-            0x2E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
-            0x3E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::rol); }
+            // ROL 
+            // TODO: Page delays (need to make sure separation of read/write)
+            0x26 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ,      MEMORY_WRITE,      instruction_set::rol); }
+            0x36 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::rol); }
+            0x2E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::rol); }
+            0x3E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::rol); }
             0x2A => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ACCUMULATOR, ACCUMULATOR_READ, ACCUMULATOR_WRITE, instruction_set::rol); }
 
             // ROR
-            0x66 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
-            0x76 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
-            0x6E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
-            0x7E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ, MEMORY_WRITE,      instruction_set::ror); }
+            // TODO: Page delays (need to make sure separation of read/write)
+            0x66 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,          MEMORY_READ,      MEMORY_WRITE,      instruction_set::ror); }
+            0x76 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::ror); }
+            0x6E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::ror); }
+            0x7E => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX,         MEMORY_READ,      MEMORY_WRITE,      instruction_set::ror); }
             0x6A => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ACCUMULATOR, ACCUMULATOR_READ, ACCUMULATOR_WRITE, instruction_set::ror); }
 
             // SBC
-            0xE1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xE9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xE5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xF5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xF1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xED => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xFD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
-            0xF9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xE1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xE9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xE5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xF5 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xF1 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xED => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xFD => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
+            0xF9 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::sbc); }
 
 
             // STA
@@ -244,13 +251,14 @@ impl Instruction {
             0x8C => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, NULL_READ, REG_WRITE, instruction_set::sty); }
 
             // DCP
-            0xC3 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xC7 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xD7 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xD3 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xCF => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xDF => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
-            0xDB => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            // Undocumented instruction
+            0xC3 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xC7 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xD7 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xD3 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xCF => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xDF => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
+            0xDB => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, instruction_set::dcp); }
 
             // JSR
             0x20 => { instruction_set::jump_sub_routine_instruction(clock, pc_state, memory); }
@@ -297,4 +305,8 @@ impl Instruction {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
 }
