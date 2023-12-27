@@ -1218,8 +1218,7 @@ impl Stella {
             75 => {clock_shift } // Treat as 'zero'
             _ => { println!("hmove called outside of handled range: scan horizontal count {}", horizontal_scan_count);
                    0 }
-        };
-        clock_shift
+        }
     }
 
 }
