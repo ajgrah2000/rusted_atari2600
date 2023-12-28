@@ -107,7 +107,7 @@ impl GenericCartridge {
                 self.num_banks += 1;
             }
         }
-        
+
         // Consumes and counts the remaining bytes.
         let remaining_bytes = source.bytes().count();
         if remaining_bytes >  0 {
@@ -121,7 +121,13 @@ impl GenericCartridge {
         // Try to read an entire bank.
         match source.read(&mut bank.data) {
             Ok(0) => (None, 0),
+            Ok(n) if 2048 == n && 0 == self.num_banks =>  {
+                println!("Assuming this to be a '2k' cartridge with no bank switching.");
+                self.bank_size = n as u16;
+                (Some(bank), n as NumBanksType)
+            }
             Ok(n) if n < bank.data.len() =>  {
+                self.bank_size = bank.data.len() as u16;
                 println!("Bank incomplete ({} bytes found in last bank), will be padded with zeros", n);
                 (Some(bank), n as NumBanksType)
             }
@@ -131,7 +137,8 @@ impl GenericCartridge {
     }
 
     fn read(&mut self, address:u16) -> u8 {
-        let address = address & 0xFFF;
+        // Mask the 'address' with the bank size (so the highest address lines are ignored).
+        let address = address & (self.bank_size - 1);
         if (self.ram_size > 0) && (address <  2 *self.ram_size) && (address >= self.ram_size) {
             self.ram[(address & self.ram_addr_mask) as usize]
         }
@@ -150,7 +157,7 @@ impl GenericCartridge {
     }
 
     fn write(&mut self, address:u16, data:u8) {
-        let address = address & 0xFFF;
+        let address = address & (self.bank_size - 1);
         if (self.ram_size > 0) && (address < self.ram_size) {
             self.ram[(address & self.ram_addr_mask) as usize] = data;
         }

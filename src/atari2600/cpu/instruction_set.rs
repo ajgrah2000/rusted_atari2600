@@ -112,6 +112,30 @@ pub fn jump_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc
     pc_state.set_pc(adl as u16 + ((adh as u16) << 8));
 }
 
+pub fn return_from_interrupt(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) 
+{
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_pc(1);
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_p(memory.read(clock, pc_state.get_s() as u16));
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_pcl(memory.read(clock, pc_state.get_s() as u16));
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    pc_state.increment_s(1);
+    pc_state.set_pch(memory.read(clock, pc_state.get_s() as u16));
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    memory.read(clock, pc_state.get_pc());
+
+    clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+    
+}
+
 pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) 
 {
     // T1 - PC + 1 

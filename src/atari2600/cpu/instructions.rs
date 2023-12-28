@@ -280,6 +280,7 @@ impl Instruction {
             // BEO case 0xF0: if (self.pc_state.P.status.Z == 1)
             0xF0 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x02, 0x02); }
 
+            0x40 => { instruction_set::return_from_interrupt(clock, pc_state, memory); }
             // RTS
             0x60 => { instruction_set::return_from_sub_routine_instruction(clock, pc_state, memory); }
 

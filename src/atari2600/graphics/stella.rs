@@ -763,6 +763,14 @@ impl Stella {
 
         self.write_functions(clock, address, data);
     }
+    pub fn get_paddle_inp_value(paddle_reset_ticks: clocks::ClockType, clock: &clocks::Clock, paddle_position: f32, current_inp: &mut u8) {
+        // TODO: Check 'capacitor delay' relating to paddles.
+        // This is here to show inputs 'could' work.
+        if 0x0 == *current_inp {
+            *current_inp = if clock.ticks > paddle_reset_ticks + 20000 + ((32000 as f32) * paddle_position) as clocks::ClockType { 0x80 } else { 0x00 };
+        }
+    }
+
     pub fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
         let result;
 
@@ -775,10 +783,14 @@ impl Stella {
             0x5 => { result = self.collision_state.get_cxmfb_1() }
             0x6 => { result = self.collision_state.get_cxblpf(); }
             0x7 => { result = self.collision_state.get_cxppmm(); }
-            0x8 => { result = self.input.input0; }
-            0x9 => { result = self.input.input1; }
-            0xA => { result = self.input.input2; }
-            0xB => { result = self.input.input3; }
+            0x8 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+                     result = self.input.input0; }
+            0x9 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+                     result = self.input.input1; }
+            0xA => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+                     result = self.input.input2; }
+            0xB => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+                     result = self.input.input3; }
             0xC => { result = self.input.input4; }
             0xD => { result = self.input.input5; }
             _ => { if self.scanline_debug {println!("Stella read: {:X}", address);}
@@ -868,6 +880,7 @@ impl Stella {
 
         if (data & Stella::BLANK_PADDLE_RECHARGE) == Stella::BLANK_PADDLE_RECHARGE {
             self.paddle_start_clock = clock.ticks;
+            self.input.input0 = 0x00;
         }
 
         if (data & Stella::BLANK_MASK) == Stella::BLANK_ON {
