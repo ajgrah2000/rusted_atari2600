@@ -785,11 +785,11 @@ impl Stella {
             0x7 => { result = self.collision_state.get_cxppmm(); }
             0x8 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
                      result = self.input.input0; }
-            0x9 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+            0x9 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input1);
                      result = self.input.input1; }
-            0xA => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+            0xA => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input2);
                      result = self.input.input2; }
-            0xB => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
+            0xB => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input3);
                      result = self.input.input3; }
             0xC => { result = self.input.input4; }
             0xD => { result = self.input.input5; }
