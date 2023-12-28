@@ -705,7 +705,7 @@ pub struct Stella {
 
 impl Stella {
     pub const FRAME_WIDTH:u16 = 160;
-    pub const FRAME_HEIGHT:u16 = 280;
+    pub const FRAME_HEIGHT:u16 = 192; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
     pub const HORIZONTAL_BLANK:u16 = 68;
     pub const LATE_HORIZONTAL_BLANK:u16 = 76;
     pub const HORIZONTAL_TICKS:clocks::ClockType = (Stella::FRAME_WIDTH + Stella::HORIZONTAL_BLANK) as clocks::ClockType;
@@ -720,7 +720,7 @@ impl Stella {
     pub const VBLANK_LINES:u16 = 37;
     pub const OVERSCAN_LINES:u16 = 30;
 
-    pub const START_DRAW_Y:u16 = 0;
+    pub const START_DRAW_Y:u16 = 20; // TODO: Determine whey this isn't (at least) the full 'Vertical Blank' size
     pub const END_DRAW_Y:u16 = Stella::VBLANK_LINES + Stella::FRAME_HEIGHT + Stella::OVERSCAN_LINES;
 
     pub fn new(scanline_debug:bool, realtime:bool, pal_palette:bool) -> Self {
@@ -741,7 +741,7 @@ impl Stella {
             is_update_time:false,
             is_hmove_scan:false,
             colours: colours,
-            display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y - Stella::START_DRAW_Y + 1) as usize],
+            display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y) as usize],
             collision_state: CollisionState::new(),
             playfield_state: PlayfieldState::new(),
             p0_state: PlayerState::new(),
@@ -775,23 +775,13 @@ impl Stella {
             0x5 => { result = self.collision_state.get_cxmfb_1() }
             0x6 => { result = self.collision_state.get_cxblpf(); }
             0x7 => { result = self.collision_state.get_cxppmm(); }
-// TODO: Inputs
-//            0x8 => {
-//                result = self._inpt[0];
-//                // paddle0 stuff
-//            }
-//            0x9 => {
-//                result = self._inpt[1];
-//                // paddle1 stuff
-//            }
-//            0xA => {
-//                // paddle3 stuff
-//                result = self._inpt[2];
-//            }
-            0xB => { result = self.input.input7; }
-            0xC => { result = self.input.input7; }
-//            0xD => { result = self._inpt[5]; }
-            _ => { println!("Stella read: {:X}", address); 
+            0x8 => { result = self.input.input0; }
+            0x9 => { result = self.input.input1; }
+            0xA => { result = self.input.input2; }
+            0xB => { result = self.input.input3; }
+            0xC => { result = self.input.input4; }
+            0xD => { result = self.input.input5; }
+            _ => { if self.scanline_debug {println!("Stella read: {:X}", address);}
                 result = 0;
             }
         }
@@ -1216,11 +1206,9 @@ impl Stella {
             73 => { clock_shift + 8 },
             74 => { clock_shift + 8 },
             75 => {clock_shift } // Treat as 'zero'
-            _ => { println!("hmove called outside of handled range: scan horizontal count {}", horizontal_scan_count);
-                   0 }
+            _ => { 0 } // TODO: Actually emulate the counters, rather than a crude lookup.
         }
     }
-
 }
 
 impl io::ReadWriteMemory for Stella{

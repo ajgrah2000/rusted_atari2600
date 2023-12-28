@@ -13,7 +13,11 @@ const MAX_BANKS: NumBanksType = 8;
 pub enum CartridgeType {
     Default,
     F4,
-    FE,
+    F4SC,
+    F6,
+    F6SC,
+    F8,
+    F8SC,
     CBS,
     SUPER,
 }
@@ -65,7 +69,7 @@ pub struct GenericCartridge {
 }
 
 impl GenericCartridge {
-    pub fn new(filename: &str,  max_banks: u8, bank_size: u16, hot_swap: u16, ram_size: u16) -> Self {
+    pub fn new(filename: &str, max_banks: u8, bank_size: u16, hot_swap: u16, ram_size: u16) -> Self {
         let instance = Self {
             filename: filename.to_string(),
             cartridge_banks: Vec::new(),
@@ -135,8 +139,10 @@ impl GenericCartridge {
             // 0xFF8 == address: Last bank - 2
             // 0xFF9 == address: Last bank - 1
             // 0xFFA == address: Last bank
-            if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap+1) >  address) {
-                self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+            if self.num_banks > 1 {
+                if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap+1) >  address) {
+                    self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+                }
             }
 
             self.cartridge_banks[self.current_bank as usize].data[address as usize]
@@ -149,8 +155,10 @@ impl GenericCartridge {
             self.ram[(address & self.ram_addr_mask) as usize] = data;
         }
 
-        if (((self.hot_swap + 1) - self.num_banks as u16) <=  address) && ((self.hot_swap+1) >  address) {
-            self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+        if self.num_banks > 1 {
+            if (((self.hot_swap + 1) - self.num_banks as u16) <=  address) && ((self.hot_swap+1) >  address) {
+                self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+            }
         }
     }
 
@@ -178,12 +186,24 @@ impl Cartridge for GenericCartridge {
 }
 
 pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> GenericCartridge {
+    const NO_RAM: u16        = 0x0000;
+    const RAM_128_BYTES: u16 = 0x0080;
+    const RAM_256_BYTES: u16 = 0x0100;
     match cartridge_type {
-        CartridgeType::Default => {GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, 0x0)},
-        CartridgeType::F4      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, 0x000)}
-        CartridgeType::FE      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, 0x080)}
-        CartridgeType::CBS     => {GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, 0x100)}
-        CartridgeType::SUPER   => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, 0x080)}
+        // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
+        // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
+        CartridgeType::Default => {GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, NO_RAM)},
+        CartridgeType::F4      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, NO_RAM)}
+        CartridgeType::F4SC    => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, RAM_128_BYTES)}
+
+        CartridgeType::F8      => {GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, NO_RAM)}
+        CartridgeType::F8SC    => {GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, RAM_128_BYTES)}
+
+        CartridgeType::F6      => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM)}
+        CartridgeType::F6SC    => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, RAM_128_BYTES)}
+
+        CartridgeType::CBS     => {GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES)}
+        CartridgeType::SUPER   => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM)}
     }
 }
 

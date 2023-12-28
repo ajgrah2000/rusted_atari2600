@@ -38,8 +38,6 @@ Building/Running:
 		"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --parallel
                  copy Release\SDL2.* %USERPROFILE%\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib
 
-		
-
 Build and run:
     cargo run --release <rom_file>
 
@@ -57,12 +55,22 @@ Build and run:
       -s, --stop-clock  number of clock cycles to stop the emulator (for
                         benchmarking)
       -f, --fullscreen  run the emulator in full screen mode.
+      -p, --pal-palette use PAL palette (instead of NTSC)
       -l, --list-drivers
                         list SDL drivers
       -r, --replay-file replay file
       -c, --cartridge-type
-                        cartridge type
+                        cartridge type.  (Specifying an invalid option will display
+                        available options).
       --help            display usage information
+
+
+Somewhat working ROMs:
+        https://forums.atariage.com/topic/206497-dk-vcs/
+
+        'Version 1.0' is playable (although there are some querks).
+        
+        This uses cartridge type 'F4SC', so add the command line option '-c F4SC'
 
 Rust dependencies:
         cargo add argh
@@ -72,6 +80,30 @@ Rust dependencies:
 
 PAL Colour palette from:
     https://www.qotile.net/minidig/docs/tia_color.html
+
+    STELLA PROGRAMMER'S GUIDE
+    by Steven Write (12/03/79)
+        Great for most addressing/register information.
+
+        The main gap is 'tone', which is hard to describe (and is acknowledge in the guide)
+            '..Some are pure tones like a flute..'.  
+            'Even though the TIA hardware manual lists the sounds, some experimentation will be necessary to find "your sound"'
+
+    TIA Technical Manual
+        TIA 1A, Television Interface Adaptor (Model 1A)
+
+    TIA Hardware information:
+        Atari 2600 TIA Hardware Notes
+        Andrew Towers
+        https://www.atarihq.com/danb/files/TIA_HW_Notes.txt
+
+    Cartridge information:
+        Cart Information
+        Kevin Horton
+        http://kevtris.org/files/sizes.txt
+
+    TIA Schematics (mainly used to figure out sound polynomials, but also helped clarrify behaviours described in the 'hardware notes')
+        https://atariage.com/2600/archives/schematics_tia/index.html
 
 TODO:
 
@@ -92,5 +124,3 @@ Sound
 
     - Lots of other stuff, adding tests, re-working layout/dependency,
 
-
-Add more references.
