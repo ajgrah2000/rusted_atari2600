@@ -11,7 +11,6 @@ pub struct Input {
     pub input3:u8,
     pub input4:u8,
     pub input5:u8,
-    pub paddle0:u8,
     pub quit:u8,
 }
 
@@ -28,7 +27,6 @@ impl Input {
             input3: 0xFF,
             input4: 0xFF,
             input5: 0xFF,
-            paddle0: 0x00,
             quit: 0x0,
         }
     }

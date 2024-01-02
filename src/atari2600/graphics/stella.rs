@@ -705,7 +705,8 @@ pub struct Stella {
 
 impl Stella {
     pub const FRAME_WIDTH:u16 = 160;
-    pub const FRAME_HEIGHT:u16 = 192; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
+//    pub const FRAME_HEIGHT:u16 = 192; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
+    pub const FRAME_HEIGHT:u16 = 220; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
     pub const HORIZONTAL_BLANK:u16 = 68;
     pub const LATE_HORIZONTAL_BLANK:u16 = 76;
     pub const HORIZONTAL_TICKS:clocks::ClockType = (Stella::FRAME_WIDTH + Stella::HORIZONTAL_BLANK) as clocks::ClockType;
@@ -1241,7 +1242,16 @@ impl io::DebugClock for Stella{
 
 impl io::StellaIO for Stella{
     fn set_inputs(&mut self, inputs: inputs::Input) {
+        // TODO: Find a better way to separate the paddle input0-3 values
+        let input0 = self.input.input0;
+        let input1 = self.input.input1;
+        let input2 = self.input.input2;
+        let input3 = self.input.input3;
         self.input = inputs;
+        self.input.input0 = input0;
+        self.input.input1 = input1;
+        self.input.input2 = input2;
+        self.input.input3 = input3;
     }
 
     fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType> {
