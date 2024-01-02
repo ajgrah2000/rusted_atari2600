@@ -1,9 +1,9 @@
-use super::super::io;
-use super::super::clocks;
-use super::super::inputs;
 use super::super::audio::tiasound;
-use super::display;
+use super::super::clocks;
 use super::super::cpu::pc_state;
+use super::super::inputs;
+use super::super::io;
+use super::display;
 use std;
 use std::io::BufRead;
 
@@ -12,38 +12,37 @@ use super::super::audio::soundchannel;
 pub struct Constants {}
 
 impl Constants {
-    pub const ATARI2600_WIDTH:  u16 = Stella::FRAME_WIDTH;
+    pub const ATARI2600_WIDTH: u16 = Stella::FRAME_WIDTH;
     pub const ATARI2600_HEIGHT: u16 = Stella::FRAME_HEIGHT;
 
     pub const PIXEL_WIDTH_STRETCH: u8 = 2;
 
-    pub const VSYNC_MASK:u8 = 0x2;
-    pub const VSYNC_ON:u8   = 0x2;
-    pub const VSYNC_OFF:u8  = 0x0;
+    pub const VSYNC_MASK: u8 = 0x2;
+    pub const VSYNC_ON: u8 = 0x2;
+    pub const VSYNC_OFF: u8 = 0x0;
 
-    pub const DEFAULT_COLOUR:display::Colour = display::Colour::new(0, 0, 0);
+    pub const DEFAULT_COLOUR: display::Colour = display::Colour::new(0, 0, 0);
 }
 
 pub struct PlayfieldState {
     // Playfield state.
     // It's updated infrequently, so generate an entire scan each update and
     // return the lookup.
-
-    pf0:u8,
-    pf1:u8,
-    pf2:u8,
-    ctrlpf:u8,
+    pf0: u8,
+    pf1: u8,
+    pf2: u8,
+    ctrlpf: u8,
 
     pf_lookup: Vec<bool>,
-    pf0_lookup: Vec< Vec<bool> >,
-    pf1_lookup: Vec< Vec<bool> >,
-    pf2_lookup: Vec< Vec<bool> >,
+    pf0_lookup: Vec<Vec<bool>>,
+    pf1_lookup: Vec<Vec<bool>>,
+    pf2_lookup: Vec<Vec<bool>>,
 }
 
 impl PlayfieldState {
-    pub const PLAYFIELD_LOOKUP_SIZE:usize = 256;
-    pub const PLAYFIELD_LENGTH:usize = 8;
-    pub const PLAYFIELD_EXPAND_SIZE:usize = 4;
+    pub const PLAYFIELD_LOOKUP_SIZE: usize = 256;
+    pub const PLAYFIELD_LENGTH: usize = 8;
+    pub const PLAYFIELD_EXPAND_SIZE: usize = 4;
 
     pub fn new() -> Self {
         let mut instance = Self {
@@ -53,8 +52,22 @@ impl PlayfieldState {
             ctrlpf: 0,
             pf_lookup: vec![false; Stella::FRAME_WIDTH as usize],
             pf0_lookup: vec![vec![false; 16]; 16],
-            pf1_lookup: vec![vec![false; PlayfieldState::PLAYFIELD_LENGTH * PlayfieldState::PLAYFIELD_EXPAND_SIZE]; PlayfieldState::PLAYFIELD_LOOKUP_SIZE],
-            pf2_lookup: vec![vec![false; PlayfieldState::PLAYFIELD_LENGTH * PlayfieldState::PLAYFIELD_EXPAND_SIZE]; PlayfieldState::PLAYFIELD_LOOKUP_SIZE],
+            pf1_lookup: vec![
+                vec![
+                    false;
+                    PlayfieldState::PLAYFIELD_LENGTH
+                        * PlayfieldState::PLAYFIELD_EXPAND_SIZE
+                ];
+                PlayfieldState::PLAYFIELD_LOOKUP_SIZE
+            ],
+            pf2_lookup: vec![
+                vec![
+                    false;
+                    PlayfieldState::PLAYFIELD_LENGTH
+                        * PlayfieldState::PLAYFIELD_EXPAND_SIZE
+                ];
+                PlayfieldState::PLAYFIELD_LOOKUP_SIZE
+            ],
         };
 
         instance.pre_calc_playfield();
@@ -63,14 +76,14 @@ impl PlayfieldState {
     }
 
     fn pre_calc_playfield(&mut self) {
-        // Pre-calc playfield lists. 
+        // Pre-calc playfield lists.
         //
         // Bit order for displaying pf1 is reverse to pf0 & pf2.
         // Order:
         // PF0: 4,5,6,7, PF1: 7,6,5,4,3,2,1,0 PF2: 0,1,2,3,4,5,6,7
 
         for i in 0..256 {
-            let mut pf_lookup = vec![false;8];
+            let mut pf_lookup = vec![false; 8];
             let mut mask = 1;
             for b in 0..8 {
                 if 0 != i & mask {
@@ -82,8 +95,9 @@ impl PlayfieldState {
             // Expand to 4-pixels
             let mut pf_lookup_expanded = vec![false; 8 * PlayfieldState::PLAYFIELD_EXPAND_SIZE];
             for j in 0..pf_lookup.len() {
-                for k in 0..PlayfieldState::PLAYFIELD_EXPAND_SIZE  {
-                    pf_lookup_expanded[(j * PlayfieldState::PLAYFIELD_EXPAND_SIZE + k) as usize] = pf_lookup[j];
+                for k in 0..PlayfieldState::PLAYFIELD_EXPAND_SIZE {
+                    pf_lookup_expanded[(j * PlayfieldState::PLAYFIELD_EXPAND_SIZE + k) as usize] =
+                        pf_lookup[j];
                 }
             }
 
@@ -94,13 +108,15 @@ impl PlayfieldState {
 
         // PF0 is only 4-bit encoding.
         for i in 0..16 {
-            self.pf0_lookup[i] = self.pf2_lookup[i*16][16..PlayfieldState::PLAYFIELD_LENGTH * PlayfieldState::PLAYFIELD_EXPAND_SIZE].to_vec();
+            self.pf0_lookup[i] = self.pf2_lookup[i * 16]
+                [16..PlayfieldState::PLAYFIELD_LENGTH * PlayfieldState::PLAYFIELD_EXPAND_SIZE]
+                .to_vec();
         }
     }
 
     pub fn update(&mut self) {
-        // Pre-compute the playfield on register change. 
-        let mut field = self.pf0_lookup[(self.pf0/16) as usize].clone();
+        // Pre-compute the playfield on register change.
+        let mut field = self.pf0_lookup[(self.pf0 / 16) as usize].clone();
         field.append(&mut self.pf1_lookup[(self.pf1) as usize].clone());
         field.append(&mut self.pf2_lookup[(self.pf2) as usize].clone());
 
@@ -140,34 +156,33 @@ impl PlayfieldState {
 }
 
 pub struct BallState {
-        enabl:u8,
-        enabl_old:u8,
-        vdelbl:u8,
-        resbl:u8,
-        ctrlpf:u8,
+    enabl: u8,
+    enabl_old: u8,
+    vdelbl: u8,
+    resbl: u8,
+    ctrlpf: u8,
 
-        x_min:u16,
-        x_max:u16,
+    x_min: u16,
+    x_max: u16,
 
-        enabled:bool,
+    enabled: bool,
 
-        scan_line: Vec<bool>,
+    scan_line: Vec<bool>,
 }
 
 impl BallState {
-
     fn new() -> Self {
         Self {
-            enabl:     0,
-            enabl_old:  0,
-            vdelbl:    0,
-            resbl:     0,
-            ctrlpf:    0,
+            enabl: 0,
+            enabl_old: 0,
+            vdelbl: 0,
+            resbl: 0,
+            ctrlpf: 0,
 
-            x_min:     0,
-            x_max:     0,
+            x_min: 0,
+            x_max: 0,
 
-            enabled:   false,
+            enabled: false,
 
             scan_line: vec![false; Stella::FRAME_WIDTH as usize],
         }
@@ -183,45 +198,47 @@ impl BallState {
         let width = 1 << ((self.ctrlpf & 0x30) >> 4);
 
         self.x_min = (self.resbl as u16).wrapping_sub(Stella::HORIZONTAL_BLANK);
-        self.x_max = (self.resbl as u16).wrapping_sub(Stella::HORIZONTAL_BLANK).wrapping_add(width);
+        self.x_max = (self.resbl as u16)
+            .wrapping_sub(Stella::HORIZONTAL_BLANK)
+            .wrapping_add(width);
 
         self.calc_ball_scan()
     }
 
-    fn update_resbl(&mut self, data:u8) {
+    fn update_resbl(&mut self, data: u8) {
         self.resbl = data;
         self.update();
     }
-        
-    fn update_enabl_old(&mut self, data:u8) {
+
+    fn update_enabl_old(&mut self, data: u8) {
         self.enabl_old = data;
         self.update();
     }
 
-    fn update_enabl(&mut self, data:u8) {
+    fn update_enabl(&mut self, data: u8) {
         self.enabl = data;
         self.update();
     }
 
-    fn update_vdelbl(&mut self, data:u8) {
+    fn update_vdelbl(&mut self, data: u8) {
         self.vdelbl = data;
         self.update();
     }
 
-    fn update_ctrlpf(&mut self, data:u8) {
+    fn update_ctrlpf(&mut self, data: u8) {
         self.ctrlpf = data;
         self.update();
     }
 
     fn calc_ball_scan(&mut self) {
         // Calculate an entire scanline for the ball, re-calculated on
-        // parameter change. 
+        // parameter change.
         // Default scan to false.
         self.scan_line = vec![false; Stella::FRAME_WIDTH as usize];
 
         if self.enabled {
             for x in self.x_min..self.x_max {
-               self.scan_line[(x % Stella::FRAME_WIDTH) as usize] = true;
+                self.scan_line[(x % Stella::FRAME_WIDTH) as usize] = true;
             }
         }
     }
@@ -232,20 +249,19 @@ impl BallState {
 }
 
 pub struct MissileState {
-    nusiz:u8,
-    enam:u8,
-    resm:u8,
-    
+    nusiz: u8,
+    enam: u8,
+    resm: u8,
+
     // Derived state data (nominally generated during update)
-    number:u8,
-    gap:u8,
-    
+    number: u8,
+    gap: u8,
+
     // Default scan to false.
     scan_line: Vec<bool>,
 }
 
 impl MissileState {
-
     fn new() -> Self {
         Self {
             nusiz: 0,
@@ -265,33 +281,33 @@ impl MissileState {
         // Missiles ignore scaling options.
         let (number, size, gap) = Stella::nusize(self.nusiz);
         self.number = number;
-        self.gap    = gap;
+        self.gap = gap;
 
-        if self.resm < Stella::HORIZONTAL_BLANK as u8{
+        if self.resm < Stella::HORIZONTAL_BLANK as u8 {
             self.resm = Stella::HORIZONTAL_BLANK as u8;
         }
 
         self.calc_missile_scan();
     }
 
-    fn update_nusiz(&mut self, data:u8) {
+    fn update_nusiz(&mut self, data: u8) {
         self.nusiz = data;
         self.update();
     }
 
-    fn update_resm(&mut self, data:u8) {
+    fn update_resm(&mut self, data: u8) {
         self.resm = data;
         self.update();
     }
 
-    fn update_enam(&mut self, data:u8) {
+    fn update_enam(&mut self, data: u8) {
         self.enam = data;
         self.update();
     }
 
     fn calc_missile_scan(&mut self) {
         // Pre-calculate an entire scan line, as update is called relatively
-        // infrequently. 
+        // infrequently.
         self.scan_line = vec![false; Stella::FRAME_WIDTH as usize];
 
         if 0 != self.enam & 0x02 {
@@ -300,7 +316,8 @@ impl MissileState {
                 let width = 1 << ((self.nusiz & 0x30) >> 4);
                 // Uses similar position to 'player'
                 for i in 0..width {
-                    let x = (i +self.resm + n*self.gap * 8 - Stella::HORIZONTAL_BLANK as u8) % Stella::FRAME_WIDTH as u8;
+                    let x = (i + self.resm + n * self.gap * 8 - Stella::HORIZONTAL_BLANK as u8)
+                        % Stella::FRAME_WIDTH as u8;
                     self.scan_line[x as usize] = true;
                 }
             }
@@ -313,21 +330,21 @@ impl MissileState {
 }
 
 pub struct PlayerState {
-    nusiz:u8,
-    p:u8,
-    p_old:u8,
-    refp:u8,
-    resp:u8,
-    vdelp:u8,
-    reflect:u8,
+    nusiz: u8,
+    p: u8,
+    p_old: u8,
+    refp: u8,
+    resp: u8,
+    vdelp: u8,
+    reflect: u8,
 
     // Derived state data (nominally generated during update)
-    grp:u8,
-    number:u8,
-    size:u8,
-    gap:u8,
+    grp: u8,
+    number: u8,
+    size: u8,
+    gap: u8,
 
-    pos_start:u16,
+    pos_start: u16,
 
     scan_line: Vec<bool>,
 
@@ -336,17 +353,17 @@ pub struct PlayerState {
 
 impl PlayerState {
     // Only 1,2,3 required, but 0..3 calculated
-    const NUMBER_RANGE:usize = 4;
+    const NUMBER_RANGE: usize = 4;
 
     // Only 1,2,4 required, but 0..4 calculated
-    const SIZE_RANGE:usize = 5;
+    const SIZE_RANGE: usize = 5;
 
     // Gaps are 0, 2, 4, 8
-    const GAP_RANGE:usize = 9;
+    const GAP_RANGE: usize = 9;
 
-    const REFLECT_RANGE:usize = 2;
+    const REFLECT_RANGE: usize = 2;
 
-    const GRAPHIC_RANGE:usize = 256;
+    const GRAPHIC_RANGE: usize = 256;
 
     fn new() -> Self {
         let mut instance = Self {
@@ -356,7 +373,7 @@ impl PlayerState {
             refp: 0,
             resp: 0,
             vdelp: 0,
-            reflect:0,
+            reflect: 0,
 
             // Derived state data (nominally generated during update)
             grp: 0,
@@ -368,7 +385,22 @@ impl PlayerState {
 
             scan_line: vec![false; Stella::FRAME_WIDTH as usize],
 
-            player_scan_unshifted: vec![vec![vec![vec![vec![vec![false; Stella::FRAME_WIDTH as usize]; PlayerState::GRAPHIC_RANGE]; PlayerState::REFLECT_RANGE]; PlayerState::GAP_RANGE]; PlayerState::SIZE_RANGE]; PlayerState::NUMBER_RANGE],
+            player_scan_unshifted: vec![
+                vec![
+                    vec![
+                        vec![
+                            vec![
+                                vec![false; Stella::FRAME_WIDTH as usize];
+                                PlayerState::GRAPHIC_RANGE
+                            ];
+                            PlayerState::REFLECT_RANGE
+                        ];
+                        PlayerState::GAP_RANGE
+                    ];
+                    PlayerState::SIZE_RANGE
+                ];
+                PlayerState::NUMBER_RANGE
+            ],
         };
 
         instance.pre_calc_player();
@@ -376,32 +408,32 @@ impl PlayerState {
         instance
     }
 
-    fn update_nusiz(&mut self, data:u8) {
+    fn update_nusiz(&mut self, data: u8) {
         self.nusiz = data;
         self.update();
     }
 
-    fn update_resp(&mut self, data:u8) {
+    fn update_resp(&mut self, data: u8) {
         self.resp = data;
         self.update();
     }
 
-    fn update_refp(&mut self, data:u8) {
+    fn update_refp(&mut self, data: u8) {
         self.refp = data;
         self.update();
     }
 
-    fn update_p(&mut self, data:u8) {
+    fn update_p(&mut self, data: u8) {
         self.p = data;
         self.update();
     }
 
-    fn update_p_old(&mut self, data:u8) {
+    fn update_p_old(&mut self, data: u8) {
         self.p_old = data;
         self.update();
     }
 
-    fn update_vdelp(&mut self, data:u8) {
+    fn update_vdelp(&mut self, data: u8) {
         self.vdelp = data;
         self.update();
     }
@@ -410,9 +442,9 @@ impl PlayerState {
         // Precalculate all number, gap, size, graphic combinations.
 
         // Create enough empty lists to allow direct indexing.
-        for number in [1,2,3] {
-            for size in [1,2,4] {
-                for gap in [0,2,4,8] {
+        for number in [1, 2, 3] {
+            for size in [1, 2, 4] {
+                for gap in [0, 2, 4, 8] {
                     for reflect in 0..2 {
                         for g in 0..PlayerState::GRAPHIC_RANGE {
                             // Create the 8-bit 'graphic'
@@ -437,7 +469,7 @@ impl PlayerState {
 
                             let mut scan = vec![false; Stella::FRAME_WIDTH as usize];
                             for n in 0..number {
-                                let offset = n*gap*8;
+                                let offset = n * gap * 8;
                                 for i in 0..scaled_graphic.len() {
                                     scan[offset + i] = scaled_graphic[i];
                                 }
@@ -454,59 +486,60 @@ impl PlayerState {
     fn update(&mut self) {
         if 0 == (self.vdelp & 0x1) {
             self.grp = self.p;
-        }
-        else {
+        } else {
             self.grp = self.p_old;
         }
 
         if 0 == self.grp {
             self.scan_line = vec![false; Stella::FRAME_WIDTH as usize];
-        }
-        else {
+        } else {
             let (number, size, gap) = Stella::nusize(self.nusiz);
             self.number = number;
-            self.size   = size;
-            self.gap    = gap;
+            self.size = size;
+            self.gap = gap;
 
-            if self.resp < Stella::HORIZONTAL_BLANK as u8{
+            if self.resp < Stella::HORIZONTAL_BLANK as u8 {
                 self.resp = Stella::HORIZONTAL_BLANK as u8;
             }
             if (self.refp & 0x8) == 0 {
                 self.reflect = 1;
-            }
-            else {
+            } else {
                 self.reflect = 0;
             }
 
-            // TODO: Check wrapping of 'start'. 
-            self.pos_start = (self.resp as u16).wrapping_sub(Stella::HORIZONTAL_BLANK).wrapping_add(self.size as u16/2) % Stella::FRAME_WIDTH;
+            // TODO: Check wrapping of 'start'.
+            self.pos_start = (self.resp as u16)
+                .wrapping_sub(Stella::HORIZONTAL_BLANK)
+                .wrapping_add(self.size as u16 / 2)
+                % Stella::FRAME_WIDTH;
             self.calc_player_scan();
         }
     }
 
     fn calc_player_scan(&mut self) {
         // Rotate the scan.
-        let rotation = Stella::FRAME_WIDTH-self.pos_start;
-        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize][self.gap as usize][self.reflect as usize][self.grp as usize];
-        self.scan_line = scan[rotation as usize ..].to_vec();
-        self.scan_line.append(&mut scan[..rotation as usize ].to_vec());
+        let rotation = Stella::FRAME_WIDTH - self.pos_start;
+        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize]
+            [self.gap as usize][self.reflect as usize][self.grp as usize];
+        self.scan_line = scan[rotation as usize..].to_vec();
+        self.scan_line
+            .append(&mut scan[..rotation as usize].to_vec());
     }
-                            
-        
+
     fn get_player_scan(&self) -> Vec<bool> {
         self.scan_line.clone()
     }
 }
 
 pub struct LineState {
-  // Line state used per stella line.
+    // Line state used per stella line.
     p_colour: (display::Colour, display::Colour),
     background_colour: display::Colour,
     playfield_colour: display::Colour,
-    ctrlpf:u8,
-    hmp:(u8, u8),
-    hmm:(u8, u8),
-    hmbl:u8,
+    ctrlpf: u8,
+    hmp: (u8, u8),
+    hmm: (u8, u8),
+    hmbl: u8,
 }
 
 impl LineState {
@@ -516,27 +549,27 @@ impl LineState {
             background_colour: Constants::DEFAULT_COLOUR,
             playfield_colour: Constants::DEFAULT_COLOUR,
             ctrlpf: 0,
-            hmp: (0,0),
-            hmm: (0,0),
+            hmp: (0, 0),
+            hmm: (0, 0),
             hmbl: 0,
         }
     }
 }
 
 pub struct CollisionState {
-        cxmp:(u8, u8),
-        cxpfb:(u8, u8),
-        cxmfb:(u8, u8),
-        cxblpf:u8,
-        cxppmm :u8,
+    cxmp: (u8, u8),
+    cxpfb: (u8, u8),
+    cxmfb: (u8, u8),
+    cxblpf: u8,
+    cxppmm: u8,
 }
 
 impl CollisionState {
     pub fn new() -> Self {
         Self {
-            cxmp:(0, 0),
-            cxpfb:(0, 0),
-            cxmfb:(0, 0),
+            cxmp: (0, 0),
+            cxpfb: (0, 0),
+            cxmfb: (0, 0),
             cxblpf: 0,
             cxppmm: 0,
         }
@@ -546,13 +579,20 @@ impl CollisionState {
         self.cxmp = (0, 0);
         self.cxpfb = (0, 0);
         self.cxmfb = (0, 0);
-        self.cxblpf =  0;
-        self.cxppmm =  0;
+        self.cxblpf = 0;
+        self.cxppmm = 0;
     }
 
-    pub fn update_collisions(&mut self, p0:bool, p1:bool, m0:bool, m1:bool, bl:bool, pf:bool) {
-
-        if m0{
+    pub fn update_collisions(
+        &mut self,
+        p0: bool,
+        p1: bool,
+        m0: bool,
+        m1: bool,
+        bl: bool,
+        pf: bool,
+    ) {
+        if m0 {
             if p1 {
                 self.cxmp.0 |= 0x80; // m0 & p1
             }
@@ -570,7 +610,7 @@ impl CollisionState {
             }
         }
 
-        if m1{
+        if m1 {
             if pf {
                 self.cxmfb.1 |= 0x80; // m1 & pf
             }
@@ -585,7 +625,7 @@ impl CollisionState {
             }
         }
 
-        if bl{
+        if bl {
             if pf {
                 self.cxblpf |= 0x80; // bl & pf
             }
@@ -597,7 +637,7 @@ impl CollisionState {
             }
         }
 
-        if p0{
+        if p0 {
             if pf {
                 self.cxpfb.0 |= 0x80; // p0 & pf
             }
@@ -606,7 +646,7 @@ impl CollisionState {
             }
         }
 
-        if p1 & pf{
+        if p1 & pf {
             self.cxpfb.1 |= 0x80; // p1 & pf
         }
     }
@@ -644,13 +684,12 @@ impl CollisionState {
     }
 }
 
-
 pub struct Colours {
-    colours: Vec<display::Colour>, 
+    colours: Vec<display::Colour>,
 }
 
 impl Colours {
-    pub const NUM_COLOURS:u8 = 128;
+    pub const NUM_COLOURS: u8 = 128;
 
     pub fn new() -> Self {
         Self {
@@ -659,16 +698,25 @@ impl Colours {
     }
 
     pub fn load(&mut self, palette_filename: &str) {
-        let buf_read = std::io::BufReader::new(std::fs::File::open(palette_filename).expect(format!("file not found! {}", palette_filename).as_str()));
-        let lines:Vec<String> = buf_read.lines().map(|x| x.unwrap()).collect();
+        let buf_read = std::io::BufReader::new(
+            std::fs::File::open(palette_filename)
+                .expect(format!("file not found! {}", palette_filename).as_str()),
+        );
+        let lines: Vec<String> = buf_read.lines().map(|x| x.unwrap()).collect();
         for (i, line) in lines.iter().enumerate() {
-            let line_without_comments = &line[0..line.find("#").unwrap_or(line.len())].trim_end_matches(' ');
-            let values:Vec<u8> = line_without_comments.split(' ').collect::<Vec<&str>>().iter().map(|x| x.parse::<u8>().unwrap()).collect::<Vec<u8>>();
+            let line_without_comments =
+                &line[0..line.find("#").unwrap_or(line.len())].trim_end_matches(' ');
+            let values: Vec<u8> = line_without_comments
+                .split(' ')
+                .collect::<Vec<&str>>()
+                .iter()
+                .map(|x| x.parse::<u8>().unwrap())
+                .collect::<Vec<u8>>();
             self.colours[i] = display::Colour::new(values[0], values[1], values[2]);
         }
     }
 
-    pub fn get_colour(&self, colour:u8) -> display::Colour {
+    pub fn get_colour(&self, colour: u8) -> display::Colour {
         self.colours[colour as usize >> 1]
     }
 }
@@ -676,21 +724,21 @@ impl Colours {
 pub struct Stella {
     pub tiasound: tiasound::TiaSound,
 
-    input:inputs::Input,
-    pub vsync_debug_output_clock:clocks::ClockType,
-    screen_start_clock:clocks::ClockType,
-    paddle_start_clock:clocks::ClockType,
-    last_screen_update_clock:clocks::ClockType,
-    next_line:LineState,
-    is_vsync:bool,
-    is_blank:bool,
-    is_input_latched:bool,
-    is_update_time:bool,
-    is_hmove_scan:bool,
+    input: inputs::Input,
+    pub vsync_debug_output_clock: clocks::ClockType,
+    screen_start_clock: clocks::ClockType,
+    paddle_start_clock: clocks::ClockType,
+    last_screen_update_clock: clocks::ClockType,
+    next_line: LineState,
+    is_vsync: bool,
+    is_blank: bool,
+    is_input_latched: bool,
+    is_update_time: bool,
+    is_hmove_scan: bool,
 
     colours: Colours,
 
-    display_lines: Vec< Vec<display::Colour> >,
+    display_lines: Vec<Vec<display::Colour>>,
 
     collision_state: CollisionState,
     playfield_state: PlayfieldState,
@@ -704,45 +752,54 @@ pub struct Stella {
 }
 
 impl Stella {
-    pub const FRAME_WIDTH:u16 = 160;
-//    pub const FRAME_HEIGHT:u16 = 192; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
-    pub const FRAME_HEIGHT:u16 = 220; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
-    pub const HORIZONTAL_BLANK:u16 = 68;
-    pub const LATE_HORIZONTAL_BLANK:u16 = 76;
-    pub const HORIZONTAL_TICKS:clocks::ClockType = (Stella::FRAME_WIDTH + Stella::HORIZONTAL_BLANK) as clocks::ClockType;
-    pub const INPUT_45_LATCH_MASK:u8 = 0x40;
-    pub const BLANK_PADDLE_RECHARGE:u8 = 0x80;
-    pub const BLANK_MASK:u8 = 0x2;
-    pub const BLANK_ON:u8 = 0x2;
-    pub const BLANK_OFF:u8 = 0x0;
+    pub const FRAME_WIDTH: u16 = 160;
+    //    pub const FRAME_HEIGHT:u16 = 192; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
+    pub const FRAME_HEIGHT: u16 = 220; // TODO: Make this 'sensibly' configurable,  was '280' to include overscan/blank. Maybe show overscans in 'Debug'?
+    pub const HORIZONTAL_BLANK: u16 = 68;
+    pub const LATE_HORIZONTAL_BLANK: u16 = 76;
+    pub const HORIZONTAL_TICKS: clocks::ClockType =
+        (Stella::FRAME_WIDTH + Stella::HORIZONTAL_BLANK) as clocks::ClockType;
+    pub const INPUT_45_LATCH_MASK: u8 = 0x40;
+    pub const BLANK_PADDLE_RECHARGE: u8 = 0x80;
+    pub const BLANK_MASK: u8 = 0x2;
+    pub const BLANK_ON: u8 = 0x2;
+    pub const BLANK_OFF: u8 = 0x0;
 
-    pub const PF_PRIORITY:u8 = 0x4;
+    pub const PF_PRIORITY: u8 = 0x4;
 
-    pub const VBLANK_LINES:u16 = 37;
-    pub const OVERSCAN_LINES:u16 = 30;
+    pub const VBLANK_LINES: u16 = 37;
+    pub const OVERSCAN_LINES: u16 = 30;
 
-    pub const START_DRAW_Y:u16 = 20; // TODO: Determine whey this isn't (at least) the full 'Vertical Blank' size
-    pub const END_DRAW_Y:u16 = Stella::VBLANK_LINES + Stella::FRAME_HEIGHT + Stella::OVERSCAN_LINES;
+    pub const START_DRAW_Y: u16 = 20; // TODO: Determine whey this isn't (at least) the full 'Vertical Blank' size
+    pub const END_DRAW_Y: u16 =
+        Stella::VBLANK_LINES + Stella::FRAME_HEIGHT + Stella::OVERSCAN_LINES;
 
-    pub fn new(scanline_debug:bool, realtime:bool, pal_palette:bool) -> Self {
+    pub fn new(scanline_debug: bool, realtime: bool, pal_palette: bool) -> Self {
         let mut colours = Colours::new();
-        colours.load(if pal_palette {"palette_pal.dat"} else {"palette_ntsc.dat"});
+        colours.load(if pal_palette {
+            "palette_pal.dat"
+        } else {
+            "palette_ntsc.dat"
+        });
 
-        Self { 
-            tiasound:tiasound::TiaSound::new(realtime),
-            input:inputs::Input::new(),
+        Self {
+            tiasound: tiasound::TiaSound::new(realtime),
+            input: inputs::Input::new(),
             vsync_debug_output_clock: 0,
             screen_start_clock: 0,
             paddle_start_clock: 0,
             last_screen_update_clock: 0,
             next_line: LineState::new(),
-            is_vsync:false,
-            is_blank:true,
-            is_input_latched:false,
-            is_update_time:false,
-            is_hmove_scan:false,
+            is_vsync: false,
+            is_blank: true,
+            is_input_latched: false,
+            is_update_time: false,
+            is_hmove_scan: false,
             colours: colours,
-            display_lines: vec![vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize]; (Stella::END_DRAW_Y) as usize],
+            display_lines: vec![
+                vec![display::Colour::new(0, 0, 0); Stella::FRAME_WIDTH as usize];
+                (Stella::END_DRAW_Y) as usize
+            ],
             collision_state: CollisionState::new(),
             playfield_state: PlayfieldState::new(),
             p0_state: PlayerState::new(),
@@ -764,11 +821,24 @@ impl Stella {
 
         self.write_functions(clock, address, data);
     }
-    pub fn get_paddle_inp_value(paddle_reset_ticks: clocks::ClockType, clock: &clocks::Clock, paddle_position: f32, current_inp: &mut u8) {
+    pub fn get_paddle_inp_value(
+        paddle_reset_ticks: clocks::ClockType,
+        clock: &clocks::Clock,
+        paddle_position: f32,
+        current_inp: &mut u8,
+    ) {
         // TODO: Check 'capacitor delay' relating to paddles.
         // This is here to show inputs 'could' work.
         if 0x0 == *current_inp {
-            *current_inp = if clock.ticks > paddle_reset_ticks + 20000 + ((32000 as f32) * paddle_position) as clocks::ClockType { 0x80 } else { 0x00 };
+            *current_inp = if clock.ticks
+                > paddle_reset_ticks
+                    + 20000
+                    + ((32000 as f32) * paddle_position) as clocks::ClockType
+            {
+                0x80
+            } else {
+                0x00
+            };
         }
     }
 
@@ -776,25 +846,64 @@ impl Stella {
         let result;
 
         match address & 0xF {
-            0x0 => { result = self.collision_state.get_cxmp_0() }
-            0x1 => { result = self.collision_state.get_cxmp_1() }
-            0x2 => { result = self.collision_state.get_cxpfb_0() }
-            0x3 => { result = self.collision_state.get_cxpfb_1() }
-            0x4 => { result = self.collision_state.get_cxmfb_0() }
-            0x5 => { result = self.collision_state.get_cxmfb_1() }
-            0x6 => { result = self.collision_state.get_cxblpf(); }
-            0x7 => { result = self.collision_state.get_cxppmm(); }
-            0x8 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input0);
-                     result = self.input.input0; }
-            0x9 => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input1);
-                     result = self.input.input1; }
-            0xA => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input2);
-                     result = self.input.input2; }
-            0xB => { Self::get_paddle_inp_value(self.paddle_start_clock, clock, 0.5, &mut self.input.input3);
-                     result = self.input.input3; }
-            0xC => { result = self.input.input4; }
-            0xD => { result = self.input.input5; }
-            _ => { if self.scanline_debug {println!("Stella read: {:X}", address);}
+            0x0 => result = self.collision_state.get_cxmp_0(),
+            0x1 => result = self.collision_state.get_cxmp_1(),
+            0x2 => result = self.collision_state.get_cxpfb_0(),
+            0x3 => result = self.collision_state.get_cxpfb_1(),
+            0x4 => result = self.collision_state.get_cxmfb_0(),
+            0x5 => result = self.collision_state.get_cxmfb_1(),
+            0x6 => {
+                result = self.collision_state.get_cxblpf();
+            }
+            0x7 => {
+                result = self.collision_state.get_cxppmm();
+            }
+            0x8 => {
+                Self::get_paddle_inp_value(
+                    self.paddle_start_clock,
+                    clock,
+                    0.5,
+                    &mut self.input.input0,
+                );
+                result = self.input.input0;
+            }
+            0x9 => {
+                Self::get_paddle_inp_value(
+                    self.paddle_start_clock,
+                    clock,
+                    0.5,
+                    &mut self.input.input1,
+                );
+                result = self.input.input1;
+            }
+            0xA => {
+                Self::get_paddle_inp_value(
+                    self.paddle_start_clock,
+                    clock,
+                    0.5,
+                    &mut self.input.input2,
+                );
+                result = self.input.input2;
+            }
+            0xB => {
+                Self::get_paddle_inp_value(
+                    self.paddle_start_clock,
+                    clock,
+                    0.5,
+                    &mut self.input.input3,
+                );
+                result = self.input.input3;
+            }
+            0xC => {
+                result = self.input.input4;
+            }
+            0xD => {
+                result = self.input.input5;
+            }
+            _ => {
+                if self.scanline_debug {
+                    println!("Stella read: {:X}", address);
+                }
                 result = 0;
             }
         }
@@ -805,57 +914,142 @@ impl Stella {
     fn write_functions(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         // TODO
         match address & 0x3F {
-
-            0x00 => {self.write_vsync(clock, address, data); }
-            0x01 => {self.write_vblank(clock, address, data); }
-            0x02 => {self.write_wsync(clock, address, data); }
-            0x03 => {self.write_rsync(clock, address, data); }
-            0x04 => {self.write_nusiz0(clock, address, data); }
-            0x05 => {self.write_nusiz1(clock, address, data); }
-            0x06 => {self.write_colump0(clock, address, data); }
-            0x07 => {self.write_colump1(clock, address, data); }
-            0x08 => {self.write_colupf(clock, address, data); }
-            0x09 => {self.write_colubk(clock, address, data); }
-            0x0A => {self.write_ctrlpf(clock, address, data); }
-            0x0B => {self.write_refp0(clock, address, data); }
-            0x0C => {self.write_refp1(clock, address, data); }
-            0x0D => {self.write_pf0(clock, address, data); }
-            0x0E => {self.write_pf1(clock, address, data); }
-            0x0F => {self.write_pf2(clock, address, data); }
-            0x10 => {self.write_resp0(clock, address, data); }
-            0x11 => {self.write_resp1(clock, address, data); }
-            0x12 => {self.write_resm0(clock, address, data); }
-            0x13 => {self.write_resm1(clock, address, data); }
-            0x14 => {self.write_resbl(clock, address, data); }
-            0x15 => {self.tiasound.write_audio_ctrl_0(clock, address, data); }
-            0x16 => {self.tiasound.write_audio_ctrl_1(clock, address, data); }
-            0x17 => {self.tiasound.write_audio_freq_0(clock, address, data); }
-            0x18 => {self.tiasound.write_audio_freq_1(clock, address, data); }
-            0x19 => {self.tiasound.write_audio_vol_0(clock, address, data); }
-            0x1A => {self.tiasound.write_audio_vol_1(clock, address, data); }
-            0x1B => {self.write_grp0(clock, address, data); }
-            0x1C => {self.write_grp1(clock, address, data); }
-            0x1D => {self.write_enam0(clock, address, data); }
-            0x1E => {self.write_enam1(clock, address, data); }
-            0x1F => {self.write_enabl(clock, address, data); }
-            0x20 => {self.write_hmp0(clock, address, data); }
-            0x21 => {self.write_hmp1(clock, address, data); }
-            0x22 => {self.write_hmm0(clock, address, data); }
-            0x23 => {self.write_hmm1(clock, address, data); }
-            0x24 => {self.write_hmbl(clock, address, data); }
-            0x2A => {self.write_hmove(clock, address, data); }
-            0x2B => {self.write_hclr(clock, address, data); }
-            0x25 => {self.write_vdelp0(clock, address, data); }
-            0x26 => {self.write_vdelp1(clock, address, data); }
-            0x27 => {self.write_vdelbl(clock, address, data); }
-            0x2C => {self.write_cxclr(clock, address, data); }
-            _ => { 
-//                println!("Stella write not supported 0x{:X}", address & 0x3F);
+            0x00 => {
+                self.write_vsync(clock, address, data);
+            }
+            0x01 => {
+                self.write_vblank(clock, address, data);
+            }
+            0x02 => {
+                self.write_wsync(clock, address, data);
+            }
+            0x03 => {
+                self.write_rsync(clock, address, data);
+            }
+            0x04 => {
+                self.write_nusiz0(clock, address, data);
+            }
+            0x05 => {
+                self.write_nusiz1(clock, address, data);
+            }
+            0x06 => {
+                self.write_colump0(clock, address, data);
+            }
+            0x07 => {
+                self.write_colump1(clock, address, data);
+            }
+            0x08 => {
+                self.write_colupf(clock, address, data);
+            }
+            0x09 => {
+                self.write_colubk(clock, address, data);
+            }
+            0x0A => {
+                self.write_ctrlpf(clock, address, data);
+            }
+            0x0B => {
+                self.write_refp0(clock, address, data);
+            }
+            0x0C => {
+                self.write_refp1(clock, address, data);
+            }
+            0x0D => {
+                self.write_pf0(clock, address, data);
+            }
+            0x0E => {
+                self.write_pf1(clock, address, data);
+            }
+            0x0F => {
+                self.write_pf2(clock, address, data);
+            }
+            0x10 => {
+                self.write_resp0(clock, address, data);
+            }
+            0x11 => {
+                self.write_resp1(clock, address, data);
+            }
+            0x12 => {
+                self.write_resm0(clock, address, data);
+            }
+            0x13 => {
+                self.write_resm1(clock, address, data);
+            }
+            0x14 => {
+                self.write_resbl(clock, address, data);
+            }
+            0x15 => {
+                self.tiasound.write_audio_ctrl_0(clock, address, data);
+            }
+            0x16 => {
+                self.tiasound.write_audio_ctrl_1(clock, address, data);
+            }
+            0x17 => {
+                self.tiasound.write_audio_freq_0(clock, address, data);
+            }
+            0x18 => {
+                self.tiasound.write_audio_freq_1(clock, address, data);
+            }
+            0x19 => {
+                self.tiasound.write_audio_vol_0(clock, address, data);
+            }
+            0x1A => {
+                self.tiasound.write_audio_vol_1(clock, address, data);
+            }
+            0x1B => {
+                self.write_grp0(clock, address, data);
+            }
+            0x1C => {
+                self.write_grp1(clock, address, data);
+            }
+            0x1D => {
+                self.write_enam0(clock, address, data);
+            }
+            0x1E => {
+                self.write_enam1(clock, address, data);
+            }
+            0x1F => {
+                self.write_enabl(clock, address, data);
+            }
+            0x20 => {
+                self.write_hmp0(clock, address, data);
+            }
+            0x21 => {
+                self.write_hmp1(clock, address, data);
+            }
+            0x22 => {
+                self.write_hmm0(clock, address, data);
+            }
+            0x23 => {
+                self.write_hmm1(clock, address, data);
+            }
+            0x24 => {
+                self.write_hmbl(clock, address, data);
+            }
+            0x2A => {
+                self.write_hmove(clock, address, data);
+            }
+            0x2B => {
+                self.write_hclr(clock, address, data);
+            }
+            0x25 => {
+                self.write_vdelp0(clock, address, data);
+            }
+            0x26 => {
+                self.write_vdelp1(clock, address, data);
+            }
+            0x27 => {
+                self.write_vdelbl(clock, address, data);
+            }
+            0x2C => {
+                self.write_cxclr(clock, address, data);
+            }
+            _ => {
+                //                println!("Stella write not supported 0x{:X}", address & 0x3F);
             }
         }
     }
 
-    fn write_vsync(&mut self, clock: &mut clocks::Clock, address: u16, data: u8)  {
+    fn write_vsync(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         if false == self.is_vsync {
             if Constants::VSYNC_ON == (data & Constants::VSYNC_MASK) {
                 self.is_update_time = true;
@@ -864,7 +1058,7 @@ impl Stella {
         } else {
             if Constants::VSYNC_OFF == (data & Constants::VSYNC_MASK) {
                 self.is_vsync = false;
-                self.vsync_debug_output_clock =  clock.ticks;
+                self.vsync_debug_output_clock = clock.ticks;
                 // TODO: Check 'actual' calc (mod of negative seems inconsistent) self.screen_start_clock = clock.ticks.wrapping_sub(Stella::HORIZONTAL_TICKS).wrapping_add((Stella::HORIZONTAL_TICKS.wrapping_sub(clock.ticks).wrapping_add(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS);
                 self.screen_start_clock = clock.ticks;
                 self.last_screen_update_clock = self.screen_start_clock;
@@ -893,7 +1087,8 @@ impl Stella {
 
     fn write_wsync(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         if (clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS > 3 {
-            clock.ticks += Stella::HORIZONTAL_TICKS - (clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS;
+            clock.ticks += Stella::HORIZONTAL_TICKS
+                - (clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS;
         }
     }
 
@@ -901,7 +1096,8 @@ impl Stella {
         let fudge = 3;
 
         if (clock.ticks - self.screen_start_clock) > 3 {
-            clock.ticks += Stella::HORIZONTAL_TICKS - (clock.ticks - self.screen_start_clock + fudge) % Stella::HORIZONTAL_TICKS; 
+            clock.ticks += Stella::HORIZONTAL_TICKS
+                - (clock.ticks - self.screen_start_clock + fudge) % Stella::HORIZONTAL_TICKS;
         }
     }
 
@@ -932,7 +1128,7 @@ impl Stella {
     }
 
     fn write_ctrlpf(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.next_line.ctrlpf  = data;
+        self.next_line.ctrlpf = data;
         self.playfield_state.update_ctrlpf(data);
         self.ball.update_ctrlpf(data)
     }
@@ -958,24 +1154,37 @@ impl Stella {
     }
 
     fn write_resp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        let resp_value = ((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
+        let resp_value =
+            ((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
         self.p0_state.update_resp(resp_value);
     }
 
     fn write_resp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.p1_state.update_resp(((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+        self.p1_state.update_resp(
+            ((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8,
+        );
     }
 
     fn write_resm0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.missile0.update_resm(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+        self.missile0.update_resm(
+            ((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8,
+        );
     }
 
     fn write_resm1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.missile1.update_resm(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+        self.missile1.update_resm(
+            ((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8,
+        );
     }
 
     fn write_resbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.ball.update_resbl(((clock.ticks.wrapping_add(4).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
+        self.ball.update_resbl(
+            ((clock
+                .ticks
+                .wrapping_add(4)
+                .wrapping_sub(self.screen_start_clock))
+                % Stella::HORIZONTAL_TICKS) as u8,
+        );
     }
 
     fn write_grp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1050,155 +1259,183 @@ impl Stella {
     }
 
     pub fn screen_scan(&mut self, clock: &mut clocks::Clock) {
+        let future_pixels = 1;
 
-      let future_pixels = 1;
-    
-      let last_screen_pos = self.last_screen_update_clock - self.screen_start_clock;
-      let screen_pos = (clock.ticks - self.screen_start_clock).wrapping_add(future_pixels as clocks::ClockType);
-    
-      let y_start = (last_screen_pos/Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::START_DRAW_Y;
-      let y_stop  = (screen_pos/Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::START_DRAW_Y;
+        let last_screen_pos = self.last_screen_update_clock - self.screen_start_clock;
+        let screen_pos = (clock.ticks - self.screen_start_clock)
+            .wrapping_add(future_pixels as clocks::ClockType);
 
-      if y_stop < (Stella::END_DRAW_Y - Stella::START_DRAW_Y) {
+        let y_start = (last_screen_pos / Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16
+            - Stella::START_DRAW_Y;
+        let y_stop = (screen_pos / Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16
+            - Stella::START_DRAW_Y;
 
-        let priority_ctrl = 0 == self.next_line.ctrlpf & Stella::PF_PRIORITY;
-        let nl_p_colour0  = self.next_line.p_colour.0;
-        let nl_p_colour1  = self.next_line.p_colour.1;
-        let nl_pf_colour  = self.next_line.playfield_colour;
-        let nl_bg_colour  = self.next_line.background_colour;
+        if y_stop < (Stella::END_DRAW_Y - Stella::START_DRAW_Y) {
+            let priority_ctrl = 0 == self.next_line.ctrlpf & Stella::PF_PRIORITY;
+            let nl_p_colour0 = self.next_line.p_colour.0;
+            let nl_p_colour1 = self.next_line.p_colour.1;
+            let nl_pf_colour = self.next_line.playfield_colour;
+            let nl_bg_colour = self.next_line.background_colour;
 
-        let p0_scan = self.p0_state.get_player_scan();
-        let p1_scan = self.p1_state.get_player_scan();
-        let pf_scan = self.playfield_state.get_playfield_scan();
-        let m0_scan = self.missile0.get_missile_scan();
-        let m1_scan = self.missile1.get_missile_scan();
-        let bl_scan = self.ball.get_ball_scan();
+            let p0_scan = self.p0_state.get_player_scan();
+            let p1_scan = self.p1_state.get_player_scan();
+            let pf_scan = self.playfield_state.get_playfield_scan();
+            let m0_scan = self.missile0.get_missile_scan();
+            let m1_scan = self.missile1.get_missile_scan();
+            let bl_scan = self.ball.get_ball_scan();
 
-        let mut x_start = 0;
-        if ((last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16) >= Stella::HORIZONTAL_BLANK {
-            x_start = (last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::HORIZONTAL_BLANK;
-        }
-
-        let mut last_x_stop = 0;
-        if ((screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16) >= Stella::HORIZONTAL_BLANK {
-          last_x_stop = (screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16 - Stella::HORIZONTAL_BLANK;
-        }
-
-        for y in y_start as u16 .. (y_stop+1) as u16 {
-
-            let x_stop;
-            if y == y_stop {
-                x_stop = last_x_stop;
-            } else {
-                x_stop = Stella::FRAME_WIDTH - 1;
+            let mut x_start = 0;
+            if ((last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16)
+                >= Stella::HORIZONTAL_BLANK
+            {
+                x_start = (last_screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16
+                    - Stella::HORIZONTAL_BLANK;
             }
 
-            if self.is_hmove_scan {
-                // If 'hmove' was used, then there's an additional '8 pixels' of blanking.
-                // Clear the flag once we've passed the additional blanking.
-                let blanking_pixels = Stella::LATE_HORIZONTAL_BLANK - Stella::HORIZONTAL_BLANK;
-                x_start = std::cmp::max(x_start, blanking_pixels);
-                if x_stop >= blanking_pixels {
-                    self.is_hmove_scan = false;
-                }
+            let mut last_x_stop = 0;
+            if ((screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16)
+                >= Stella::HORIZONTAL_BLANK
+            {
+                last_x_stop = (screen_pos % Stella::HORIZONTAL_TICKS as clocks::ClockType) as u16
+                    - Stella::HORIZONTAL_BLANK;
             }
 
-
-            let current_y_line = &mut self.display_lines[y as usize];
-            for x in x_start as usize ..x_stop as usize  {
-
-                let pf = pf_scan[x];
-                let bl = bl_scan[x];
-                let m1 = m1_scan[x];
-                let p1 = p1_scan[x];
-                let m0 = m0_scan[x];
-                let p0 = p0_scan[x];
-
-                // Priorities (bit 2 set):  Priorities (bit 2 clear):
-                //  PF, BL                   P0, M0
-                //  P0, M0                   P1, M1
-                //  P1, M1                   PF, BL
-                //  BK                       BK
-                let mut pixel_colour = nl_bg_colour;
-                let mut hits = 0;
-                if priority_ctrl {
-                    if pf || bl {
-                        pixel_colour = nl_pf_colour;
-                        hits += bl as u8 + pf as u8;
-                    }
-                    if p1 || m1 {
-                        pixel_colour = nl_p_colour1;
-                        hits += m1 as u8 + p1 as u8;
-                    }
-                    if p0 || m0 {
-                        pixel_colour = nl_p_colour0;
-                        hits += m0 as u8 + p0 as u8;
-                    }
+            for y in y_start as u16..(y_stop + 1) as u16 {
+                let x_stop;
+                if y == y_stop {
+                    x_stop = last_x_stop;
                 } else {
-                    if p1 || m1 {
-                        pixel_colour = nl_p_colour1;
-                        hits += m1 as u8 + p1 as u8;
-                    }
-                    if p0 || m0 {
-                        pixel_colour = nl_p_colour0;
-                        hits += m0 as u8 + p0 as u8;
-                    }
-                    if pf || bl {
-                        pixel_colour = nl_pf_colour;
-                        hits += bl as u8 + pf as u8;
+                    x_stop = Stella::FRAME_WIDTH - 1;
+                }
+
+                if self.is_hmove_scan {
+                    // If 'hmove' was used, then there's an additional '8 pixels' of blanking.
+                    // Clear the flag once we've passed the additional blanking.
+                    let blanking_pixels = Stella::LATE_HORIZONTAL_BLANK - Stella::HORIZONTAL_BLANK;
+                    x_start = std::cmp::max(x_start, blanking_pixels);
+                    if x_stop >= blanking_pixels {
+                        self.is_hmove_scan = false;
                     }
                 }
 
-                if hits > 1 {
-                    self.collision_state.update_collisions(p0, p1, m0, m1, bl, pf);
+                let current_y_line = &mut self.display_lines[y as usize];
+                for x in x_start as usize..x_stop as usize {
+                    let pf = pf_scan[x];
+                    let bl = bl_scan[x];
+                    let m1 = m1_scan[x];
+                    let p1 = p1_scan[x];
+                    let m0 = m0_scan[x];
+                    let p0 = p0_scan[x];
+
+                    // Priorities (bit 2 set):  Priorities (bit 2 clear):
+                    //  PF, BL                   P0, M0
+                    //  P0, M0                   P1, M1
+                    //  P1, M1                   PF, BL
+                    //  BK                       BK
+                    let mut pixel_colour = nl_bg_colour;
+                    let mut hits = 0;
+                    if priority_ctrl {
+                        if pf || bl {
+                            pixel_colour = nl_pf_colour;
+                            hits += bl as u8 + pf as u8;
+                        }
+                        if p1 || m1 {
+                            pixel_colour = nl_p_colour1;
+                            hits += m1 as u8 + p1 as u8;
+                        }
+                        if p0 || m0 {
+                            pixel_colour = nl_p_colour0;
+                            hits += m0 as u8 + p0 as u8;
+                        }
+                    } else {
+                        if p1 || m1 {
+                            pixel_colour = nl_p_colour1;
+                            hits += m1 as u8 + p1 as u8;
+                        }
+                        if p0 || m0 {
+                            pixel_colour = nl_p_colour0;
+                            hits += m0 as u8 + p0 as u8;
+                        }
+                        if pf || bl {
+                            pixel_colour = nl_pf_colour;
+                            hits += bl as u8 + pf as u8;
+                        }
+                    }
+
+                    if hits > 1 {
+                        self.collision_state
+                            .update_collisions(p0, p1, m0, m1, bl, pf);
+                    }
+
+                    if self.scanline_debug {
+                        // Display scan 'start position'.
+                        let ps0 = self.p0_state.pos_start;
+                        let ps1 = self.p1_state.pos_start;
+                        if x as u16 == ps0 {
+                            pixel_colour = self.colours.get_colour(0x0E);
+                        }
+                        if x as u16 == ps1 {
+                            pixel_colour = self.colours.get_colour(0x78);
+                        }
+                    }
+
+                    current_y_line[x] = pixel_colour;
                 }
 
-                if self.scanline_debug {
-                    // Display scan 'start position'.
-                    let ps0 = self.p0_state.pos_start;
-                    let ps1 = self.p1_state.pos_start;
-                    if x as u16 == ps0 {
-                        pixel_colour = self.colours.get_colour(0x0E);
-                    }
-                    if x as u16 == ps1 {
-                        pixel_colour = self.colours.get_colour(0x78);
-                    }
-                }
-
-                current_y_line[x] = pixel_colour;
+                x_start = 0;
             }
-
-            x_start = 0;
         }
-      }
 
-      self.last_screen_update_clock = clock.ticks + future_pixels as u64;
+        self.last_screen_update_clock = clock.ticks + future_pixels as u64;
     }
 
-    fn nusize(nusiz:u8) -> (u8, u8, u8) {
+    fn nusize(nusiz: u8) -> (u8, u8, u8) {
         // (number, size, gap)
         match nusiz & 0x7 {
-            0 => { (1, 1, 0) },
-            1 => { (2, 1, 2) },
-            2 => { (2, 1, 4) },
-            3 => { (3, 1, 2) },
-            4 => { (2, 1, 8) },
-            5 => { (1, 2, 0) },
-            6 => { (3, 1, 4) },
-            7 => { (1, 4, 0) },
-            _ => { panic!("nusize: this should be impossible");},
+            0 => (1, 1, 0),
+            1 => (2, 1, 2),
+            2 => (2, 1, 4),
+            3 => (3, 1, 2),
+            4 => (2, 1, 8),
+            5 => (1, 2, 0),
+            6 => (3, 1, 4),
+            7 => (1, 4, 0),
+            _ => {
+                panic!("nusize: this should be impossible");
+            }
         }
     }
 
     fn hmove(&mut self, clock: &clocks::Clock) {
         self.is_hmove_scan = true;
 
-        let clock_ticks_from_scan =  ((clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
-        self.p0_state.resp  = (self.p0_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.0, clock_ticks_from_scan) as u8)) % Stella::HORIZONTAL_TICKS as u8;
-        self.p1_state.resp  = (self.p1_state.resp.wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.1, clock_ticks_from_scan) as u8)) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile0.resm  = self.missile0.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
-        self.missile1.resm  = self.missile1.resm.wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
-        self.ball.resbl     = self.ball.resbl.wrapping_sub(Stella::hmove_clocks(self.next_line.hmbl, clock_ticks_from_scan) as u8) % Stella::HORIZONTAL_TICKS as u8;
+        let clock_ticks_from_scan =
+            ((clock.ticks - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
+        self.p0_state.resp = (self
+            .p0_state
+            .resp
+            .wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.0, clock_ticks_from_scan) as u8))
+            % Stella::HORIZONTAL_TICKS as u8;
+        self.p1_state.resp = (self
+            .p1_state
+            .resp
+            .wrapping_sub(Stella::hmove_clocks(self.next_line.hmp.1, clock_ticks_from_scan) as u8))
+            % Stella::HORIZONTAL_TICKS as u8;
+        self.missile0.resm = self
+            .missile0
+            .resm
+            .wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.0, clock_ticks_from_scan) as u8)
+            % Stella::HORIZONTAL_TICKS as u8;
+        self.missile1.resm = self
+            .missile1
+            .resm
+            .wrapping_sub(Stella::hmove_clocks(self.next_line.hmm.1, clock_ticks_from_scan) as u8)
+            % Stella::HORIZONTAL_TICKS as u8;
+        self.ball.resbl = self
+            .ball
+            .resbl
+            .wrapping_sub(Stella::hmove_clocks(self.next_line.hmbl, clock_ticks_from_scan) as u8)
+            % Stella::HORIZONTAL_TICKS as u8;
 
         self.p0_state.update();
         self.p1_state.update();
@@ -1207,40 +1444,41 @@ impl Stella {
         self.ball.update();
     }
 
-    fn hmove_clocks(hm:u8, ticks_since_scan_start: u8) -> i8 {
+    fn hmove_clocks(hm: u8, ticks_since_scan_start: u8) -> i8 {
         // hm - int8
         // Need to ensure 'hm' maintains negative when shifted.
         // 'hm >= 0x80' is negative move.
         let clock_shift = (hm as i8) >> 4;
 
         // TODO: Fix 73/74 clock approximation of 'hmove'
-        let horizontal_scan_count = ticks_since_scan_start/pc_state::PcState::CYCLES_TO_CLOCK as u8;
+        let horizontal_scan_count =
+            ticks_since_scan_start / pc_state::PcState::CYCLES_TO_CLOCK as u8;
         match horizontal_scan_count as u8 {
-            0..=4 => {clock_shift }
-            73 => { clock_shift + 8 },
-            74 => { clock_shift + 8 },
-            75 => {clock_shift } // Treat as 'zero'
-            _ => { 0 } // TODO: Actually emulate the counters, rather than a crude lookup.
+            0..=4 => clock_shift,
+            73 => clock_shift + 8,
+            74 => clock_shift + 8,
+            75 => clock_shift, // Treat as 'zero'
+            _ => 0,            // TODO: Actually emulate the counters, rather than a crude lookup.
         }
     }
 }
 
-impl io::ReadWriteMemory for Stella{
+impl io::ReadWriteMemory for Stella {
     fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         self.write(clock, address, data);
     }
     fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
         self.read(clock, address)
     }
- }
+}
 
-impl io::DebugClock for Stella{
+impl io::DebugClock for Stella {
     fn debug_clock(&mut self) -> clocks::ClockType {
         self.vsync_debug_output_clock
     }
 }
 
-impl io::StellaIO for Stella{
+impl io::StellaIO for Stella {
     fn set_inputs(&mut self, inputs: inputs::Input) {
         // TODO: Find a better way to separate the paddle input0-3 values
         let input0 = self.input.input0;
@@ -1266,7 +1504,7 @@ impl io::StellaIO for Stella{
         // If it's time to update, then return the current value and clear it.
         let result = self.is_update_time;
         self.is_update_time = false;
-        result 
+        result
     }
 
     fn generate_display(&mut self, buffer: &mut [u8]) {
@@ -1274,7 +1512,9 @@ impl io::StellaIO for Stella{
         for y in 0..Stella::FRAME_HEIGHT {
             let display_line = &self.display_lines[(y + Stella::START_DRAW_Y) as usize];
             for x in display_line {
-                x.convert_rgb888(&mut buffer[index..(index + display::SDLUtility::bytes_per_pixel() as usize)]);
+                x.convert_rgb888(
+                    &mut buffer[index..(index + display::SDLUtility::bytes_per_pixel() as usize)],
+                );
                 index += display::SDLUtility::bytes_per_pixel() as usize;
             }
         }

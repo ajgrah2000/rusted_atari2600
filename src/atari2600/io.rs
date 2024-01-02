@@ -1,10 +1,10 @@
+use super::audio::soundchannel;
 use super::clocks;
 use super::inputs;
-use super::audio::soundchannel;
 
 pub trait ReadWriteMemory {
-    fn read(&mut self, clock: &clocks::Clock, address:u16) -> u8;
-    fn write(&mut self, clock: &mut clocks::Clock, address:u16, data:u8);
+    fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8;
+    fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8);
 }
 
 pub trait DebugClock {
