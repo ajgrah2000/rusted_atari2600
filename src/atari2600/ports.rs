@@ -5,7 +5,6 @@ pub struct Ports {
 }
 
 impl Ports {
-
     pub fn new() -> Self {
         Self {
             joysticks: inputs::Joystick::new(),

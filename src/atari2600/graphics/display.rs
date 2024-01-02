@@ -1,7 +1,7 @@
+use sdl2::event;
 use sdl2::pixels;
 use sdl2::render;
 use sdl2::video;
-use sdl2::event;
 
 use std::fmt;
 
@@ -14,7 +14,13 @@ pub struct WindowSize {
 }
 
 impl WindowSize {
-    pub fn new(frame_width: u16, frame_height: u16, console_width: u16, console_height: u16, fullscreen: bool) -> Self {
+    pub fn new(
+        frame_width: u16,
+        frame_height: u16,
+        console_width: u16,
+        console_height: u16,
+        fullscreen: bool,
+    ) -> Self {
         Self {
             frame_width,
             frame_height,
@@ -59,16 +65,14 @@ impl Colour {
 
 impl fmt::Display for Colour {
     fn fmt(&self, dest: &mut fmt::Formatter) -> fmt::Result {
-        write!( dest, "R:{} G:{} B:{}", self.r, self.g, self.b)
+        write!(dest, "R:{} G:{} B:{}", self.r, self.g, self.b)
     }
 }
-
-
 
 pub struct SDLUtility {}
 
 impl SDLUtility {
-    pub const PIXEL_FORMAT:pixels::PixelFormatEnum = pixels::PixelFormatEnum::RGB888;
+    pub const PIXEL_FORMAT: pixels::PixelFormatEnum = pixels::PixelFormatEnum::RGB888;
 
     pub fn bytes_per_pixel() -> u16 {
         SDLUtility::PIXEL_FORMAT.byte_size_per_pixel() as u16
@@ -82,18 +86,24 @@ impl SDLUtility {
         fullscreen: bool,
     ) -> render::Canvas<video::Window> {
         let video_subsystem = sdl_context.video().unwrap();
-        let mut renderer = video_subsystem
-            .window(name, frame_width as u32, frame_height as u32);
+        let mut renderer = video_subsystem.window(name, frame_width as u32, frame_height as u32);
 
         // Just playing with if statement (to toggle full screen)
-        let window = if fullscreen { renderer.fullscreen()} else { renderer.position_centered().resizable() };
+        let window = if fullscreen {
+            renderer.fullscreen()
+        } else {
+            renderer.position_centered().resizable()
+        };
 
-        window.build()
-              .map_err(|e| e.to_string()).unwrap()
-              .into_canvas().accelerated()
-              .build()
-              .map_err(|e| e.to_string())
-              .unwrap()
+        window
+            .build()
+            .map_err(|e| e.to_string())
+            .unwrap()
+            .into_canvas()
+            .accelerated()
+            .build()
+            .map_err(|e| e.to_string())
+            .unwrap()
     }
 
     pub fn texture_creator(
@@ -114,10 +124,9 @@ impl SDLUtility {
             .unwrap()
     }
 
-    pub fn handle_events(event: &event::Event, window_size:&mut WindowSize) {
+    pub fn handle_events(event: &event::Event, window_size: &mut WindowSize) {
         // Handle window events.
-        if let event::Event::Window {win_event, .. } = event {
-
+        if let event::Event::Window { win_event, .. } = event {
             // Allow resizing (
             if let event::WindowEvent::Resized(w, h) = win_event {
                 window_size.frame_width = *w as u16;
@@ -126,4 +135,3 @@ impl SDLUtility {
         }
     }
 }
-
