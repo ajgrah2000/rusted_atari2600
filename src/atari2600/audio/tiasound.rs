@@ -31,7 +31,7 @@ impl TiaSound {
 
     pub fn new(realtime: bool) -> Self {
         Self {
-            realtime: realtime, // Only enable when running in 'real-time'
+            realtime, // Only enable when running in 'real-time'
             volume: vec![0; TiaSound::CHANNELS as usize],
             freq: vec![0; TiaSound::CHANNELS as usize],
             poly4state: vec![0; TiaSound::CHANNELS as usize],
@@ -82,9 +82,7 @@ impl TiaSound {
             || (((audio_ctrl & 0xC) == 0x4) && (0 == poly4_state & 0x8))
             || (((audio_ctrl & 0xC) == 0x8) && (0 == poly5_state & 0x1));
 
-        let poly4output = (0x7 ^ (poly4_state >> 1)) | (i as u8) << 3;
-
-        poly4output
+        (0x7 ^ (poly4_state >> 1)) | (i as u8) << 3
     }
 
     // Clock poly 5, return new poly5 state
@@ -94,16 +92,12 @@ impl TiaSound {
             || (((0 != audio_ctrl & 0x3) || ((poly4_state & 0xF) == 0xA)) && (0 == poly5_state & 0x1F))
             || !((((0 != audio_ctrl & 0x3) || (0 == poly4_state & 0x1)) && ((0 == poly5_state & 0x8) || (0 == audio_ctrl & 0x3))) ^ (0 != poly5_state & 0x1));
 
-        let poly5output = (poly5_state >> 1) | ((in_5 as u8) << 4);
-
-        poly5output
+        (poly5_state >> 1) | ((in_5 as u8) << 4)
     }
 
     // @staticmethod
     pub fn poly5clk(audio_ctrl: u8, poly5_state: u8) -> bool {
-        let clockoutput = (((audio_ctrl & 0x3) != 0x2) || (0x2 == (poly5_state & 0x1E))) && (((audio_ctrl & 0x3) != 0x3) || (0 != poly5_state & 0x1));
-
-        clockoutput
+        (((audio_ctrl & 0x3) != 0x2) || (0x2 == (poly5_state & 0x1E))) && (((audio_ctrl & 0x3) != 0x3) || (0 != poly5_state & 0x1))
     }
 
     pub fn get_channel_data(&mut self, channel: u8, length: u16) -> Vec<u8> {
@@ -122,7 +116,7 @@ impl TiaSound {
             }
 
             if 0 != self.poly4state[channel as usize] & 1 {
-                stream[i as usize] = (self.volume[channel as usize] & 0xF) * 0x7 & 0xFF;
+                stream[i as usize] = (self.volume[channel as usize] & 0xF) * 0x7;
             }
 
             self.freq_pos[channel as usize] += 1;
@@ -137,12 +131,12 @@ impl TiaSound {
 
     pub fn write_audio_ctrl_0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         self.pre_write_generate_sound(clock);
-        self.wave_form[0] = data & 0xFF;
+        self.wave_form[0] = data;
     }
 
     pub fn write_audio_ctrl_1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
         self.pre_write_generate_sound(clock);
-        self.wave_form[1] = data & 0xFF;
+        self.wave_form[1] = data;
     }
 
     pub fn write_audio_freq_0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -183,7 +177,7 @@ impl TiaSound {
             raw_audio.1.append(&mut self.get_channel_data(1, num_samples));
 
             // Update the time based on the number of samples.
-            self.last_update_time = self.last_update_time + ((num_samples as u64 * TiaSound::CPU_CLOCK_RATE as u64) / TiaSound::SAMPLERATE as u64) as clocks::ClockType;
+            self.last_update_time += ((num_samples as u64 * TiaSound::CPU_CLOCK_RATE as u64) / TiaSound::SAMPLERATE as u64) as clocks::ClockType;
 
             while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
                 if 2 == sound::SDLUtility::MONO_STERO_FLAG {

@@ -57,9 +57,9 @@ impl Instruction {
         ports: &mut ports::Ports) {
 
         // Op code, 0xFF -> 0bAAABBBCC
-        let get_a = |op:u8| op >> 5 & 0x7 as u8;
-        let get_b = |op:u8| op >> 2 & 0x7 as u8;
-        let get_c = |op:u8| op & 0x3 as u8;
+        let get_a = |op:u8| op >> 5 & 0x7;
+        let get_b = |op:u8| op >> 2 & 0x7;
+        let get_c = |op:u8| op & 0x3;
 
         let op_instruction = |op: u8| 
             match op {
@@ -77,7 +77,7 @@ impl Instruction {
                         _ => {panic!("Not possible");},
                     }
                 },
-                n if (get_c(n) == 0x2) && ((get_b(n) & 0x1 == 0x1)) => {
+                n if (get_c(n) == 0x2) && (get_b(n) & 0x1 == 0x1) => {
                     match n >> 5 & 7 {
                         0 => {instruction_set::asl},
                         1 => {instruction_set::rol},
@@ -101,7 +101,7 @@ impl Instruction {
                         _ => {panic!("Opcode not implemented: 0x{:x}", op);}
                     }
                 }
-                n if (get_c(n) == 0x2) && ((get_b(n) == 0x0)) => {
+                n if (get_c(n) == 0x2) && (get_b(n) == 0x0) => {
                     match n >> 5 & 7 {
                         5 => {instruction_set::ldx},
                         _ => {panic!("Opcode not implemented: 0x{:x}", op);},

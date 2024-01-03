@@ -51,7 +51,7 @@ struct RustAtari2600Args {
 }
 
 fn cartridge_type_help_fn() -> String {
-    atari2600::memory::cartridge::CartridgeType::iter().into_iter().fold("cartridge type: ".to_owned(), |all, value| format!("{} {:?}", all, value))
+    atari2600::memory::cartridge::CartridgeType::iter().fold("cartridge type: ".to_owned(), |all, value| format!("{} {:?}", all, value))
 }
 fn parse_cartridge(value: &str) -> Result<atari2600::memory::cartridge::CartridgeType, String> {
     match atari2600::memory::cartridge::CartridgeType::from_str(value) {

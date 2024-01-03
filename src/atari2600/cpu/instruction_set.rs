@@ -212,7 +212,7 @@ pub fn branch_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::Pc
 
 pub fn asl(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
     pc_state.set_flag_c(0 != (data >> 7) & 0x1);
-    let left_shift = (data << 1) as u8;
+    let left_shift = data << 1;
     pc_state::set_status_nz(pc_state, left_shift);
     left_shift
 }
@@ -232,7 +232,7 @@ pub fn rol(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
 }
 
 pub fn ror(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
-    let t8 = ((data >> 1) | ((pc_state.get_flag_c() as u8) << 7)) & 0xFF;
+    let t8 = (data >> 1) | ((pc_state.get_flag_c() as u8) << 7);
     pc_state.set_flag_c(1 == data & 1);
     pc_state::set_status_nz(pc_state, t8);
     t8
@@ -275,17 +275,15 @@ pub fn or(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &
 }
 
 pub fn add_carry(pc_state: &mut pc_state::PcState, a: u8, b: u8, c: u8) -> u8 {
-    let result;
-
-    if false == pc_state.get_flag_d() {
-        let r = ((a as u16).wrapping_add(b as u16) + c as u16) as u16;
+    if !pc_state.get_flag_d() {
+        let r = (a as u16).wrapping_add(b as u16) + c as u16;
         let rc = a.wrapping_add(b).wrapping_add(c);
         pc_state.set_flag_n(0 != rc & 0x80);
         pc_state.set_flag_z(rc == 0x0);
         pc_state.set_flag_v(rc as i8 as u16 != r); // Overflow
         pc_state.set_flag_c(0x100 == (r & 0x100));
 
-        result = a.wrapping_add(b).wrapping_add(c);
+        a.wrapping_add(b).wrapping_add(c)
     } else {
         // Decimal Addition
         // FIXME need to fix flags
@@ -295,10 +293,8 @@ pub fn add_carry(pc_state: &mut pc_state::PcState, a: u8, b: u8, c: u8) -> u8 {
         pc_state.set_flag_z(rc == 0x0);
         // TODO: Check not needed        pc_state.set_flag_v(rc != r); // Overflow
         pc_state.set_flag_c(r > 99);
-        result = ((((r / 10 % 10) << 4) & 0xf0) + (r % 10)) as u8;
+        ((((r / 10 % 10) << 4) & 0xf0) + (r % 10)) as u8
     }
-
-    result
 }
 
 pub fn adc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
@@ -314,17 +310,16 @@ pub fn sbc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
 }
 
 pub fn sub_carry(pc_state: &mut pc_state::PcState, a: u8, b: u8, c: u8) -> u8 {
-    let result;
-    if false == pc_state.get_flag_d() {
+    if !pc_state.get_flag_d() {
         let mut r = (a as i8 as i16) - (b as i8 as i16) - (c as i8 as i16);
-        let rs = a.wrapping_sub(b).wrapping_sub(c as u8) as i8;
+        let rs = a.wrapping_sub(b).wrapping_sub(c) as i8;
         pc_state.set_flag_n(rs < 0); // Negative
         pc_state.set_flag_z(rs == 0); // Zero
         pc_state.set_flag_v(r != rs as i16); // Overflow
 
         r = (a as i16) - (b as i16) - (c as i16);
         pc_state.set_flag_c(0x100 != (r as u16 & 0x100)); // Carry (not borrow
-        result = a.wrapping_sub(b).wrapping_sub(c);
+        a.wrapping_sub(b).wrapping_sub(c)
     } else {
         // Decimal subtraction
         // FIXME need to fix flags
@@ -338,11 +333,9 @@ pub fn sub_carry(pc_state: &mut pc_state::PcState, a: u8, b: u8, c: u8) -> u8 {
         // self.pc_state.P.V = (rc != r) ? 1:0;   # Overflow
         pc_state.set_flag_v(true); // Overflow
 
-        pc_state.set_flag_c((r >= 0) && (r <= 99));
-        result = (((((r / 10) % 10) << 4) & 0xf0) + (r % 10)) as u8;
+        pc_state.set_flag_c((0..=99).contains(&r));
+        (((((r / 10) % 10) << 4) & 0xf0) + (r % 10)) as u8
     }
-
-    result
 }
 
 pub fn compare(pc_state: &mut pc_state::PcState, a: u8, b: u8) {

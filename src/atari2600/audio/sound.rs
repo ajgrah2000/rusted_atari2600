@@ -3,13 +3,13 @@ use super::soundchannel;
 use sdl2::audio;
 
 pub trait SoundQueue {
-    fn add_audio(&mut self, new_audio_data: &Vec<soundchannel::PlaybackType>);
+    fn add_audio(&mut self, new_audio_data: &[soundchannel::PlaybackType]);
     fn size(&self) -> usize;
 }
 
 impl SoundQueue for audio::AudioQueue<soundchannel::PlaybackType> {
-    fn add_audio(&mut self, new_audio_data: &Vec<soundchannel::PlaybackType>) {
-        self.queue_audio(&new_audio_data).unwrap();
+    fn add_audio(&mut self, new_audio_data: &[soundchannel::PlaybackType]) {
+        self.queue_audio(new_audio_data).unwrap();
     }
 
     fn size(&self) -> usize {
@@ -38,7 +38,7 @@ impl HoundOutput {
         }
     }
 
-    pub fn write(&mut self, data: &Vec<soundchannel::PlaybackType>) {
+    pub fn write(&mut self, data: &[soundchannel::PlaybackType]) {
         for d in data {
             self.out_file.write_sample(*d as i8).unwrap();
         }
@@ -46,7 +46,7 @@ impl HoundOutput {
 }
 
 impl SoundQueue for HoundOutput {
-    fn add_audio(&mut self, new_audio_data: &Vec<soundchannel::PlaybackType>) {
+    fn add_audio(&mut self, new_audio_data: &[soundchannel::PlaybackType]) {
         self.write(new_audio_data);
     }
 

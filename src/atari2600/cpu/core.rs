@@ -44,8 +44,8 @@ impl Core {
     pub fn step(&mut self, debug: bool, realtime: bool) {
         if realtime {
             let in_ms: u64 = self.start_time.elapsed().expect("Error getting eplapsed").as_millis() as u64;
-            if 1000 * self.clock.ticks as u64 / Constants::CLOCK_HZ as u64 > in_ms as u64 {
-                let required_sleep = (1000 * self.clock.ticks as u64 / Constants::CLOCK_HZ as u64) - in_ms;
+            if 1000 * self.clock.ticks / Constants::CLOCK_HZ as u64 > in_ms {
+                let required_sleep = (1000 * self.clock.ticks / Constants::CLOCK_HZ as u64) - in_ms;
                 thread::sleep(time::Duration::from_millis(required_sleep));
             }
         }

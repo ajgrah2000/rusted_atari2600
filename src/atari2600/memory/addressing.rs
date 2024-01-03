@@ -19,7 +19,7 @@ pub struct Addressing {
 
 impl Addressing {
     pub const fn new(size: u8, cycles: u8) -> Self {
-        Self { size: size, cycles: cycles }
+        Self { size, cycles }
     }
 }
 
@@ -60,7 +60,7 @@ impl AddressingIZY {
     pub const fn new(check_page_delay: bool) -> Self {
         Self {
             addressing: Addressing::new(1, 3),
-            check_page_delay: check_page_delay,
+            check_page_delay,
         }
     }
 
@@ -145,7 +145,7 @@ impl AllAddressingModes {
             clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
         }
 
-        return tmp16;
+        tmp16
     }
 
     pub fn address_abx(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
@@ -156,7 +156,7 @@ impl AllAddressingModes {
             clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
         }
 
-        return tmp16;
+        tmp16
     }
 
     pub fn address_accumulator(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {

@@ -194,7 +194,7 @@ impl PcState {
     }
 
     pub fn increment_reg8(register: &mut Reg8, increment: i8) {
-        *register = (*register as i8).wrapping_add(increment as i8) as u8;
+        *register = (*register as i8).wrapping_add(increment) as u8;
     }
 
     pub fn increment_reg(register: &mut Reg16, increment: i16) {
@@ -212,7 +212,7 @@ impl PcState {
 
 pub fn set_status_nz(pc_state: &mut PcState, value: u8) {
     pc_state.set_flag_n(0x80 == 0x80 & value);
-    pc_state.set_flag_z(0x00 == 0xFF & value);
+    pc_state.set_flag_z(0x00 == value);
 }
 
 // Register read/write trait functions.
@@ -300,7 +300,7 @@ mod tests {
         let mut pc_state = PcState::new();
         assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:0 V:0 N:0)");
 
-        pc_state.set_x1(true);
+        pc_state.set_flag_x1(true);
 
         // Use the formatted state to check the output.
         assert_eq!(format!("{}", pc_state), "PC:0 X:0 Y:0 A:0 (C:0 Z:0 I:0 D:0 B:0 X1:1 V:0 N:0)");

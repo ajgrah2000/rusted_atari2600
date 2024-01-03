@@ -66,31 +66,31 @@ pub struct GenericCartridge {
 
 impl GenericCartridge {
     pub fn new(filename: &str, max_banks: u8, bank_size: u16, hot_swap: u16, ram_size: u16) -> Self {
-        let instance = Self {
+        Self {
             filename: filename.to_string(),
             cartridge_banks: Vec::new(),
             ram: vec![0; ram_size as usize],
-            bank_size: bank_size,
-            max_banks: max_banks,
-            hot_swap: hot_swap,
-            ram_size: ram_size,
-            ram_addr_mask: 0xFFFF & ram_size.wrapping_sub(1),
+            bank_size,
+            max_banks,
+            hot_swap,
+            ram_size,
+            ram_addr_mask: ram_size.wrapping_sub(1),
             num_banks: 0,
             current_bank: 0,
             bank_select: 0,
-        };
-
-        instance
+        }
     }
 
     pub fn load(&mut self) -> std::io::Result<()> {
-        let mut file = File::open(&self.filename)?;
-
-        self.load_banks(&mut file);
-
-        self.summary();
-
-        Ok(())
+        let f = File::open(&self.filename);
+        match f {
+            Ok(mut file) => {
+                self.load_banks(&mut file);
+                self.summary();
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
     }
 
     fn load_banks(&mut self, source: &mut dyn Read) {
@@ -141,10 +141,8 @@ impl GenericCartridge {
             // 0xFF8 == address: Last bank - 2
             // 0xFF9 == address: Last bank - 1
             // 0xFFA == address: Last bank
-            if self.num_banks > 1 {
-                if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
-                    self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
-                }
+            if self.num_banks > 1 && (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
+                self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
             }
 
             self.cartridge_banks[self.current_bank as usize].data[address as usize]
@@ -157,10 +155,8 @@ impl GenericCartridge {
             self.ram[(address & self.ram_addr_mask) as usize] = data;
         }
 
-        if self.num_banks > 1 {
-            if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
-                self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
-            }
+        if self.num_banks > 1 && (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
+            self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
         }
     }
 }

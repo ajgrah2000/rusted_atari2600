@@ -27,13 +27,13 @@ impl Atari2600 {
         let clock = clocks::Clock::new();
         let pc_state = cpu::pc_state::PcState::new();
         // Default Cartridge.
-        let mut cartridge = memory::cartridge::get_new_carterage(cartridge_name, cartridge_type);
+        let mut cartridge = memory::cartridge::get_new_carterage(cartridge_name.clone(), cartridge_type);
         match cartridge.load() {
             Ok(()) => {
                 println!("Ok");
             }
-            _ => {
-                println!("Error loading cartridge.");
+            Err(e) => {
+                panic!("Error loading cartridge \"{}\".\n {}", cartridge_name, e);
             }
         }
 
@@ -64,7 +64,7 @@ impl Atari2600 {
 
         println!("powering on Atari 2600 Emulator.");
 
-        let window_size = graphics::display::WindowSize::new(frame_width, frame_height, graphics::stella::Constants::ATARI2600_WIDTH as u16, graphics::stella::Constants::ATARI2600_HEIGHT as u16, self.fullscreen);
+        let window_size = graphics::display::WindowSize::new(frame_width, frame_height, graphics::stella::Constants::ATARI2600_WIDTH, graphics::stella::Constants::ATARI2600_HEIGHT, self.fullscreen);
 
         self.main_loop(window_size, graphics::display::SDLUtility::PIXEL_FORMAT);
     }

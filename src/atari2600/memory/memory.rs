@@ -19,11 +19,7 @@ impl Memory {
     const ROM_ADDRLINE: u16 = 0x1000;
 
     pub fn new(cartridge: Box<dyn cartridge::Cartridge>, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::RiotIO>) -> Self {
-        Self {
-            cartridge: cartridge,
-            stella: stella,
-            riot: riot,
-        }
+        Self { cartridge, stella, riot }
     }
 
     pub fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -31,7 +27,7 @@ impl Memory {
             self.stella.write(clock, address & !Memory::STELLA_MASK, data);
         } else if (address & Memory::RIOT_MASK) == Memory::RIOT_ADDR {
             self.riot.write(clock, address & !Memory::RIOT_MASK, data);
-        } else if (address >= Memory::STACK_OFFSET) && (address < Memory::STACK_OFFSET + Memory::STACK_LENGTH) {
+        } else if (Memory::STACK_OFFSET..Memory::STACK_OFFSET + Memory::STACK_LENGTH).contains(&address) {
             self.riot.write(clock, address, data);
         } else if (address & Memory::ROM_ADDRLINE) == Memory::ROM_ADDRLINE {
             // Only address lines 1-13 are connected, higher bits ignored.
@@ -56,7 +52,7 @@ impl Memory {
             return self.stella.read(clock, address & !Memory::STELLA_MASK);
         }
 
-        if (address >= Memory::STACK_OFFSET) && (address < Memory::STACK_OFFSET + Memory::STACK_LENGTH) {
+        if (Memory::STACK_OFFSET..Memory::STACK_OFFSET + Memory::STACK_LENGTH).contains(&address) {
             return self.riot.read(clock, address);
         }
 
