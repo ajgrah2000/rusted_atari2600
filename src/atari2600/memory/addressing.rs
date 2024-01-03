@@ -2,14 +2,14 @@ use super::super::clocks;
 use super::super::cpu::pc_state;
 use super::memory;
 
-fn did_index_cross_page(base_address: u16, result_address: u16) -> bool {
-    (base_address & 0xFF00) != (result_address & 0xFF00)
-}
-
 pub trait Address16 {
     fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
     fn get_addressing_size(&self) -> u8;
     fn get_addressing_time(&self) -> u8;
+}
+
+fn did_index_cross_page(base_address: u16, result_address: u16) -> bool {
+    (base_address & 0xFF00) != (result_address & 0xFF00)
 }
 
 pub struct Addressing {
@@ -23,103 +23,6 @@ impl Addressing {
     }
 }
 
-pub struct AddressingIMM {
-    addressing: Addressing,
-}
-
-impl AddressingIMM {
-    pub const fn new() -> Self {
-        Self { addressing: Addressing::new(1, 0) }
-    }
-
-    pub fn address(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, _: &memory::Memory) -> u16 {
-        pc_state.get_pc() + 1
-    }
-}
-
-pub struct AddressingZP {
-    addressing: Addressing,
-}
-
-impl AddressingZP {
-    pub const fn new() -> Self {
-        Self { addressing: Addressing::new(1, 1) }
-    }
-
-    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        memory.read(clock, pc_state.get_pc().wrapping_add(1)) as u16
-    }
-}
-
-pub struct AddressingIZY {
-    addressing: Addressing,
-    check_page_delay: bool,
-}
-
-impl AddressingIZY {
-    pub const fn new(check_page_delay: bool) -> Self {
-        Self {
-            addressing: Addressing::new(1, 3),
-            check_page_delay,
-        }
-    }
-
-    pub fn address(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1));
-        let address_tmp = memory.read16(clock, tmp8 as u16);
-        let tmp16 = address_tmp.wrapping_add(pc_state.get_y() as u16);
-
-        if self.check_page_delay && did_index_cross_page(address_tmp, tmp16) {
-            clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
-        }
-
-        tmp16
-    }
-}
-
-pub struct AddressingIZX {
-    addressing: Addressing,
-}
-
-impl AddressingIZX {
-    pub const fn new() -> Self {
-        Self { addressing: Addressing::new(1, 4) }
-    }
-
-    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x());
-        memory.read16(clock, tmp8 as u16)
-    }
-}
-
-pub struct AddressingZPX {
-    addressing: Addressing,
-}
-
-impl AddressingZPX {
-    pub const fn new() -> Self {
-        Self { addressing: Addressing::new(1, 2) }
-    }
-
-    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x())) as u16
-    }
-}
-
-pub struct AddressingZPY {
-    addressing: Addressing,
-}
-
-impl AddressingZPY {
-    pub const fn new() -> Self {
-        Self { addressing: Addressing::new(1, 2) }
-    }
-
-    pub fn address(&self, clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y())) as u16
-    }
-}
-
 pub struct AllAddressingModes {}
 
 impl AllAddressingModes {
@@ -128,6 +31,32 @@ impl AllAddressingModes {
     // If the carry was needed, then a 're-read' of the 'correct' address is needed, adding an extra delay.
     // The 'delay' is only applicable to op-codes that immediately use the 'result address' (ie LDA).  Generally, for functions that use the address to 'write',
     // It appears as though there's generally time to 'fix' the address before it's needed for the 'write' operation (eg STA).
+
+    pub fn address_accumulator(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        // TODO: Check implementation.
+        0
+    }
+    pub fn address_imm(clock: &clocks::Clock, pc_state: &pc_state::PcState, _: &memory::Memory, page_delay: bool) -> u16 {
+        pc_state.get_pc().wrapping_add(1)
+    }
+
+    pub fn address_zp(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        memory.read(clock, pc_state.get_pc().wrapping_add(1)) as u16
+    }
+
+    pub fn address_izx(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x());
+        memory.read16(clock, tmp8 as u16)
+    }
+
+    pub fn address_zpx(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_x())) as u16
+    }
+
+    pub fn address_zpy(clock: &clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        (memory.read(clock, pc_state.get_pc().wrapping_add(1)).wrapping_add(pc_state.get_y())) as u16
+    }
+
     pub fn address_abs(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
         memory.read16(clock, pc_state.get_pc().wrapping_add(1))
     }
@@ -135,6 +64,18 @@ impl AllAddressingModes {
     pub fn address_indirect(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
         let indirect_addr = memory.read16(clock, pc_state.get_pc().wrapping_add(1));
         memory.read16(clock, indirect_addr)
+    }
+
+    pub fn address_izy(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
+        let tmp8 = memory.read(clock, pc_state.get_pc().wrapping_add(1));
+        let address_tmp = memory.read16(clock, tmp8 as u16);
+        let tmp16 = address_tmp.wrapping_add(pc_state.get_y() as u16);
+
+        if page_delay && did_index_cross_page(address_tmp, tmp16) {
+            clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
+        }
+
+        tmp16
     }
 
     pub fn address_aby(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
@@ -158,11 +99,6 @@ impl AllAddressingModes {
 
         tmp16
     }
-
-    pub fn address_accumulator(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, page_delay: bool) -> u16 {
-        // TODO: Check implementation.
-        0
-    }
 }
 
 macro_rules! impl_addressing_struct {
@@ -180,23 +116,7 @@ macro_rules! impl_addressing_struct {
                 AllAddressingModes::$fn_name(clock, pc_state, memory, $page_delay)
             }
         }
-    };
-}
 
-// Create the different structures and map them to their respective adressing functions
-impl_addressing_struct!(AddressingAbs, 2, 2, address_abs, false);
-impl_addressing_struct!(AddressingIndirect, 2, 4, address_indirect, false);
-impl_addressing_struct!(AddressingAby, 2, 2, address_aby, false);
-impl_addressing_struct!(AddressingAbx, 2, 2, address_abx, false);
-impl_addressing_struct!(AddressingAccumulator, 0, 0, address_accumulator, false);
-
-impl_addressing_struct!(AddressingAbyPageDelay, 2, 2, address_aby, true);
-impl_addressing_struct!(AddressingAbxPageDelay, 2, 2, address_abx, true);
-
-// Common functions associated with 'addressing' types.
-// TODO: See if there's a less macro way
-macro_rules! impl_addressing {
-    ($type:ty) => {
         impl Address16 for $type {
             fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
                 self.address(clock, pc_state, memory)
@@ -212,22 +132,24 @@ macro_rules! impl_addressing {
     };
 }
 
-impl_addressing!(AddressingIZY);
-impl_addressing!(AddressingIMM);
-impl_addressing!(AddressingIZX);
+// Create the different structures and map them to their respective adressing functions
+//// TODO: See if there's a less macro way
+impl_addressing_struct!(AddressingIMM, 1, 0, address_imm, false);
+impl_addressing_struct!(AddressingZP, 1, 1, address_zp, false);
+impl_addressing_struct!(AddressingIZY, 1, 3, address_izy, false);
+impl_addressing_struct!(AddressingIZYPageDelay, 1, 3, address_izy, true);
+impl_addressing_struct!(AddressingIZX, 1, 4, address_izx, false);
+impl_addressing_struct!(AddressingZPX, 1, 2, address_zpx, false);
+impl_addressing_struct!(AddressingZPY, 1, 2, address_zpy, false);
 
-impl_addressing!(AddressingZP);
-impl_addressing!(AddressingZPX);
-impl_addressing!(AddressingZPY);
+impl_addressing_struct!(AddressingAbs, 2, 2, address_abs, false);
+impl_addressing_struct!(AddressingIndirect, 2, 4, address_indirect, false);
+impl_addressing_struct!(AddressingAby, 2, 2, address_aby, false);
+impl_addressing_struct!(AddressingAbx, 2, 2, address_abx, false);
+impl_addressing_struct!(AddressingAccumulator, 0, 0, address_accumulator, false);
 
-impl_addressing!(AddressingAbs);
-impl_addressing!(AddressingIndirect);
-impl_addressing!(AddressingAby);
-impl_addressing!(AddressingAbx);
-impl_addressing!(AddressingAccumulator);
-
-impl_addressing!(AddressingAbyPageDelay);
-impl_addressing!(AddressingAbxPageDelay);
+impl_addressing_struct!(AddressingAbyPageDelay, 2, 2, address_aby, true);
+impl_addressing_struct!(AddressingAbxPageDelay, 2, 2, address_abx, true);
 
 pub trait ReadData {
     fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
