@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(sample_cartridge.cartridge_banks.len(), 0);
 
         // A slice implements 'Read'
-        let dummy_file_data = vec![0 as u8; 0x100000];
+        let dummy_file_data = vec![0_u8; 0x100000];
 
         sample_cartridge.load_banks(&mut &dummy_file_data[..]);
 

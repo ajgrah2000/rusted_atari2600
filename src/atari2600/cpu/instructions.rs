@@ -8,23 +8,23 @@ use super::pc_state;
 pub struct Instruction {}
 
 // There's likely a better way to specify the memory types, but this achieves the intent.
-const ADDR_IMM: addressing::AddressingIMM = addressing::AddressingIMM::new();
-const ADDR_ZP: addressing::AddressingZP = addressing::AddressingZP::new();
-const ADDR_ZPX: addressing::AddressingZPX = addressing::AddressingZPX::new();
-const ADDR_ZPY: addressing::AddressingZPY = addressing::AddressingZPY::new();
-const ADDR_IZX: addressing::AddressingIZX = addressing::AddressingIZX::new();
-const ADDR_IZY: addressing::AddressingIZY = addressing::AddressingIZY::new();
+const ADDR_IMM: addressing::AddressingEnum = addressing::AddressingEnum::AddressingImmEnum;
+const ADDR_ZP: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpEnum;
+const ADDR_ZPX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpxEnum;
+const ADDR_ZPY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpyEnum;
+const ADDR_IZX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIzxEnum;
+const ADDR_IZY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIzyEnum;
 
-const ADDR_ABS: addressing::AddressingAbs = addressing::AddressingAbs::new();
-const ADDR_INDIRECT: addressing::AddressingIndirect = addressing::AddressingIndirect::new();
-const ADDR_ABY: addressing::AddressingAby = addressing::AddressingAby::new();
-const ADDR_ABX: addressing::AddressingAbx = addressing::AddressingAbx::new();
-const ADDR_ACCUMULATOR: addressing::AddressingAccumulator = addressing::AddressingAccumulator::new();
+const ADDR_ABS: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbsEnum;
+const ADDR_INDIRECT: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIndirectEnum;
+const ADDR_ABY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbyEnum;
+const ADDR_ABX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbxEnum;
+const ADDR_ACCUMULATOR: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAccumulatorEnum;
 
 // Page Delay version of addressing modes (only applicable to some indexed modes, that can carry).)
-const ADDR_IZY_PAGE_DELAY: addressing::AddressingIZYPageDelay = addressing::AddressingIZYPageDelay::new();
-const ADDR_ABY_PAGE_DELAY: addressing::AddressingAbyPageDelay = addressing::AddressingAbyPageDelay::new();
-const ADDR_ABX_PAGE_DELAY: addressing::AddressingAbxPageDelay = addressing::AddressingAbxPageDelay::new();
+const ADDR_IZY_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIZYPageDelayEnum;
+const ADDR_ABY_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbyPageDelayEnum;
+const ADDR_ABX_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbxPageDelayEnum;
 
 const NULL_READ: addressing::NullRead = addressing::NullRead::new();
 const MEMORY_READ: addressing::MemoryRead = addressing::MemoryRead::new();
@@ -109,6 +109,8 @@ impl Instruction {
                 }
                 _ => {panic!("Opcode not implemented: 0x{:x}", op);}
             };
+
+        let mut read_write_memory_read_partial = |addressing, op_code| {instruction_set::read_write_instruction(clock, pc_state, memory, &addressing, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); };
                                
         match op_code {
 
@@ -144,14 +146,16 @@ impl Instruction {
             n if n & 0x3 == 0x1 => {
                 match op_code {
                     // EOR
-                    0x41 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x49 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x45 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x55 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x51 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x4D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x5D => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    0x59 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
+                    
+//                    0x41 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
+                    0x41 => { read_write_memory_read_partial(ADDR_IZX, op_code); }
+                    0x49 => { read_write_memory_read_partial(ADDR_IMM, op_code); }
+                    0x45 => { read_write_memory_read_partial(ADDR_ZP,  op_code); }
+                    0x55 => { read_write_memory_read_partial(ADDR_ZPX, op_code); }
+                    0x51 => { read_write_memory_read_partial(ADDR_IZY, op_code); }
+                    0x4D => { read_write_memory_read_partial(ADDR_ABS, op_code); }
+                    0x5D => { read_write_memory_read_partial(ADDR_ABX, op_code); }
+                    0x59 => { read_write_memory_read_partial(ADDR_ABY, op_code); }
 
                     // STA
                     0x81 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, NULL_READ, REG_WRITE, op_instruction(op_code)); }
@@ -163,14 +167,14 @@ impl Instruction {
                     0x99 => { instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &ADDR_ABY, NULL_READ, REG_WRITE, op_instruction(op_code), pc_state::PcState::CYCLES_TO_CLOCK); }
 
                     // OR, AND, ADC, LDA, CMP, SBC
-                    n if 0x0 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x1 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x2 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x3 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x4 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x5 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x6 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-                    n if 0x7 == get_b(n) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
+                    n if 0x0 == get_b(n) => { read_write_memory_read_partial(ADDR_IZX, op_code); }
+                    n if 0x1 == get_b(n) => { read_write_memory_read_partial(ADDR_ZP, op_code); }
+                    n if 0x2 == get_b(n) => { read_write_memory_read_partial(ADDR_IMM, op_code); }
+                    n if 0x3 == get_b(n) => { read_write_memory_read_partial(ADDR_ABS, op_code); }
+                    n if 0x4 == get_b(n) => { read_write_memory_read_partial(ADDR_IZY_PAGE_DELAY, op_code); }
+                    n if 0x5 == get_b(n) => { read_write_memory_read_partial(ADDR_ZPX, op_code); }
+                    n if 0x6 == get_b(n) => { read_write_memory_read_partial(ADDR_ABY_PAGE_DELAY, op_code); }
+                    n if 0x7 == get_b(n) => { read_write_memory_read_partial(ADDR_ABX_PAGE_DELAY, op_code); }
 
                     _ => { panic!("Unmatched (0xXXXXXX01) opcode 0x{:x}", op_code); }
                 }
@@ -209,11 +213,11 @@ impl Instruction {
             0xFE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, op_instruction(op_code)); }
 
             // LDX
-            0xA2 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-            0xA6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,             MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-            0xB6 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPY,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-            0xAE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS,            MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
-            0xBE => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_instruction(op_code)); }
+            0xA2 => { read_write_memory_read_partial(ADDR_IMM, op_code); }
+            0xA6 => { read_write_memory_read_partial(ADDR_ZP, op_code); }
+            0xB6 => { read_write_memory_read_partial(ADDR_ZPY, op_code); }
+            0xAE => { read_write_memory_read_partial(ADDR_ABS, op_code); }
+            0xBE => { read_write_memory_read_partial(ADDR_ABY_PAGE_DELAY, op_code); }
 
             // LDY
             0xA0 => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM,            MEMORY_READ, MEMORY_NULL, instruction_set::ldy); }
@@ -296,7 +300,7 @@ impl Instruction {
 
             // JMP, absolute (effectively immediate)
             0x4C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_ABS); }
-            // JMP, absolute (effectively absolute)
+            // JMP
             0x6C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_INDIRECT); }
 
             // PHP

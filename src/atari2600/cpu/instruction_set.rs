@@ -23,33 +23,31 @@ where
     pc_state.increment_pc(1);
 }
 
-pub fn read_write_instruction<A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(
+pub fn read_write_instruction<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(
     clock: &mut clocks::Clock,
     pc_state: &mut pc_state::PcState,
     memory: &mut memory::Memory,
-    address: &A,
+    address: &addressing::AddressingEnum,
     read: R,
     write: W,
     instruction: I,
 ) where
-    A: addressing::Address16,
     R: addressing::ReadData,
     W: addressing::WriteData,
 {
     read_write_instruction_additional_delay(clock, pc_state, memory, address, read, write, instruction, 0);
 }
 
-pub fn read_write_instruction_additional_delay<A, R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(
+pub fn read_write_instruction_additional_delay<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(
     clock: &mut clocks::Clock,
     pc_state: &mut pc_state::PcState,
     memory: &mut memory::Memory,
-    address: &A,
+    address: &addressing::AddressingEnum,
     read: R,
     write: W,
     instruction: I,
     additional_delay: u8,
 ) where
-    A: addressing::Address16,
     R: addressing::ReadData,
     W: addressing::WriteData,
 {
@@ -170,9 +168,7 @@ pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: 
     pc_state.increment_pc(1);
 }
 
-pub fn jump_instruction<A>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &A)
-where
-    A: addressing::Address16,
+pub fn jump_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &addressing::AddressingEnum)
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     let addr = address.address16(clock, pc_state, memory);

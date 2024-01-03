@@ -3,24 +3,13 @@ use super::super::cpu::pc_state;
 use super::memory;
 
 pub trait Address16 {
-    fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
-    fn get_addressing_size(&self) -> u8;
-    fn get_addressing_time(&self) -> u8;
+    fn address16(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
+    fn get_addressing_size() -> u8;
+    fn get_addressing_time() -> u8;
 }
 
 fn did_index_cross_page(base_address: u16, result_address: u16) -> bool {
     (base_address & 0xFF00) != (result_address & 0xFF00)
-}
-
-pub struct Addressing {
-    size: u8,
-    cycles: u8,
-}
-
-impl Addressing {
-    pub const fn new(size: u8, cycles: u8) -> Self {
-        Self { size, cycles }
-    }
 }
 
 pub struct AllAddressingModes {}
@@ -101,55 +90,91 @@ impl AllAddressingModes {
     }
 }
 
-macro_rules! impl_addressing_struct {
-    ($type:ident, $size:expr, $cycles:expr, $fn_name:tt, $page_delay:expr) => {
-        pub struct $type {
-            addressing: Addressing,
-        }
-
-        impl $type {
-            pub const fn new() -> Self {
-                Self { addressing: Addressing::new($size, $cycles) }
-            }
-
-            pub fn address(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-                AllAddressingModes::$fn_name(clock, pc_state, memory, $page_delay)
-            }
-        }
-
-        impl Address16 for $type {
-            fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-                self.address(clock, pc_state, memory)
-            }
-
-            fn get_addressing_size(&self) -> u8 {
-                self.addressing.size
-            }
-            fn get_addressing_time(&self) -> u8 {
-                self.addressing.cycles * pc_state::PcState::CYCLES_TO_CLOCK
-            }
-        }
-    };
+pub enum AddressingEnum {
+    AddressingImmEnum,
+    AddressingZpEnum,
+    AddressingIzyEnum,
+    AddressingIZYPageDelayEnum,
+    AddressingIzxEnum,
+    AddressingZpxEnum,
+    AddressingZpyEnum,
+    
+    AddressingAbsEnum,
+    AddressingIndirectEnum,
+    AddressingAbyEnum,
+    AddressingAbxEnum,
+    AddressingAccumulatorEnum,
+    
+    AddressingAbyPageDelayEnum,
+    AddressingAbxPageDelayEnum,
 }
 
-// Create the different structures and map them to their respective adressing functions
-//// TODO: See if there's a less macro way
-impl_addressing_struct!(AddressingIMM, 1, 0, address_imm, false);
-impl_addressing_struct!(AddressingZP, 1, 1, address_zp, false);
-impl_addressing_struct!(AddressingIZY, 1, 3, address_izy, false);
-impl_addressing_struct!(AddressingIZYPageDelay, 1, 3, address_izy, true);
-impl_addressing_struct!(AddressingIZX, 1, 4, address_izx, false);
-impl_addressing_struct!(AddressingZPX, 1, 2, address_zpx, false);
-impl_addressing_struct!(AddressingZPY, 1, 2, address_zpy, false);
+impl AddressingEnum {
+    pub fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+    
+        match self {
+            AddressingEnum::AddressingImmEnum => AllAddressingModes::address_imm(clock, pc_state, memory, false),
+            AddressingEnum::AddressingZpEnum => AllAddressingModes::address_zp(clock, pc_state, memory, false),
+            AddressingEnum::AddressingIzyEnum => AllAddressingModes::address_izy(clock, pc_state, memory, false),
+            AddressingEnum::AddressingIZYPageDelayEnum => AllAddressingModes::address_izy(clock, pc_state, memory, true),
+            AddressingEnum::AddressingIzxEnum => AllAddressingModes::address_izx(clock, pc_state, memory, false),
+            AddressingEnum::AddressingZpxEnum => AllAddressingModes::address_zpx(clock, pc_state, memory, false),
+            AddressingEnum::AddressingZpyEnum => AllAddressingModes::address_zpy(clock, pc_state, memory, false),
+            
+            AddressingEnum::AddressingAbsEnum => AllAddressingModes::address_abs(clock, pc_state, memory, false),
+            AddressingEnum::AddressingIndirectEnum => AllAddressingModes::address_indirect(clock, pc_state, memory, false),
+            AddressingEnum::AddressingAbyEnum => AllAddressingModes::address_aby(clock, pc_state, memory, false),
+            AddressingEnum::AddressingAbxEnum => AllAddressingModes::address_abx(clock, pc_state, memory, false),
+            AddressingEnum::AddressingAccumulatorEnum => AllAddressingModes::address_accumulator(clock, pc_state, memory, false),
+            
+            AddressingEnum::AddressingAbyPageDelayEnum => AllAddressingModes::address_aby(clock, pc_state, memory, true),
+            AddressingEnum::AddressingAbxPageDelayEnum => AllAddressingModes::address_abx(clock, pc_state, memory, true),
+        }
+    }
 
-impl_addressing_struct!(AddressingAbs, 2, 2, address_abs, false);
-impl_addressing_struct!(AddressingIndirect, 2, 4, address_indirect, false);
-impl_addressing_struct!(AddressingAby, 2, 2, address_aby, false);
-impl_addressing_struct!(AddressingAbx, 2, 2, address_abx, false);
-impl_addressing_struct!(AddressingAccumulator, 0, 0, address_accumulator, false);
+    pub fn get_addressing_size(&self) -> u8 {
+        match self {
+            AddressingEnum::AddressingImmEnum => 1,
+            AddressingEnum::AddressingZpEnum => 1,
+            AddressingEnum::AddressingIzyEnum => 1,
+            AddressingEnum::AddressingIZYPageDelayEnum => 1,
+            AddressingEnum::AddressingIzxEnum => 1,
+            AddressingEnum::AddressingZpxEnum => 1,
+            AddressingEnum::AddressingZpyEnum => 1,
 
-impl_addressing_struct!(AddressingAbyPageDelay, 2, 2, address_aby, true);
-impl_addressing_struct!(AddressingAbxPageDelay, 2, 2, address_abx, true);
+            AddressingEnum::AddressingAbsEnum => 2,
+            AddressingEnum::AddressingIndirectEnum => 2,
+            AddressingEnum::AddressingAbyEnum => 2,
+            AddressingEnum::AddressingAbxEnum => 2,
+            AddressingEnum::AddressingAccumulatorEnum => 0,
+
+            AddressingEnum::AddressingAbyPageDelayEnum => 2,
+            AddressingEnum::AddressingAbxPageDelayEnum => 2,
+        }
+    }
+
+    pub fn get_addressing_time(&self) -> u8 {
+         pc_state::PcState::CYCLES_TO_CLOCK * match self {
+            AddressingEnum::AddressingImmEnum => 0,
+            AddressingEnum::AddressingZpEnum => 1,
+            AddressingEnum::AddressingIzyEnum => 3,
+            AddressingEnum::AddressingIZYPageDelayEnum => 3,
+            AddressingEnum::AddressingIzxEnum => 4,
+            AddressingEnum::AddressingZpxEnum => 2,
+            AddressingEnum::AddressingZpyEnum => 2,
+            
+            AddressingEnum::AddressingAbsEnum => 2,
+            AddressingEnum::AddressingIndirectEnum => 4,
+            AddressingEnum::AddressingAbyEnum => 2,
+            AddressingEnum::AddressingAbxEnum => 2,
+            AddressingEnum::AddressingAccumulatorEnum => 0,
+            
+            AddressingEnum::AddressingAbyPageDelayEnum => 2,
+            AddressingEnum::AddressingAbxPageDelayEnum => 2,
+        }
+    }
+}
+
 
 pub trait ReadData {
     fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;
