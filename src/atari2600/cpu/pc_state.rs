@@ -1,7 +1,7 @@
 use bitfield::bitfield;
 use std::fmt;
 
-type Reg8  = u8;
+type Reg8 = u8;
 type Reg16 = u16;
 
 bitfield! {
@@ -34,38 +34,34 @@ impl fmt::Display for PcStatusFlagFields {
     }
 }
 
-
 pub struct PcState {
     // Registers
-    pub a_reg:  Reg8,
-    pub x_reg:  Reg8,
-    pub y_reg:  Reg8,
+    pub a_reg: Reg8,
+    pub x_reg: Reg8,
+    pub y_reg: Reg8,
     pub pc_reg: Reg16,
 
-    pub s_reg:  Reg8,
-    pub p_reg:  PcStatusFlagFields,
+    pub s_reg: Reg8,
+    pub p_reg: PcStatusFlagFields,
 }
 
 impl fmt::Display for PcState {
     fn fmt(&self, dest: &mut fmt::Formatter) -> fmt::Result {
-        write!(dest, "PC:{:X} X:{:X} Y:{:X} A:{:X} {}",
-                self.get_pc(), self.get_x(), self.get_y(), 
-                self.get_a(), self.get_flags())
+        write!(dest, "PC:{:X} X:{:X} Y:{:X} A:{:X} {}", self.get_pc(), self.get_x(), self.get_y(), self.get_a(), self.get_flags())
     }
 }
 
-
 impl PcState {
-    pub const CYCLES_TO_CLOCK:u8 = 3;
+    pub const CYCLES_TO_CLOCK: u8 = 3;
 
     pub fn new() -> Self {
         Self {
-            a_reg:  0,
-            x_reg:  0,
-            y_reg:  0,
+            a_reg: 0,
+            x_reg: 0,
+            y_reg: 0,
             pc_reg: 0,
-            s_reg:  0,
-            p_reg:  PcStatusFlagFields(0),
+            s_reg: 0,
+            p_reg: PcStatusFlagFields(0),
         }
     }
 
@@ -135,35 +131,35 @@ impl PcState {
         self.p_reg.get_n() != 0
     }
 
-    pub fn set_flag_c(&mut self, value:bool) {
+    pub fn set_flag_c(&mut self, value: bool) {
         self.p_reg.set_c(value as u8);
     }
 
-    pub fn set_flag_z(&mut self, value:bool) {
+    pub fn set_flag_z(&mut self, value: bool) {
         self.p_reg.set_z(value as u8);
     }
 
-    pub fn set_flag_i(&mut self, value:bool) {
+    pub fn set_flag_i(&mut self, value: bool) {
         self.p_reg.set_i(value as u8);
     }
 
-    pub fn set_flag_d(&mut self, value:bool) {
+    pub fn set_flag_d(&mut self, value: bool) {
         self.p_reg.set_d(value as u8);
     }
 
-    pub fn set_flag_b(&mut self, value:bool) {
+    pub fn set_flag_b(&mut self, value: bool) {
         self.p_reg.set_b(value as u8);
     }
 
-    pub fn set_flag_x1(&mut self, value:bool) {
+    pub fn set_flag_x1(&mut self, value: bool) {
         self.p_reg.set_x1(value as u8);
     }
 
-    pub fn set_flag_v(&mut self, value:bool) {
+    pub fn set_flag_v(&mut self, value: bool) {
         self.p_reg.set_v(value as u8);
     }
 
-    pub fn set_flag_n(&mut self, value:bool) {
+    pub fn set_flag_n(&mut self, value: bool) {
         self.p_reg.set_n(value as u8);
     }
 
@@ -173,23 +169,23 @@ impl PcState {
     pub fn set_x(&mut self, input: u8) {
         self.x_reg = input;
     }
-    pub fn set_y(&mut self, input:u8) {
+    pub fn set_y(&mut self, input: u8) {
         self.y_reg = input;
     }
 
-    pub fn set_pc(&mut self, input:u16) {
+    pub fn set_pc(&mut self, input: u16) {
         self.pc_reg = input;
     }
 
-    pub fn set_pch(&mut self, input:u8) {
+    pub fn set_pch(&mut self, input: u8) {
         self.pc_reg = self.pc_reg & 0xFF | (input as u16) << 8;
     }
 
-    pub fn set_pcl(&mut self, input:u8) {
+    pub fn set_pcl(&mut self, input: u8) {
         self.pc_reg = self.pc_reg & 0xFF00 | input as u16;
     }
 
-    pub fn set_s(&mut self, input:u8) {
+    pub fn set_s(&mut self, input: u8) {
         self.s_reg = input;
     }
 
@@ -214,11 +210,10 @@ impl PcState {
     }
 }
 
-pub fn set_status_nz(pc_state: &mut PcState, value:u8) {
+pub fn set_status_nz(pc_state: &mut PcState, value: u8) {
     pc_state.set_flag_n(0x80 == 0x80 & value);
     pc_state.set_flag_z(0x00 == 0xFF & value);
 }
-
 
 // Register read/write trait functions.
 pub trait ReadReg8 {
@@ -226,10 +221,10 @@ pub trait ReadReg8 {
 }
 
 pub trait WriteReg8 {
-    fn set(&self, pc_state: &mut PcState, data:u8);
+    fn set(&self, pc_state: &mut PcState, data: u8);
 }
 
-pub struct ReadNull { }
+pub struct ReadNull {}
 impl ReadNull {
     pub const fn new() -> Self {
         Self {}
@@ -242,21 +237,21 @@ impl ReadReg8 for ReadNull {
     }
 }
 
-macro_rules! impl_read_register{
-     ($new_struct:ident, $func_name:tt)  => {
-        pub struct $new_struct { }
+macro_rules! impl_read_register {
+    ($new_struct:ident, $func_name:tt) => {
+        pub struct $new_struct {}
         impl $new_struct {
             pub const fn new() -> Self {
                 Self {}
             }
         }
-        
+
         impl ReadReg8 for $new_struct {
             fn get(&self, pc_state: &PcState) -> u8 {
                 pc_state.$func_name()
             }
         }
-     };
+    };
 }
 
 impl_read_register!(ReadX, get_x);
@@ -264,7 +259,7 @@ impl_read_register!(ReadY, get_y);
 impl_read_register!(ReadA, get_a);
 impl_read_register!(ReadS, get_s);
 
-pub struct WriteNull { }
+pub struct WriteNull {}
 impl WriteNull {
     pub const fn new() -> Self {
         Self {}
@@ -272,20 +267,18 @@ impl WriteNull {
 }
 
 impl WriteReg8 for WriteNull {
-    fn set(&self, pc_state: &mut PcState, data: u8) {
-    }
+    fn set(&self, pc_state: &mut PcState, data: u8) {}
 }
 
-
-macro_rules! impl_read_register{
-    ($new_struct:ident, $func_name:tt)  => {
-        pub struct $new_struct { }
+macro_rules! impl_read_register {
+    ($new_struct:ident, $func_name:tt) => {
+        pub struct $new_struct {}
         impl $new_struct {
             pub const fn new() -> Self {
                 Self {}
             }
         }
-        
+
         impl WriteReg8 for $new_struct {
             fn set(&self, pc_state: &mut PcState, data: u8) {
                 pc_state.$func_name(data);

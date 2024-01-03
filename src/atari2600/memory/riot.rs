@@ -1,8 +1,8 @@
 use super::super::clocks;
-use super::super::io;
 use super::super::inputs;
+use super::super::io;
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 enum Interval {
     Tim1 = 1,
     Tim8 = 8,
@@ -11,9 +11,9 @@ enum Interval {
 }
 
 pub struct Riot {
-//inputs:
-    input:inputs::Input,
-    interval:Interval,   // Interval holds the values
+    //inputs:
+    input: inputs::Input,
+    interval: Interval, // Interval holds the values
     expiration_time: clocks::ClockType,
     ram: Vec<u8>,
 }
@@ -21,33 +21,33 @@ pub struct Riot {
 type AddressType = u16;
 
 impl Riot {
-    const CYCLES_TO_CLOCK:clocks::ClockType = 3;
-    const RAMSIZE:u8         = 128;
-    const NOT_RAMSELECT:AddressType  = 0x200;
-    const RIOT_ADDRMASK:u8   = 0x7F;
-    const RIOT_SWCHA:u8      = 0x00;
-    const RIOT_SWCHB:u8      = 0x02;
-    const TIMERADDR:u8       = 0x04;
-    const RIOT_INTERRUPT:u8  = 0x05;
+    const CYCLES_TO_CLOCK: clocks::ClockType = 3;
+    const RAMSIZE: u8 = 128;
+    const NOT_RAMSELECT: AddressType = 0x200;
+    const RIOT_ADDRMASK: u8 = 0x7F;
+    const RIOT_SWCHA: u8 = 0x00;
+    const RIOT_SWCHB: u8 = 0x02;
+    const TIMERADDR: u8 = 0x04;
+    const RIOT_INTERRUPT: u8 = 0x05;
 
-    const INT_ENABLE_MASK:u8 = 0x8;
+    const INT_ENABLE_MASK: u8 = 0x8;
 
-    const RIOT_TIM1T:u8      = 0x14;
-    const RIOT_TIM8T:u8      = 0x15;
-    const RIOT_TIM64T:u8     = 0x16;
-    const RIOT_T1024T:u8     = 0x17;
+    const RIOT_TIM1T: u8 = 0x14;
+    const RIOT_TIM8T: u8 = 0x15;
+    const RIOT_TIM64T: u8 = 0x16;
+    const RIOT_T1024T: u8 = 0x17;
 
     pub fn new() -> Self {
         Self {
-            input:inputs::Input::new(),
-            interval:Interval::Tim1024,
+            input: inputs::Input::new(),
+            interval: Interval::Tim1024,
             expiration_time: 1000000,
             ram: vec![0; Riot::RAMSIZE as usize],
         }
     }
 
     pub fn read(&mut self, clock: &clocks::Clock, address: u16) -> u8 {
-        let mut value:u8 = 0;
+        let mut value: u8 = 0;
 
         let future_clock = clock.ticks + 12;
 
@@ -62,28 +62,23 @@ impl Riot {
             value = self.input.swcha;
         } else if test == Riot::RIOT_SWCHB {
             value = self.input.swchb;
-        }
-        else if test == Riot::RIOT_TIM1T || test == Riot::RIOT_TIM8T || test == Riot::RIOT_TIM64T || test == Riot::RIOT_T1024T || test == Riot::TIMERADDR
-        {
+        } else if test == Riot::RIOT_TIM1T || test == Riot::RIOT_TIM8T || test == Riot::RIOT_TIM64T || test == Riot::RIOT_T1024T || test == Riot::TIMERADDR {
             if self.expiration_time >= future_clock {
                 // If expiration hasn't occured, return the time remaining.
                 value = ((self.expiration_time - future_clock) / (self.interval as clocks::ClockType * Riot::CYCLES_TO_CLOCK)) as u8;
             } else {
                 // Calculate ticks past zero, may not be quite right
                 // The interval was passed, value counts down from 255.
-                value = (0x100 as i16).wrapping_sub(((future_clock - self.expiration_time)/Riot::CYCLES_TO_CLOCK) as i16) as u8;
+                value = (0x100 as i16).wrapping_sub(((future_clock - self.expiration_time) / Riot::CYCLES_TO_CLOCK) as i16) as u8;
             }
-        }
-        else if test == Riot::RIOT_INTERRUPT {
+        } else if test == Riot::RIOT_INTERRUPT {
             if self.expiration_time >= future_clock {
                 value = 0;
             } else {
                 // Return the interrupt flag if time has expired.
                 value = 0x80;
             }
-        }
-        else
-        {
+        } else {
             println!("Bad address: {:X}", address);
         }
 
@@ -97,8 +92,7 @@ impl Riot {
             let test = address as u8 & Riot::RIOT_ADDRMASK;
             if test == Riot::RIOT_TIM1T {
                 self.interval = Interval::Tim1;
-            }
-            else if test == Riot::RIOT_TIM8T {
+            } else if test == Riot::RIOT_TIM8T {
                 self.interval = Interval::Tim8;
             } else if test == Riot::RIOT_TIM64T {
                 self.interval = Interval::Tim64;
@@ -108,10 +102,9 @@ impl Riot {
                 println!("Nothing written: {:X}", address);
             }
 
-            self.expiration_time = clock.ticks + Riot::CYCLES_TO_CLOCK * data  as clocks::ClockType * self.interval as clocks::ClockType;
+            self.expiration_time = clock.ticks + Riot::CYCLES_TO_CLOCK * data as clocks::ClockType * self.interval as clocks::ClockType;
         }
     }
-
 }
 
 impl io::ReadWriteMemory for Riot {
@@ -128,4 +121,3 @@ impl io::RiotIO for Riot {
         self.input = inputs;
     }
 }
-

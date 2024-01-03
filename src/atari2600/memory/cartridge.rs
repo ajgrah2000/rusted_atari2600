@@ -24,23 +24,20 @@ pub enum CartridgeType {
 
 #[derive(Clone)]
 pub struct Bank {
-    data: Vec<u8>
+    data: Vec<u8>,
 }
 
 impl Bank {
     fn new(bank_size: u16) -> Self {
-        Self {
-            data: vec![0; bank_size as usize],
-        }
+        Self { data: vec![0; bank_size as usize] }
     }
 }
-
 
 pub trait Cartridge {
     fn load(&mut self) -> std::io::Result<()>;
 
-    fn read(&mut self, address:u16) -> u8;
-    fn write(&mut self, address:u16, data:u8);
+    fn read(&mut self, address: u16) -> u8;
+    fn write(&mut self, address: u16, data: u8);
 
     fn summary(&self);
 }
@@ -54,7 +51,7 @@ pub struct GenericCartridge {
     bank_size: u16,
     ram_size: u16,
 
-    ram_addr_mask:u16,
+    ram_addr_mask: u16,
 
     ram: Vec<u8>,
 
@@ -65,7 +62,6 @@ pub struct GenericCartridge {
     /// 0xFF9 == address: Last bank - 1
     /// 0xFFA == address: Last bank
     hot_swap: u16,
-
 }
 
 impl GenericCartridge {
@@ -75,8 +71,8 @@ impl GenericCartridge {
             cartridge_banks: Vec::new(),
             ram: vec![0; ram_size as usize],
             bank_size: bank_size,
-            max_banks: max_banks, 
-            hot_swap: hot_swap, 
+            max_banks: max_banks,
+            hot_swap: hot_swap,
             ram_size: ram_size,
             ram_addr_mask: 0xFFFF & ram_size.wrapping_sub(1),
             num_banks: 0,
@@ -110,7 +106,7 @@ impl GenericCartridge {
 
         // Consumes and counts the remaining bytes.
         let remaining_bytes = source.bytes().count();
-        if remaining_bytes >  0 {
+        if remaining_bytes > 0 {
             println!("Extra bytes in cartridge: {} bytes", remaining_bytes);
         }
     }
@@ -121,34 +117,33 @@ impl GenericCartridge {
         // Try to read an entire bank.
         match source.read(&mut bank.data) {
             Ok(0) => (None, 0),
-            Ok(n) if 2048 == n && 0 == self.num_banks =>  {
+            Ok(n) if 2048 == n && 0 == self.num_banks => {
                 println!("Assuming this to be a '2k' cartridge with no bank switching.");
                 self.bank_size = n as u16;
                 (Some(bank), n as NumBanksType)
             }
-            Ok(n) if n < bank.data.len() =>  {
+            Ok(n) if n < bank.data.len() => {
                 self.bank_size = bank.data.len() as u16;
                 println!("Bank incomplete ({} bytes found in last bank), will be padded with zeros", n);
                 (Some(bank), n as NumBanksType)
             }
             Ok(n) => (Some(bank), n as NumBanksType),
-                    _ => (None, 0),
+            _ => (None, 0),
         }
     }
 
-    fn read(&mut self, address:u16) -> u8 {
+    fn read(&mut self, address: u16) -> u8 {
         // Mask the 'address' with the bank size (so the highest address lines are ignored).
         let address = address & (self.bank_size - 1);
-        if (self.ram_size > 0) && (address <  2 *self.ram_size) && (address >= self.ram_size) {
+        if (self.ram_size > 0) && (address < 2 * self.ram_size) && (address >= self.ram_size) {
             self.ram[(address & self.ram_addr_mask) as usize]
-        }
-        else {
+        } else {
             // 0xFF8 == address: Last bank - 2
             // 0xFF9 == address: Last bank - 1
             // 0xFFA == address: Last bank
             if self.num_banks > 1 {
-                if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap+1) >  address) {
-                    self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+                if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
+                    self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
                 }
             }
 
@@ -156,19 +151,18 @@ impl GenericCartridge {
         }
     }
 
-    fn write(&mut self, address:u16, data:u8) {
+    fn write(&mut self, address: u16, data: u8) {
         let address = address & (self.bank_size - 1);
         if (self.ram_size > 0) && (address < self.ram_size) {
             self.ram[(address & self.ram_addr_mask) as usize] = data;
         }
 
         if self.num_banks > 1 {
-            if (((self.hot_swap + 1) - self.num_banks as u16) <=  address) && ((self.hot_swap+1) >  address) {
-                self.current_bank = self.num_banks - ((self.hot_swap+1) - address) as u8;
+            if (((self.hot_swap + 1) - self.num_banks as u16) <= address) && ((self.hot_swap + 1) > address) {
+                self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
             }
         }
     }
-
 }
 
 impl Cartridge for GenericCartridge {
@@ -182,35 +176,34 @@ impl Cartridge for GenericCartridge {
         println!(" bank size = {}", self.cartridge_banks[0].data.len());
     }
 
-    fn read(&mut self, address:u16) -> u8 {
+    fn read(&mut self, address: u16) -> u8 {
         self.read(address)
     }
 
-    fn write(&mut self, address:u16, data:u8) {
+    fn write(&mut self, address: u16, data: u8) {
         self.write(address, data);
     }
-
 }
 
 pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> GenericCartridge {
-    const NO_RAM: u16        = 0x0000;
+    const NO_RAM: u16 = 0x0000;
     const RAM_128_BYTES: u16 = 0x0080;
     const RAM_256_BYTES: u16 = 0x0100;
     match cartridge_type {
         // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
         // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
-        CartridgeType::Default => {GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, NO_RAM)},
-        CartridgeType::F4      => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, NO_RAM)}
-        CartridgeType::F4SC    => {GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, RAM_128_BYTES)}
+        CartridgeType::Default => GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, NO_RAM),
+        CartridgeType::F4 => GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, NO_RAM),
+        CartridgeType::F4SC => GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, RAM_128_BYTES),
 
-        CartridgeType::F8      => {GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, NO_RAM)}
-        CartridgeType::F8SC    => {GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, RAM_128_BYTES)}
+        CartridgeType::F8 => GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, NO_RAM),
+        CartridgeType::F8SC => GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, RAM_128_BYTES),
 
-        CartridgeType::F6      => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM)}
-        CartridgeType::F6SC    => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, RAM_128_BYTES)}
+        CartridgeType::F6 => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
+        CartridgeType::F6SC => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, RAM_128_BYTES),
 
-        CartridgeType::CBS     => {GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES)}
-        CartridgeType::SUPER   => {GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM)}
+        CartridgeType::CBS => GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES),
+        CartridgeType::SUPER => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
     }
 }
 
@@ -219,11 +212,11 @@ mod tests {
     use crate::atari2600::memory::cartridge::GenericCartridge;
     #[test]
     fn test_simple_generic_cartridge() {
-        let mut sample_cartridge = GenericCartridge::new("dummy",  3, 0x200, 0xF9, 40);
+        let mut sample_cartridge = GenericCartridge::new("dummy", 3, 0x200, 0xF9, 40);
         assert_eq!(sample_cartridge.cartridge_banks.len(), 0);
 
         // A slice implements 'Read'
-        let dummy_file_data = vec![0 as u8;0x100000];
+        let dummy_file_data = vec![0 as u8; 0x100000];
 
         sample_cartridge.load_banks(&mut &dummy_file_data[..]);
 

@@ -1,38 +1,38 @@
 use super::super::clocks;
-use super::super::memory::memory;
 use super::super::memory::addressing;
+use super::super::memory::memory;
 use super::super::ports;
-use super::pc_state;
 use super::instruction_set;
+use super::pc_state;
 
 pub struct Instruction {}
 
 // There's likely a better way to specify the memory types, but this achieves the intent.
-const ADDR_IMM:addressing::AddressingIMM = addressing::AddressingIMM::new();
-const ADDR_ZP:addressing::AddressingZP = addressing::AddressingZP::new();
-const ADDR_ZPX:addressing::AddressingZPX = addressing::AddressingZPX::new();
-const ADDR_ZPY:addressing::AddressingZPY = addressing::AddressingZPY::new();
-const ADDR_IZX:addressing::AddressingIZX = addressing::AddressingIZX::new();
-const ADDR_IZY:addressing::AddressingIZY = addressing::AddressingIZY::new(false);
+const ADDR_IMM: addressing::AddressingIMM = addressing::AddressingIMM::new();
+const ADDR_ZP: addressing::AddressingZP = addressing::AddressingZP::new();
+const ADDR_ZPX: addressing::AddressingZPX = addressing::AddressingZPX::new();
+const ADDR_ZPY: addressing::AddressingZPY = addressing::AddressingZPY::new();
+const ADDR_IZX: addressing::AddressingIZX = addressing::AddressingIZX::new();
+const ADDR_IZY: addressing::AddressingIZY = addressing::AddressingIZY::new(false);
 
-const ADDR_ABS:addressing::AddressingAbs = addressing::AddressingAbs::new();
-const ADDR_INDIRECT:addressing::AddressingIndirect = addressing::AddressingIndirect::new();
-const ADDR_ABY:addressing::AddressingAby = addressing::AddressingAby::new();
-const ADDR_ABX:addressing::AddressingAbx = addressing::AddressingAbx::new();
-const ADDR_ACCUMULATOR:addressing::AddressingAccumulator = addressing::AddressingAccumulator::new();
+const ADDR_ABS: addressing::AddressingAbs = addressing::AddressingAbs::new();
+const ADDR_INDIRECT: addressing::AddressingIndirect = addressing::AddressingIndirect::new();
+const ADDR_ABY: addressing::AddressingAby = addressing::AddressingAby::new();
+const ADDR_ABX: addressing::AddressingAbx = addressing::AddressingAbx::new();
+const ADDR_ACCUMULATOR: addressing::AddressingAccumulator = addressing::AddressingAccumulator::new();
 
 // Page Delay version of addressing modes (only applicable to some indexed modes, that can carry).)
-const ADDR_IZY_PAGE_DELAY:addressing::AddressingIZY = addressing::AddressingIZY::new(true);
-const ADDR_ABY_PAGE_DELAY:addressing::AddressingAbyPageDelay = addressing::AddressingAbyPageDelay::new();
-const ADDR_ABX_PAGE_DELAY:addressing::AddressingAbxPageDelay = addressing::AddressingAbxPageDelay::new();
+const ADDR_IZY_PAGE_DELAY: addressing::AddressingIZY = addressing::AddressingIZY::new(true);
+const ADDR_ABY_PAGE_DELAY: addressing::AddressingAbyPageDelay = addressing::AddressingAbyPageDelay::new();
+const ADDR_ABX_PAGE_DELAY: addressing::AddressingAbxPageDelay = addressing::AddressingAbxPageDelay::new();
 
-const NULL_READ:addressing::NullRead = addressing::NullRead::new();
-const MEMORY_READ:addressing::MemoryRead = addressing::MemoryRead::new();
-const ACCUMULATOR_READ:addressing::AccumulatorRead = addressing::AccumulatorRead::new();
-const MEMORY_WRITE:addressing::MemoryWrite = addressing::MemoryWrite::new();
-const ACCUMULATOR_WRITE:addressing::AccumulatorWrite = addressing::AccumulatorWrite::new();
-const REG_WRITE:addressing::RegisterWrite = addressing::RegisterWrite::new();
-const MEMORY_NULL:addressing::MemoryNull = addressing::MemoryNull::new();
+const NULL_READ: addressing::NullRead = addressing::NullRead::new();
+const MEMORY_READ: addressing::MemoryRead = addressing::MemoryRead::new();
+const ACCUMULATOR_READ: addressing::AccumulatorRead = addressing::AccumulatorRead::new();
+const MEMORY_WRITE: addressing::MemoryWrite = addressing::MemoryWrite::new();
+const ACCUMULATOR_WRITE: addressing::AccumulatorWrite = addressing::AccumulatorWrite::new();
+const REG_WRITE: addressing::RegisterWrite = addressing::RegisterWrite::new();
+const MEMORY_NULL: addressing::MemoryNull = addressing::MemoryNull::new();
 
 const READ_NULL: pc_state::ReadNull = pc_state::ReadNull::new();
 const READ_REG_X: pc_state::ReadX = pc_state::ReadX::new();
@@ -46,8 +46,8 @@ const WRITE_REG_Y: pc_state::WriteY = pc_state::WriteY::new();
 const WRITE_REG_A: pc_state::WriteA = pc_state::WriteA::new();
 const WRITE_REG_S: pc_state::WriteS = pc_state::WriteS::new();
 
+#[rustfmt::skip]
 impl Instruction {
-
 
     pub fn execute(
         op_code: u8,
@@ -319,5 +319,4 @@ impl Instruction {
 }
 
 #[cfg(test)]
-mod tests {
-}
+mod tests {}
