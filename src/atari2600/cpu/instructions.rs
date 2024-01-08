@@ -7,25 +7,9 @@ use super::instruction_set;
 
 pub struct Instruction {}
 
-// There's likely a better way to specify the memory types, but this achieves the intent.
-const ADDR_IMM: addressing::AddressingEnum = addressing::AddressingEnum::AddressingImmEnum;
-const ADDR_ZP: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpEnum;
-const ADDR_ZPX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpxEnum;
-const ADDR_ZPY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingZpyEnum;
-const ADDR_IZX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIzxEnum;
-const ADDR_IZY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIzyEnum;
-
-const ADDR_ABS: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbsEnum;
-const ADDR_INDIRECT: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIndirectEnum;
-const ADDR_ABY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbyEnum;
-const ADDR_ABX: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbxEnum;
-const ADDR_ACCUMULATOR: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAccumulatorEnum;
+use addressing::AddressingEnum::*;
 
 // Page Delay version of addressing modes (only applicable to some indexed modes, that can carry).)
-const ADDR_IZY_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingIZYPageDelayEnum;
-const ADDR_ABY_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbyPageDelayEnum;
-const ADDR_ABX_PAGE_DELAY: addressing::AddressingEnum = addressing::AddressingEnum::AddressingAbxPageDelayEnum;
-
 const NULL_READ:addressing::NullRead = addressing::NullRead::new();
 const MEMORY_READ:addressing::MemoryRead = addressing::MemoryRead::new();
 const ACCUMULATOR_READ:addressing::AccumulatorRead = addressing::AccumulatorRead::new();
@@ -46,22 +30,27 @@ const WRITE_REG_Y: pc_state::WriteY = pc_state::WriteY::new();
 const WRITE_REG_A: pc_state::WriteA = pc_state::WriteA::new();
 const WRITE_REG_S: pc_state::WriteS = pc_state::WriteS::new();
 
-enum O {
+use OpName::*;
+use AddressMode::*;
+
+enum OpName {
     Adc, And, Asl, Bit, Clc, Cld, Cli, Clv, Cmp, Cpx, Cpy, Dcp, Dec, Eor, Inc,
     Lda, Ldx, Ldy, Lsr, Nop, Or, Rol, Ror, Sax, Sbc, Sec, Sed, Sei, Sta, Stx,
     Sty, TNoStatus, TStatus,
-    Jsr,
+    Jsr, Brk, Rti, Rts, JmpAbs, JmpInd, Php, Plp, Pha, Pla, Bpl, Bmi, Bvc, Bvs, Bcc, Bcs, Bne, Beo,
+    NoOP
 }
 
-enum A {
-    ImpliedAa, ImpliedXx, ImpliedYy, ImpliedNull, ImpliedXs, ImpliedSx, ImpliedXa, ImpliedAx, ImpliedAy, ImpliedYa,
+
+enum AddressMode {
+    ImpAa, ImpXx, ImpYy, ImpNull, ImpXs, ImpSx, ImpXa, ImpAx, ImpAy, ImpYa,
     IzxR, IzyR,ImmR, ZpR, ZpyR, ZpxR, IzyDelayR, AbsR, AbxR, AbyR, AbxDelayR, AbyDelayR,
     ZpW, ZpxW, AbsW, AbxW, AbxDelayW, Acc, IzxRegW, ZpRegW, ZpxRegW, ZpyRegW, IzyRegW, AbsRegW,
-    None,
+    None, AbxRegWDelay, AbyRegWDelay,
+    NoA
 }
 
 impl Instruction {
-
 
     pub fn execute(
         op_code: u8,
@@ -70,331 +59,156 @@ impl Instruction {
         pc_state: &mut pc_state::PcState,
         ports: &mut ports::Ports) {
 
-
         let op_fn = |op| match op {
-            O::Adc => { instruction_set::adc }
-            O::And => { instruction_set::and }
-            O::Asl => {instruction_set::asl}
-            O::Bit => { instruction_set::bit }
-            O::Clc => {instruction_set::clc}
-            O::Cld => {instruction_set::cld}
-            O::Cli => {instruction_set::cli}
-            O::Clv => {instruction_set::clv}
-            O::Cmp => { instruction_set::cmp }
-            O::Cpx => { instruction_set::cpx }
-            O::Cpy => { instruction_set::cpy }
-            O::Dcp => { instruction_set::dcp}
-            O::Dec => {instruction_set::dec}
-            O::Eor => { instruction_set::eor}
-            O::Inc => {instruction_set::inc}
-            O::Lda => { instruction_set::lda}
-            O::Ldx => { instruction_set::ldx}
-            O::Ldy => { instruction_set::ldy}
-            O::Lsr => {instruction_set::lsr}
-            O::Nop => {instruction_set::nop}
-            O::Or => { instruction_set::or}
-            O::Rol => { instruction_set::rol}
-            O::Ror => { instruction_set::ror}
-            O::Sax => { instruction_set::sax}
-            O::Sbc => { instruction_set::sbc}
-            O::Sec => {instruction_set::sec}
-            O::Sed => {instruction_set::sed}
-            O::Sei => {instruction_set::sei}
-            O::Sta => { instruction_set::sta}
-            O::Stx => { instruction_set::stx}
-            O::Sty => { instruction_set::sty}
-            O::TNoStatus => { instruction_set::t_no_status }
-            O::TStatus => { instruction_set::t_status }
-            _ => { panic!("Unexpected operator"); }
+            Adc => instruction_set::adc,
+            And => instruction_set::and,
+            Asl => instruction_set::asl,
+            Bit => instruction_set::bit,
+            Clc => instruction_set::clc,
+            Cld => instruction_set::cld,
+            Cli => instruction_set::cli,
+            Clv => instruction_set::clv,
+            Cmp => instruction_set::cmp,
+            Cpx => instruction_set::cpx,
+            Cpy => instruction_set::cpy,
+            Dcp => instruction_set::dcp,
+            Dec => instruction_set::dec,
+            Eor => instruction_set::eor,
+            Inc => instruction_set::inc,
+            Lda => instruction_set::lda,
+            Ldx => instruction_set::ldx,
+            Ldy => instruction_set::ldy,
+            Lsr => instruction_set::lsr,
+            Nop => instruction_set::nop,
+            Or => instruction_set::or,
+            Rol => instruction_set::rol,
+            Ror => instruction_set::ror,
+            Sax => instruction_set::sax,
+            Sbc => instruction_set::sbc,
+            Sec => instruction_set::sec,
+            Sed => instruction_set::sed,
+            Sei => instruction_set::sei,
+            Sta => instruction_set::sta,
+            Stx => instruction_set::stx,
+            Sty => instruction_set::sty,
+            TNoStatus => instruction_set::t_no_status,
+            TStatus => instruction_set::t_status,
+            _ => {panic!("Unexpected operator");}
         };
 
         let mut op = |op_arg, addr| {
             match (addr, op_arg) {
-                (A::ImpliedAa, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_A, op_fn(o)); }
-                (A::ImpliedXx, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_X, op_fn(o)); }
-                (A::ImpliedYy, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_Y, op_fn(o)); }
-                (A::ImpliedNull, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_NULL, WRITE_NULL, op_fn(o)); }
+                (ImpAa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_A, op_fn(o)),
+                (ImpXx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_X, op_fn(o)),
+                (ImpYy, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_Y, op_fn(o)),
+                (ImpNull, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_NULL, WRITE_NULL, op_fn(o)),
 
-                (A::ImpliedXs, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_S, op_fn(o)); }
-                (A::ImpliedSx, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_S, WRITE_REG_X, op_fn(o)); }
-                (A::ImpliedXa, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_A, op_fn(o)); }
-                (A::ImpliedAx, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_X, op_fn(o)); }
-                (A::ImpliedAy, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_Y, op_fn(o)); }
-                (A::ImpliedYa, o) => {instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_A, op_fn(o)); }
-                (A::IzxR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::IzyR, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::ImmR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IMM, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::ZpR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::ZpxR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::ZpyR, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::IzyDelayR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::AbsR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::AbxR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::AbyR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::AbxDelayR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::AbyDelayR, o) => {instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABY_PAGE_DELAY, MEMORY_READ, MEMORY_NULL, op_fn(o)); }
-                (A::ZpW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP, MEMORY_READ, MEMORY_WRITE, op_fn(o)); }
-                (A::ZpxW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, MEMORY_READ, MEMORY_WRITE, op_fn(o)); }
-                (A::AbsW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, MEMORY_READ, MEMORY_WRITE, op_fn(o)); }
-                (A::AbxDelayW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX_PAGE_DELAY, MEMORY_READ, MEMORY_WRITE, op_fn(o)); }
-                (A::AbxW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABX, MEMORY_READ, MEMORY_WRITE, op_fn(o)); }
-                (A::Acc, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ACCUMULATOR, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o)); }
-                (A::IzxRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZX, NULL_READ, REG_WRITE, op_fn(o)); }
-                (A::ZpRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZP,  NULL_READ, REG_WRITE, op_fn(o)); }
-                (A::ZpxRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPX, NULL_READ, REG_WRITE, op_fn(o)); }
-                (A::IzyRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_IZY, NULL_READ, REG_WRITE, op_fn(o)); }
-                (A::AbsRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ABS, NULL_READ, REG_WRITE, op_fn(o)); }
-                (A::ZpyRegW, o) => { instruction_set::read_write_instruction(clock, pc_state, memory, &ADDR_ZPY, NULL_READ, REG_WRITE, op_fn(o)); }
+                (ImpXs, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_S, op_fn(o)),
+                (ImpSx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_S, WRITE_REG_X, op_fn(o)),
+                (ImpXa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_A, op_fn(o)),
+                (ImpAx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_X, op_fn(o)),
+                (ImpAy, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_Y, op_fn(o)),
+                (ImpYa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_A, op_fn(o)),
 
-                (A::None, O::Jsr) => { instruction_set::jump_sub_routine_instruction(clock, pc_state, memory); }
+                (IzxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzxEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (IzyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzyEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (ImmR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingImmEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (ZpR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (ZpxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpxEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (ZpyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpyEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (IzyDelayR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIZYPageDelayEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (AbsR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbsEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (AbxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbxEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (AbyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbyEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (AbxDelayR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbxPageDelayEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (AbyDelayR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbyPageDelayEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
+                (ZpW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpEnum, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
+                (ZpxW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpxEnum, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
+                (AbsW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbsEnum, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
+                (AbxDelayW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbxPageDelayEnum, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
+                (AbxW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbxEnum, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
+                (Acc, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAccumulatorEnum, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o)),
+                (IzxRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzxEnum, NULL_READ, REG_WRITE, op_fn(o)),
+                (ZpRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpEnum,  NULL_READ, REG_WRITE, op_fn(o)),
+                (ZpxRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpxEnum, NULL_READ, REG_WRITE, op_fn(o)),
+                (IzyRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzyEnum, NULL_READ, REG_WRITE, op_fn(o)),
+                (AbsRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingAbsEnum, NULL_READ, REG_WRITE, op_fn(o)),
+                (ZpyRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingZpyEnum, NULL_READ, REG_WRITE, op_fn(o)),
+
+                (AbxRegWDelay, o) => instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &AddressingAbxEnum, NULL_READ, REG_WRITE, op_fn(o), pc_state::PcState::CYCLES_TO_CLOCK),
+                (AbyRegWDelay, o) => instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &AddressingAbyEnum, NULL_READ, REG_WRITE, op_fn(o), pc_state::PcState::CYCLES_TO_CLOCK),
+
+                (None, Jsr) => instruction_set::jump_sub_routine_instruction(clock, pc_state, memory),
+                (None, Brk) => instruction_set::break_instruction(clock, pc_state, memory),
+                (None, Rti) => instruction_set::return_from_interrupt(clock, pc_state, memory),
+                (None, Rts) => instruction_set::return_from_sub_routine_instruction(clock, pc_state, memory),
+                (None, JmpAbs) => instruction_set::jump_instruction(clock, pc_state, memory, &AddressingAbsEnum),
+                (None, JmpInd) => instruction_set::jump_instruction(clock, pc_state, memory, &AddressingIndirectEnum),
+                (None, Php) => instruction_set::php_instruction(clock, pc_state, memory),
+                (None, Plp) => instruction_set::plp_instruction(clock, pc_state, memory),
+                (None, Pha) => instruction_set::pha_instruction(clock, pc_state, memory),
+                (None, Pla) => instruction_set::pla_instruction(clock, pc_state, memory),
+                (None, Bpl) => instruction_set::branch_instruction(clock, pc_state, memory, 0x80, 0x00), // N == 0
+                (None, Bmi) => instruction_set::branch_instruction(clock, pc_state, memory, 0x80, 0x80), // N == 1
+                (None, Bvc) => instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x00), // V == 0
+                (None, Bvs) => instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x40), // V == 1
+                (None, Bcc) => instruction_set::branch_instruction(clock, pc_state, memory, 0x01, 0x00), // C == 0
+                (None, Bcs) => instruction_set::branch_instruction(clock, pc_state, memory, 0x01, 0x01), // C == 1
+                (None, Bne) => instruction_set::branch_instruction(clock, pc_state, memory, 0x02, 0x00), // Z == 0
+                (None, Beo) => instruction_set::branch_instruction(clock, pc_state, memory, 0x02, 0x02), // Z == 1
+
                 _ => { panic!("Unexpected address operator combination")}
             }
         };
 
-        match op_code {
+        let mut low =  |(op0, a0), (op1, a1), (op2, a2), (op3, a3), (op4, a4), (op5, a5), (op6, a6), (op7, a7)| { 
+            match op_code & 0x7 {
+                0 => op(op0, a0), 
+                1 => op(op1, a1), 
+                2 => op(op2, a2),
+                3 => op(op3, a3),
+                4 => op(op4, a4),
+                5 => op(op5, a5),
+                6 => op(op6, a6),
+                7 => op(op7, a7), 
+                _ => panic!("Not Possible")
+            }
+        };
 
-            0xEA => { op(O::Nop, A::ImpliedAa); }
+        match op_code & 0xF8 {
 
-            0x0A => { op(O::Asl, A::ImpliedAa); }
-            0x4A => { op(O::Lsr, A::ImpliedAa); }
-            0xE8 => { op(O::Inc, A::ImpliedXx); }
-            0xC8 => { op(O::Inc, A::ImpliedYy); }
-            0xCA => { op(O::Dec, A::ImpliedXx); }
-            0x88 => { op(O::Dec, A::ImpliedYy); }
-
-            0x18 => { op(O::Clc, A::ImpliedNull); }
-            0xD8 => { op(O::Cld, A::ImpliedNull); }
-            0x58 => { op(O::Cli, A::ImpliedNull); }
-            0xB8 => { op(O::Clv, A::ImpliedNull); }
-
-            0x38 => { op(O::Sec, A::ImpliedNull); }
-            0x78 => { op(O::Sei, A::ImpliedNull); }
-            0xF8 => { op(O::Sed, A::ImpliedNull); }
-
-            // Break instruction, software 'interrupt'
-            0x00 => { instruction_set::break_instruction(clock, pc_state, memory); }
-
-            // Register Transfers
-            0x9A => { op(O::TNoStatus, A::ImpliedXs); }
-            0xBA => { op(O::TNoStatus, A::ImpliedSx); }
-            0x8A => { op(O::TStatus, A::ImpliedXa); }
-            0xAA => { op(O::TStatus, A::ImpliedAx); }
-            0xA8 => { op(O::TStatus, A::ImpliedAy); }
-            0x98 => { op(O::TStatus, A::ImpliedYa); }
-
-            // ADC
-            0x61 => { op(O::Adc, A::IzxR); }
-            0x69 => { op(O::Adc, A::ImmR); }
-            0x65 => { op(O::Adc, A::ZpR); }
-            0x75 => { op(O::Adc, A::ZpxR); }
-            0x71 => { op(O::Adc, A::IzyDelayR); }
-            0x6D => { op(O::Adc, A::AbsR); }
-            0x7D => { op(O::Adc, A::AbxDelayR); }
-            0x79 => { op(O::Adc, A::AbyDelayR); }
-
-            // ASL
-            0x06 => { op(O::Asl, A::ZpW); }
-            0x16 => { op(O::Asl, A::ZpxW); }
-            0x0E => { op(O::Asl, A::AbsW); }
-            0x1E => { op(O::Asl, A::AbxDelayW); }
-
-            // AND
-            0x21 => { op(O::And, A::IzxR); }
-            0x29 => { op(O::And, A::ImmR); }
-            0x25 => { op(O::And, A::ZpR); }
-            0x35 => { op(O::And, A::ZpxR); }
-            0x31 => { op(O::And, A::IzyDelayR); }
-            0x2D => { op(O::And, A::AbsR); }
-            0x3D => { op(O::And, A::AbxDelayR); }
-            0x39 => { op(O::And, A::AbyDelayR); }
-
-            // CPX
-            0xE0 => { op(O::Cpx, A::ImmR); }
-            0xE4 => { op(O::Cpx, A::ZpR); }
-            0xEC => { op(O::Cpx, A::AbsR); }
-
-            // CPY
-            0xC0 => { op(O::Cpy, A::ImmR); }
-            0xC4 => { op(O::Cpy, A::ZpR); }
-            0xCC => { op(O::Cpy, A::AbsR); }
-
-            // BIT
-            0x24 => { op(O::Bit, A::ZpR); }
-            0x2C => { op(O::Bit, A::AbsR); }
-
-            // CMP
-            0xC1 => { op(O::Cmp, A::IzxR); }
-            0xC9 => { op(O::Cmp, A::ImmR); }
-            0xC5 => { op(O::Cmp, A::ZpR); }
-            0xD5 => { op(O::Cmp, A::ZpxR); }
-            0xD1 => { op(O::Cmp, A::IzyDelayR); }
-            0xCD => { op(O::Cmp, A::AbsR); }
-            0xDD => { op(O::Cmp, A::AbxDelayR); }
-            0xD9 => { op(O::Cmp, A::AbyDelayR); }
-
-            // DEC
-            0xC6 => { op(O::Dec, A::ZpW); }
-            0xD6 => { op(O::Dec, A::ZpxW); }
-            0xCE => { op(O::Dec, A::AbsW); }
-            0xDE => { op(O::Dec, A::AbxDelayW); }
-
-            // EOR
-            0x41 => { op(O::Eor, A::IzxR); }
-            0x49 => { op(O::Eor, A::ImmR); }
-            0x45 => { op(O::Eor, A::ZpR); }
-            0x55 => { op(O::Eor, A::ZpxR); }
-            0x51 => { op(O::Eor, A::IzyR); }
-            0x4D => { op(O::Eor, A::AbsR); }
-            0x5D => { op(O::Eor, A::AbxR); }
-            0x59 => { op(O::Eor, A::AbyR); }
-
-            // INC
-            0xE6 => { op(O::Inc, A::ZpW); }
-            0xF6 => { op(O::Inc, A::ZpxW); }
-            0xEE => { op(O::Inc, A::AbsW); }
-            0xFE => { op(O::Inc, A::AbxDelayW); }
-
-            // LDA
-            0xA1 => { op(O::Lda, A::IzxR); }
-            0xA9 => { op(O::Lda, A::ImmR); }
-            0xA5 => { op(O::Lda, A::ZpR); }
-            0xB5 => { op(O::Lda, A::ZpxR); }
-            0xB1 => { op(O::Lda, A::IzyDelayR); }
-            0xAD => { op(O::Lda, A::AbsR); }
-            0xBD => { op(O::Lda, A::AbxDelayR); }
-            0xB9 => { op(O::Lda, A::AbyDelayR); }
-
-            // LDX
-            0xA2 => { op(O::Ldx, A::ImmR); }
-            0xA6 => { op(O::Ldx, A::ZpR); }
-            0xB6 => { op(O::Ldx, A::ZpyR); }
-            0xAE => { op(O::Ldx, A::AbsR); }
-            0xBE => { op(O::Ldx, A::AbyDelayR); }
-
-            // LDY
-            0xA0 => { op(O::Ldy, A::ImmR); }
-            0xA4 => { op(O::Ldy, A::ZpR); }
-            0xB4 => { op(O::Ldy, A::ZpxR); }
-            0xAC => { op(O::Ldy, A::AbsR); }
-            0xBC => { op(O::Ldy, A::AbxDelayR); }
-
-            // LSR
-            0x46 => { op(O::Lsr, A::ZpW); }
-            0x56 => { op(O::Lsr, A::ZpxW); }
-            0x4E => { op(O::Lsr, A::AbsW); }
-            0x5E => { op(O::Lsr, A::AbxDelayW); }
-
-            // OR
-            0x01 => { op(O::Or, A::IzxR); }
-            0x09 => { op(O::Or, A::ImmR); }
-            0x05 => { op(O::Or, A::ZpR); }
-            0x15 => { op(O::Or, A::ZpxR); }
-            0x11 => { op(O::Or, A::IzyDelayR); }
-            0x0D => { op(O::Or, A::AbsR); }
-            0x1D => { op(O::Or, A::AbxDelayR); }
-            0x19 => { op(O::Or, A::AbyDelayR); }
-
-            // ROL 
-            // TODO: Page delays (need to make sure separation of read/write)
-            0x26 => { op(O::Rol, A::ZpW); }
-            0x36 => { op(O::Rol, A::ZpxW); }
-            0x2E => { op(O::Rol, A::AbsW); }
-            0x3E => { op(O::Rol, A::AbxW); }
-            0x2A => { op(O::Rol, A::Acc); }
-
-            // ROR
-            // TODO: Page delays (need to make sure separation of read/write)
-            0x66 => { op(O::Ror, A::ZpW); }
-            0x76 => { op(O::Ror, A::ZpxW); }
-            0x6E => { op(O::Ror, A::AbsW); }
-            0x7E => { op(O::Ror, A::AbxW); }
-            0x6A => { op(O::Ror, A::Acc); }
-
-            // SBC
-            0xE1 => { op(O::Sbc, A::IzxR); }
-            0xE9 => { op(O::Sbc, A::ImmR); }
-            0xE5 => { op(O::Sbc, A::ZpR); }
-            0xF5 => { op(O::Sbc, A::ZpxR); }
-            0xF1 => { op(O::Sbc, A::IzyDelayR); }
-            0xED => { op(O::Sbc, A::AbsR); }
-            0xFD => { op(O::Sbc, A::AbxDelayR); }
-            0xF9 => { op(O::Sbc, A::AbyDelayR); }
-
-            // STA
-            0x81 => { op(O::Sta, A::IzxRegW); }
-            0x85 => { op(O::Sta, A::ZpRegW); }
-            0x95 => { op(O::Sta, A::ZpxRegW); }
-            0x91 => { op(O::Sta, A::IzyRegW); }
-            0x8D => { op(O::Sta, A::AbsRegW); }
-            0x9D => { instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &ADDR_ABX, NULL_READ, REG_WRITE, instruction_set::sta, pc_state::PcState::CYCLES_TO_CLOCK); }
-            0x99 => { instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &ADDR_ABY, NULL_READ, REG_WRITE, instruction_set::sta, pc_state::PcState::CYCLES_TO_CLOCK); }
-
-            // SAX
-            0x83 => { op(O::Sax, A::IzxRegW); }
-            0x87 => { op(O::Sax, A::ZpRegW); }
-            0x8F => { op(O::Sax, A::AbsRegW); }
-            0x97 => { op(O::Sax, A::ZpyRegW); }
-
-            // STX
-            0x86 => { op(O::Stx, A::ZpRegW); }
-            0x96 => { op(O::Stx, A::ZpyRegW); }
-            0x8E => { op(O::Stx, A::AbsRegW); }
-
-            // STY
-            0x84 => { op(O::Sty, A::ZpRegW); }
-            0x94 => { op(O::Sty, A::ZpxRegW); }
-            0x8C => { op(O::Sty, A::AbsRegW); }
-
-            // DCP
-            // Undocumented instruction
-            0xC3 => { op(O::Dcp, A::IzxR); }
-            0xC7 => { op(O::Dcp, A::ZpR); }
-            0xD7 => { op(O::Dcp, A::ZpxR); }
-            0xD3 => { op(O::Dcp, A::IzyDelayR); }
-            0xCF => { op(O::Dcp, A::AbsR); }
-            0xDF => { op(O::Dcp, A::AbxDelayR); }
-            0xDB => { op(O::Dcp, A::AbyDelayR); }
-
-            // JSR
-            0x20 => { op(O::Jsr, A::None); }
-
-            // BPL case 0x10: if (self.pc_state.P.status.N == 0)
-            0x10 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x80, 0x00); }
-            // BMI case 0x30: if (self.pc_state.P.status.N == 1)
-            0x30 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x80, 0x80); }
-            // BVC case 0x50: if (self.pc_state.P.status.V == 0)
-            0x50 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x00); }
-            // BVS case 0x70: if (self.pc_state.P.status.V == 1)
-            0x70 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x40, 0x40); }
-            // BCC case 0x90: if (self.pc_state.P.status.C == 0)
-            0x90 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x01, 0x00); }
-            // BCS case 0xB0: if (self.pc_state.P.status.C == 1)
-            0xB0 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x01, 0x01); }
-            // BNE case 0xD0: self.clocks += 2*CYCLES_TO_CLOCK if (self.pc_state.P.status.Z == 0)
-            0xD0 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x02, 0x00); }
-            // BEO case 0xF0: if (self.pc_state.P.status.Z == 1)
-            0xF0 => { instruction_set::branch_instruction(clock, pc_state, memory, 0x02, 0x02); }
-
-            0x40 => { instruction_set::return_from_interrupt(clock, pc_state, memory); }
-            // RTS
-            0x60 => { instruction_set::return_from_sub_routine_instruction(clock, pc_state, memory); }
-
-            // JMP, absolute (effectively immediate)
-            0x4C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_ABS); }
-            // JMP, absolute (effectively absolute)
-            0x6C => { instruction_set::jump_instruction(clock, pc_state, memory, &ADDR_INDIRECT); }
-
-            // PHP
-            0x08 => { instruction_set::php_instruction(clock, pc_state, memory); }
-
-            // PLP
-            0x28 => { instruction_set::plp_instruction(clock, pc_state, memory); }
-
-            // PHA
-            0x48 => { instruction_set::pha_instruction(clock, pc_state, memory); }
-
-            // PLA
-            0x68 => { instruction_set::pla_instruction(clock, pc_state, memory); }
+            0x00 => low((Brk, ImpNull),  (Or, IzxR),         (NoOP,  NoA),      (NoOP, NoA),     (NoOP, NoA),     (Or, ZpR),          (Asl, ZpW),      (NoOP, NoA)),
+            0x08 => low((Php, None),     (Or, ImmR),         (Asl, ImpAa),      (NoOP, NoA),     (NoOP, NoA),     (Or, AbsR),         (Asl, AbsW),     (NoOP, NoA)),
+            0x10 => low((Bpl, None),     (Or, IzyDelayR),    (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Or, ZpxR),         (Asl, ZpxW),     (NoOP, NoA)),
+            0x18 => low((Clc, ImpNull),  (Or, AbyDelayR),    (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Or, AbxDelayR),    (Asl, AbxDelayW),(NoOP, NoA)),
+            0x20 => low((Jsr, None),     (And, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (Bit, ZpR),      (And, ZpR),         (Rol, ZpW),      (NoOP, NoA)),
+            0x28 => low((Plp, None),     (And, ImmR),        (Rol, Acc),        (NoOP, NoA),     (Bit, AbsR),     (And, AbsR),        (Rol, AbsW),     (NoOP, NoA)),
+            0x30 => low((Bmi, None),     (And, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (And, ZpxR),        (Rol, ZpxW),     (NoOP, NoA)),
+            0x38 => low((Sec, ImpNull),  (And, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (And, AbxDelayR),   (Rol, AbxW),     (NoOP, NoA)),
+            0x40 => low((Rti, None),     (Eor, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, ZpR),         (Lsr, ZpW),      (NoOP, NoA)),
+            0x48 => low((Pha, None),     (Eor, ImmR),        (Lsr, ImpAa),      (NoOP, NoA),     (JmpAbs, None),  (Eor, AbsR),        (Lsr, AbsW),     (NoOP, NoA)),
+            0x50 => low((Bvc, None),     (Eor, IzyR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, ZpxR),        (Lsr, ZpxW),     (NoOP, NoA)),
+            0x58 => low((Cli, ImpNull),  (Eor, AbyR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, AbxR),        (Lsr, AbxDelayW),(NoOP, NoA)),
+            0x60 => low((Rts, None),     (Adc, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, ZpR),         (Ror, ZpW),      (NoOP, NoA)),
+            0x68 => low((Pla, None),     (Adc, ImmR),        (Ror, Acc),        (NoOP, NoA),     (JmpInd, None),  (Adc, AbsR),        (Ror, AbsW),     (NoOP, NoA)),
+            0x70 => low((Bvs, None),     (Adc, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, ZpxR),        (Ror, ZpxW),     (NoOP, NoA)),
+            0x78 => low((Sei, ImpNull),  (Adc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, AbxDelayR),   (Ror, AbxW),     (NoOP, NoA)),
+            0x80 => low((NoOP, NoA),     (Sta, IzxRegW),     (NoOP, NoA),       (Sax, IzxRegW),  (Sty, ZpRegW),   (Sta, ZpRegW),      (Stx, ZpRegW),   (Sax, ZpRegW)),
+            0x88 => low((Dec, ImpYy),    (NoOP, NoA),        (TStatus, ImpXa),  (NoOP, NoA),     (Sty, AbsRegW),  (Sta, AbsRegW),     (Stx, AbsRegW),  (Sax, AbsRegW)),
+            0x90 => low((Bcc, None),     (Sta, IzyRegW),     (NoOP, NoA),       (NoOP, NoA),     (Sty, ZpxRegW),  (Sta, ZpxRegW),     (Stx, ZpyRegW),  (Sax, ZpyRegW)),
+            0x98 => low((TStatus, ImpYa),(Sta, AbyRegWDelay),(TNoStatus, ImpXs),(NoOP, NoA),     (NoOP, NoA),     (Sta, AbxRegWDelay),(NoOP, NoA),     (NoOP, NoA)),
+            0xA0 => low((Ldy, ImmR),     (Lda, IzxR),        (Ldx, ImmR),       (NoOP, NoA),     (Ldy, ZpR),      (Lda, ZpR),         (Ldx, ZpR),      (NoOP, NoA)),
+            0xA8 => low((TStatus, ImpAy),(Lda, ImmR),        (TStatus, ImpAx),  (NoOP, NoA),     (Ldy, AbsR),     (Lda, AbsR),        (Ldx, AbsR),     (NoOP, NoA)),
+            0xB0 => low((Bcs, None),     (Lda, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (Ldy, ZpxR),     (Lda, ZpxR),        (Ldx, ZpyR),     (NoOP, NoA)),
+            0xB8 => low((Clv, ImpNull),  (Lda, AbyDelayR),   (TNoStatus, ImpSx),(NoOP, NoA),     (Ldy, AbxDelayR),(Lda, AbxDelayR),   (Ldx, AbyDelayR),(NoOP, NoA)),
+            0xC0 => low((Cpy, ImmR),     (Cmp, IzxR),        (NoOP, NoA),       (Dcp, IzxR),     (Cpy, ZpR),      (Cmp, ZpR),         (Dec, ZpW),      (Dcp, ZpR)),
+            0xC8 => low((Inc, ImpYy),    (Cmp, ImmR),        (Dec, ImpXx),      (NoOP, NoA),     (Cpy, AbsR),     (Cmp, AbsR),        (Dec, AbsW),     (Dcp, AbsR)),
+            0xD0 => low((Bne, None),     (Cmp, IzyDelayR),   (NoOP, NoA),       (Dcp, IzyDelayR),(NoOP, NoA),     (Cmp, ZpxR),        (Dec, ZpxW),     (Dcp, ZpxR)),
+            0xD8 => low((Cld, ImpNull),  (Cmp, AbyDelayR),   (NoOP, NoA),       (Dcp, AbyDelayR),(NoOP, NoA),     (Cmp, AbxDelayR),   (Dec, AbxDelayW),(Dcp, AbxDelayR)),
+            0xE0 => low((Cpx, ImmR),     (Sbc, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (Cpx, ZpR),      (Sbc, ZpR),         (Inc, ZpW),      (NoOP, NoA)),
+            0xE8 => low((Inc, ImpXx),    (Sbc, ImmR),        (Nop, ImpAa),      (NoOP, NoA),     (Cpx, AbsR),     (Sbc, AbsR),        (Inc, AbsW),     (NoOP, NoA)),
+            0xF0 => low((Beo, None),     (Sbc, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Sbc, ZpxR),        (Inc, ZpxW),     (NoOP, NoA)),
+            0xF8 => low((Sed, ImpNull),  (Sbc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Sbc, AbxDelayR),   (Inc, AbxDelayW),(NoOP, NoA)),
 
             _ => {
                 panic!("Ocode not implemented: 0x{:x}", op_code);
