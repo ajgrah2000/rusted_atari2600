@@ -18,20 +18,11 @@ const ACCUMULATOR_WRITE:addressing::AccumulatorWrite = addressing::AccumulatorWr
 const REG_WRITE:addressing::RegisterWrite = addressing::RegisterWrite::new();
 const MEMORY_NULL:addressing::MemoryNull = addressing::MemoryNull::new();
 
-const READ_NULL: pc_state::ReadNull = pc_state::ReadNull::new();
-const READ_REG_X: pc_state::ReadX = pc_state::ReadX::new();
-const READ_REG_Y: pc_state::ReadY = pc_state::ReadY::new();
-const READ_REG_A: pc_state::ReadA = pc_state::ReadA::new();
-const READ_REG_S: pc_state::ReadS = pc_state::ReadS::new();
-
-const WRITE_NULL: pc_state::WriteNull = pc_state::WriteNull::new();
-const WRITE_REG_X: pc_state::WriteX = pc_state::WriteX::new();
-const WRITE_REG_Y: pc_state::WriteY = pc_state::WriteY::new();
-const WRITE_REG_A: pc_state::WriteA = pc_state::WriteA::new();
-const WRITE_REG_S: pc_state::WriteS = pc_state::WriteS::new();
-
 use OpName::*;
 use AddressMode::*;
+
+enum ReadType { ReadNull, ReadX, ReadY, ReadA, ReadS }
+enum WriteType { WriteNull, WriteX, WriteY, WriteA, WriteS }
 
 enum OpName {
     Adc, And, Asl, Bit, Clc, Cld, Cli, Clv, Cmp, Cpx, Cpy, Dcp, Dec, Eor, Inc,
@@ -43,7 +34,7 @@ enum OpName {
 
 
 enum AddressMode {
-    ImpAa, ImpXx, ImpYy, ImpNull, ImpXs, ImpSx, ImpXa, ImpAx, ImpAy, ImpYa,
+    Imp(ReadType, WriteType),
     IzxR, IzyR,ImmR, ZpR, ZpyR, ZpxR, IzyDelayR, AbsR, AbxR, AbyR, AbxDelayR, AbyDelayR,
     ZpW, ZpxW, AbsW, AbxW, AbxDelayW, Acc, IzxRegW, ZpRegW, ZpxRegW, ZpyRegW, IzyRegW, AbsRegW,
     None, AbxRegWDelay, AbyRegWDelay,
@@ -96,19 +87,25 @@ impl Instruction {
             _ => {panic!("Unexpected operator");}
         };
 
+        let read_fn = |read_type| match read_type {
+            ReadType::ReadNull => pc_state::read_null,
+            ReadType::ReadX => pc_state::read_x,
+            ReadType::ReadY => pc_state::read_y,
+            ReadType::ReadA => pc_state::read_a,
+            ReadType::ReadS => pc_state::read_s,
+        };
+
+        let write_fn = |write_type| match write_type {
+            WriteType::WriteNull => pc_state::write_null,
+            WriteType::WriteX => pc_state::write_x,
+            WriteType::WriteY => pc_state::write_y,
+            WriteType::WriteA => pc_state::write_a,
+            WriteType::WriteS => pc_state::write_s,
+        };
+
         let mut op = |op_arg, addr| {
             match (addr, op_arg) {
-                (ImpAa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_A, op_fn(o)),
-                (ImpXx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_X, op_fn(o)),
-                (ImpYy, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_Y, op_fn(o)),
-                (ImpNull, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_NULL, WRITE_NULL, op_fn(o)),
-
-                (ImpXs, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_S, op_fn(o)),
-                (ImpSx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_S, WRITE_REG_X, op_fn(o)),
-                (ImpXa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_X, WRITE_REG_A, op_fn(o)),
-                (ImpAx, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_X, op_fn(o)),
-                (ImpAy, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_A, WRITE_REG_Y, op_fn(o)),
-                (ImpYa, o) => instruction_set::single_byte_instruction(clock, pc_state, memory, READ_REG_Y, WRITE_REG_A, op_fn(o)),
+                (Imp(r, w), o) => instruction_set::single_byte_instruction(clock, pc_state, memory, read_fn(r), write_fn(w), op_fn(o)),
 
                 (IzxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzxEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
                 (IzyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &AddressingIzyEnum, MEMORY_READ, MEMORY_NULL, op_fn(o)),
@@ -177,38 +174,38 @@ impl Instruction {
 
         match op_code & 0xF8 {
 
-            0x00 => low((Brk, ImpNull),  (Or, IzxR),         (NoOP,  NoA),      (NoOP, NoA),     (NoOP, NoA),     (Or, ZpR),          (Asl, ZpW),      (NoOP, NoA)),
-            0x08 => low((Php, None),     (Or, ImmR),         (Asl, ImpAa),      (NoOP, NoA),     (NoOP, NoA),     (Or, AbsR),         (Asl, AbsW),     (NoOP, NoA)),
+            0x00 => low((Brk, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Or, IzxR),         (NoOP,  NoA),      (NoOP, NoA),     (NoOP, NoA),     (Or, ZpR),          (Asl, ZpW),      (NoOP, NoA)),
+            0x08 => low((Php, None),     (Or, ImmR),         (Asl, Imp(ReadType::ReadA, WriteType::WriteA)),      (NoOP, NoA),     (NoOP, NoA),     (Or, AbsR),         (Asl, AbsW),     (NoOP, NoA)),
             0x10 => low((Bpl, None),     (Or, IzyDelayR),    (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Or, ZpxR),         (Asl, ZpxW),     (NoOP, NoA)),
-            0x18 => low((Clc, ImpNull),  (Or, AbyDelayR),    (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Or, AbxDelayR),    (Asl, AbxDelayW),(NoOP, NoA)),
+            0x18 => low((Clc, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Or, AbyDelayR),    (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Or, AbxDelayR),    (Asl, AbxDelayW),(NoOP, NoA)),
             0x20 => low((Jsr, None),     (And, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (Bit, ZpR),      (And, ZpR),         (Rol, ZpW),      (NoOP, NoA)),
             0x28 => low((Plp, None),     (And, ImmR),        (Rol, Acc),        (NoOP, NoA),     (Bit, AbsR),     (And, AbsR),        (Rol, AbsW),     (NoOP, NoA)),
             0x30 => low((Bmi, None),     (And, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (And, ZpxR),        (Rol, ZpxW),     (NoOP, NoA)),
-            0x38 => low((Sec, ImpNull),  (And, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (And, AbxDelayR),   (Rol, AbxW),     (NoOP, NoA)),
+            0x38 => low((Sec, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (And, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (And, AbxDelayR),   (Rol, AbxW),     (NoOP, NoA)),
             0x40 => low((Rti, None),     (Eor, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, ZpR),         (Lsr, ZpW),      (NoOP, NoA)),
-            0x48 => low((Pha, None),     (Eor, ImmR),        (Lsr, ImpAa),      (NoOP, NoA),     (JmpAbs, None),  (Eor, AbsR),        (Lsr, AbsW),     (NoOP, NoA)),
+            0x48 => low((Pha, None),     (Eor, ImmR),        (Lsr, Imp(ReadType::ReadA, WriteType::WriteA)),      (NoOP, NoA),     (JmpAbs, None),  (Eor, AbsR),        (Lsr, AbsW),     (NoOP, NoA)),
             0x50 => low((Bvc, None),     (Eor, IzyR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, ZpxR),        (Lsr, ZpxW),     (NoOP, NoA)),
-            0x58 => low((Cli, ImpNull),  (Eor, AbyR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, AbxR),        (Lsr, AbxDelayW),(NoOP, NoA)),
+            0x58 => low((Cli, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Eor, AbyR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Eor, AbxR),        (Lsr, AbxDelayW),(NoOP, NoA)),
             0x60 => low((Rts, None),     (Adc, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, ZpR),         (Ror, ZpW),      (NoOP, NoA)),
             0x68 => low((Pla, None),     (Adc, ImmR),        (Ror, Acc),        (NoOP, NoA),     (JmpInd, None),  (Adc, AbsR),        (Ror, AbsW),     (NoOP, NoA)),
             0x70 => low((Bvs, None),     (Adc, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, ZpxR),        (Ror, ZpxW),     (NoOP, NoA)),
-            0x78 => low((Sei, ImpNull),  (Adc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, AbxDelayR),   (Ror, AbxW),     (NoOP, NoA)),
+            0x78 => low((Sei, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Adc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Adc, AbxDelayR),   (Ror, AbxW),     (NoOP, NoA)),
             0x80 => low((NoOP, NoA),     (Sta, IzxRegW),     (NoOP, NoA),       (Sax, IzxRegW),  (Sty, ZpRegW),   (Sta, ZpRegW),      (Stx, ZpRegW),   (Sax, ZpRegW)),
-            0x88 => low((Dec, ImpYy),    (NoOP, NoA),        (TStatus, ImpXa),  (NoOP, NoA),     (Sty, AbsRegW),  (Sta, AbsRegW),     (Stx, AbsRegW),  (Sax, AbsRegW)),
+            0x88 => low((Dec, Imp(ReadType::ReadY, WriteType::WriteY)),    (NoOP, NoA),        (TStatus, Imp(ReadType::ReadX, WriteType::WriteA)),  (NoOP, NoA),     (Sty, AbsRegW),  (Sta, AbsRegW),     (Stx, AbsRegW),  (Sax, AbsRegW)),
             0x90 => low((Bcc, None),     (Sta, IzyRegW),     (NoOP, NoA),       (NoOP, NoA),     (Sty, ZpxRegW),  (Sta, ZpxRegW),     (Stx, ZpyRegW),  (Sax, ZpyRegW)),
-            0x98 => low((TStatus, ImpYa),(Sta, AbyRegWDelay),(TNoStatus, ImpXs),(NoOP, NoA),     (NoOP, NoA),     (Sta, AbxRegWDelay),(NoOP, NoA),     (NoOP, NoA)),
+            0x98 => low((TStatus, Imp(ReadType::ReadY, WriteType::WriteA)),(Sta, AbyRegWDelay),(TNoStatus, Imp(ReadType::ReadX, WriteType::WriteS)),(NoOP, NoA),     (NoOP, NoA),     (Sta, AbxRegWDelay),(NoOP, NoA),     (NoOP, NoA)),
             0xA0 => low((Ldy, ImmR),     (Lda, IzxR),        (Ldx, ImmR),       (NoOP, NoA),     (Ldy, ZpR),      (Lda, ZpR),         (Ldx, ZpR),      (NoOP, NoA)),
-            0xA8 => low((TStatus, ImpAy),(Lda, ImmR),        (TStatus, ImpAx),  (NoOP, NoA),     (Ldy, AbsR),     (Lda, AbsR),        (Ldx, AbsR),     (NoOP, NoA)),
+            0xA8 => low((TStatus, Imp(ReadType::ReadA, WriteType::WriteY)),(Lda, ImmR),        (TStatus, Imp(ReadType::ReadA, WriteType::WriteX)),  (NoOP, NoA),     (Ldy, AbsR),     (Lda, AbsR),        (Ldx, AbsR),     (NoOP, NoA)),
             0xB0 => low((Bcs, None),     (Lda, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (Ldy, ZpxR),     (Lda, ZpxR),        (Ldx, ZpyR),     (NoOP, NoA)),
-            0xB8 => low((Clv, ImpNull),  (Lda, AbyDelayR),   (TNoStatus, ImpSx),(NoOP, NoA),     (Ldy, AbxDelayR),(Lda, AbxDelayR),   (Ldx, AbyDelayR),(NoOP, NoA)),
+            0xB8 => low((Clv, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Lda, AbyDelayR),   (TNoStatus, Imp(ReadType::ReadS, WriteType::WriteX)),(NoOP, NoA),     (Ldy, AbxDelayR),(Lda, AbxDelayR),   (Ldx, AbyDelayR),(NoOP, NoA)),
             0xC0 => low((Cpy, ImmR),     (Cmp, IzxR),        (NoOP, NoA),       (Dcp, IzxR),     (Cpy, ZpR),      (Cmp, ZpR),         (Dec, ZpW),      (Dcp, ZpR)),
-            0xC8 => low((Inc, ImpYy),    (Cmp, ImmR),        (Dec, ImpXx),      (NoOP, NoA),     (Cpy, AbsR),     (Cmp, AbsR),        (Dec, AbsW),     (Dcp, AbsR)),
+            0xC8 => low((Inc, Imp(ReadType::ReadY, WriteType::WriteY)),    (Cmp, ImmR),        (Dec, Imp(ReadType::ReadX, WriteType::WriteX)),      (NoOP, NoA),     (Cpy, AbsR),     (Cmp, AbsR),        (Dec, AbsW),     (Dcp, AbsR)),
             0xD0 => low((Bne, None),     (Cmp, IzyDelayR),   (NoOP, NoA),       (Dcp, IzyDelayR),(NoOP, NoA),     (Cmp, ZpxR),        (Dec, ZpxW),     (Dcp, ZpxR)),
-            0xD8 => low((Cld, ImpNull),  (Cmp, AbyDelayR),   (NoOP, NoA),       (Dcp, AbyDelayR),(NoOP, NoA),     (Cmp, AbxDelayR),   (Dec, AbxDelayW),(Dcp, AbxDelayR)),
+            0xD8 => low((Cld, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Cmp, AbyDelayR),   (NoOP, NoA),       (Dcp, AbyDelayR),(NoOP, NoA),     (Cmp, AbxDelayR),   (Dec, AbxDelayW),(Dcp, AbxDelayR)),
             0xE0 => low((Cpx, ImmR),     (Sbc, IzxR),        (NoOP, NoA),       (NoOP, NoA),     (Cpx, ZpR),      (Sbc, ZpR),         (Inc, ZpW),      (NoOP, NoA)),
-            0xE8 => low((Inc, ImpXx),    (Sbc, ImmR),        (Nop, ImpAa),      (NoOP, NoA),     (Cpx, AbsR),     (Sbc, AbsR),        (Inc, AbsW),     (NoOP, NoA)),
+            0xE8 => low((Inc, Imp(ReadType::ReadX, WriteType::WriteX)),    (Sbc, ImmR),        (Nop, Imp(ReadType::ReadA, WriteType::WriteA)),      (NoOP, NoA),     (Cpx, AbsR),     (Sbc, AbsR),        (Inc, AbsW),     (NoOP, NoA)),
             0xF0 => low((Beo, None),     (Sbc, IzyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Sbc, ZpxR),        (Inc, ZpxW),     (NoOP, NoA)),
-            0xF8 => low((Sed, ImpNull),  (Sbc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Sbc, AbxDelayR),   (Inc, AbxDelayW),(NoOP, NoA)),
+            0xF8 => low((Sed, Imp(ReadType::ReadNull, WriteType::WriteNull)),  (Sbc, AbyDelayR),   (NoOP, NoA),       (NoOP, NoA),     (NoOP, NoA),     (Sbc, AbxDelayR),   (Inc, AbxDelayW),(NoOP, NoA)),
 
             _ => {
                 panic!("Ocode not implemented: 0x{:x}", op_code);

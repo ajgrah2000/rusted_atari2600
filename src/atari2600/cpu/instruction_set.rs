@@ -9,14 +9,14 @@ pub fn nop(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
 
 pub fn single_byte_instruction<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, read: R, write: W, instruction: I)
 where
-    R: pc_state::ReadReg8,
-    W: pc_state::WriteReg8,
+    R: Fn(&pc_state::PcState) -> u8,
+    W: Fn(&mut pc_state::PcState, u8),
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 
-    let data = read.get(pc_state);
+    let data = read(pc_state);
     let result = instruction(clock, pc_state, memory, data);
-    write.set(pc_state, result);
+    write(pc_state, result);
 
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
 

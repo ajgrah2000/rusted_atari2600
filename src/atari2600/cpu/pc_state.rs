@@ -215,82 +215,21 @@ pub fn set_status_nz(pc_state: &mut PcState, value: u8) {
     pc_state.set_flag_z(0x00 == value);
 }
 
-// Register read/write trait functions.
-pub trait ReadReg8 {
-    fn get(&self, pc_state: &PcState) -> u8;
-}
+type ReadFunc = fn(&PcState) -> u8; // Unused: Switch to 'trait alias' when available
 
-pub trait WriteReg8 {
-    fn set(&self, pc_state: &mut PcState, data: u8);
-}
+pub fn read_null(pc_state: &PcState) -> u8 { 0 }
+pub fn read_x(pc_state: &PcState) -> u8 { pc_state.get_x() }
+pub fn read_y(pc_state: &PcState) -> u8 { pc_state.get_y() }
+pub fn read_a(pc_state: &PcState) -> u8 { pc_state.get_a() }
+pub fn read_s(pc_state: &PcState) -> u8 { pc_state.get_s() }
 
-pub struct ReadNull {}
-impl ReadNull {
-    pub const fn new() -> Self {
-        Self {}
-    }
-}
+type WriteFunc = fn(&mut PcState, u8); // Unused: Switch to 'trait alias' when available
 
-impl ReadReg8 for ReadNull {
-    fn get(&self, pc_state: &PcState) -> u8 {
-        0
-    }
-}
-
-macro_rules! impl_read_register {
-    ($new_struct:ident, $func_name:tt) => {
-        pub struct $new_struct {}
-        impl $new_struct {
-            pub const fn new() -> Self {
-                Self {}
-            }
-        }
-
-        impl ReadReg8 for $new_struct {
-            fn get(&self, pc_state: &PcState) -> u8 {
-                pc_state.$func_name()
-            }
-        }
-    };
-}
-
-impl_read_register!(ReadX, get_x);
-impl_read_register!(ReadY, get_y);
-impl_read_register!(ReadA, get_a);
-impl_read_register!(ReadS, get_s);
-
-pub struct WriteNull {}
-impl WriteNull {
-    pub const fn new() -> Self {
-        Self {}
-    }
-}
-
-impl WriteReg8 for WriteNull {
-    fn set(&self, pc_state: &mut PcState, data: u8) {}
-}
-
-macro_rules! impl_read_register {
-    ($new_struct:ident, $func_name:tt) => {
-        pub struct $new_struct {}
-        impl $new_struct {
-            pub const fn new() -> Self {
-                Self {}
-            }
-        }
-
-        impl WriteReg8 for $new_struct {
-            fn set(&self, pc_state: &mut PcState, data: u8) {
-                pc_state.$func_name(data);
-            }
-        }
-    };
-}
-
-impl_read_register!(WriteX, set_x);
-impl_read_register!(WriteY, set_y);
-impl_read_register!(WriteA, set_a);
-impl_read_register!(WriteS, set_s);
+pub fn write_null(pc_state: &mut PcState, input: u8) { }
+pub fn write_x(pc_state: &mut PcState, input: u8) { pc_state.set_x(input); }
+pub fn write_y(pc_state: &mut PcState, input: u8) { pc_state.set_y(input); }
+pub fn write_a(pc_state: &mut PcState, input: u8) { pc_state.set_a(input); }
+pub fn write_s(pc_state: &mut PcState, input: u8) { pc_state.set_s(input); }
 
 #[cfg(test)]
 mod tests {
