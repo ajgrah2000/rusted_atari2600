@@ -90,87 +90,74 @@ impl AllAddressingModes {
     }
 }
 
-pub enum AddressingEnum {
-    AddressingImmEnum,
-    AddressingZpEnum,
-    AddressingIzyEnum,
-    AddressingIZYPageDelayEnum,
-    AddressingIzxEnum,
-    AddressingZpxEnum,
-    AddressingZpyEnum,
-    
-    AddressingAbsEnum,
-    AddressingIndirectEnum,
-    AddressingAbyEnum,
-    AddressingAbxEnum,
-    AddressingAccumulatorEnum,
-    
-    AddressingAbyPageDelayEnum,
-    AddressingAbxPageDelayEnum,
+pub enum Addressing {
+    Imm, Zp, Izy, IZYPageDelay, Izx, Zpx, Zpy,
+    Abs, Indirect, Aby, Abx, Accumulator,
+    AbyPageDelay, AbxPageDelay,
 }
 
-impl AddressingEnum {
+impl Addressing {
     pub fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
     
         match self {
-            AddressingEnum::AddressingImmEnum => AllAddressingModes::address_imm(clock, pc_state, memory, false),
-            AddressingEnum::AddressingZpEnum => AllAddressingModes::address_zp(clock, pc_state, memory, false),
-            AddressingEnum::AddressingIzyEnum => AllAddressingModes::address_izy(clock, pc_state, memory, false),
-            AddressingEnum::AddressingIZYPageDelayEnum => AllAddressingModes::address_izy(clock, pc_state, memory, true),
-            AddressingEnum::AddressingIzxEnum => AllAddressingModes::address_izx(clock, pc_state, memory, false),
-            AddressingEnum::AddressingZpxEnum => AllAddressingModes::address_zpx(clock, pc_state, memory, false),
-            AddressingEnum::AddressingZpyEnum => AllAddressingModes::address_zpy(clock, pc_state, memory, false),
+            Addressing::Imm => AllAddressingModes::address_imm(clock, pc_state, memory, false),
+            Addressing::Zp => AllAddressingModes::address_zp(clock, pc_state, memory, false),
+            Addressing::Izy => AllAddressingModes::address_izy(clock, pc_state, memory, false),
+            Addressing::IZYPageDelay => AllAddressingModes::address_izy(clock, pc_state, memory, true),
+            Addressing::Izx => AllAddressingModes::address_izx(clock, pc_state, memory, false),
+            Addressing::Zpx => AllAddressingModes::address_zpx(clock, pc_state, memory, false),
+            Addressing::Zpy => AllAddressingModes::address_zpy(clock, pc_state, memory, false),
             
-            AddressingEnum::AddressingAbsEnum => AllAddressingModes::address_abs(clock, pc_state, memory, false),
-            AddressingEnum::AddressingIndirectEnum => AllAddressingModes::address_indirect(clock, pc_state, memory, false),
-            AddressingEnum::AddressingAbyEnum => AllAddressingModes::address_aby(clock, pc_state, memory, false),
-            AddressingEnum::AddressingAbxEnum => AllAddressingModes::address_abx(clock, pc_state, memory, false),
-            AddressingEnum::AddressingAccumulatorEnum => AllAddressingModes::address_accumulator(clock, pc_state, memory, false),
+            Addressing::Abs => AllAddressingModes::address_abs(clock, pc_state, memory, false),
+            Addressing::Indirect=> AllAddressingModes::address_indirect(clock, pc_state, memory, false),
+            Addressing::Aby => AllAddressingModes::address_aby(clock, pc_state, memory, false),
+            Addressing::Abx => AllAddressingModes::address_abx(clock, pc_state, memory, false),
+            Addressing::Accumulator => AllAddressingModes::address_accumulator(clock, pc_state, memory, false),
             
-            AddressingEnum::AddressingAbyPageDelayEnum => AllAddressingModes::address_aby(clock, pc_state, memory, true),
-            AddressingEnum::AddressingAbxPageDelayEnum => AllAddressingModes::address_abx(clock, pc_state, memory, true),
+            Addressing::AbyPageDelay => AllAddressingModes::address_aby(clock, pc_state, memory, true),
+            Addressing::AbxPageDelay => AllAddressingModes::address_abx(clock, pc_state, memory, true),
         }
     }
 
     pub fn get_addressing_size(&self) -> u8 {
         match self {
-            AddressingEnum::AddressingImmEnum => 1,
-            AddressingEnum::AddressingZpEnum => 1,
-            AddressingEnum::AddressingIzyEnum => 1,
-            AddressingEnum::AddressingIZYPageDelayEnum => 1,
-            AddressingEnum::AddressingIzxEnum => 1,
-            AddressingEnum::AddressingZpxEnum => 1,
-            AddressingEnum::AddressingZpyEnum => 1,
+            Addressing::Imm => 1,
+            Addressing::Zp => 1,
+            Addressing::Izy => 1,
+            Addressing::IZYPageDelay => 1,
+            Addressing::Izx => 1,
+            Addressing::Zpx => 1,
+            Addressing::Zpy => 1,
 
-            AddressingEnum::AddressingAbsEnum => 2,
-            AddressingEnum::AddressingIndirectEnum => 2,
-            AddressingEnum::AddressingAbyEnum => 2,
-            AddressingEnum::AddressingAbxEnum => 2,
-            AddressingEnum::AddressingAccumulatorEnum => 0,
+            Addressing::Abs => 2,
+            Addressing::Indirect => 2,
+            Addressing::Aby => 2,
+            Addressing::Abx => 2,
+            Addressing::Accumulator => 0,
 
-            AddressingEnum::AddressingAbyPageDelayEnum => 2,
-            AddressingEnum::AddressingAbxPageDelayEnum => 2,
+            Addressing::AbyPageDelay => 2,
+            Addressing::AbxPageDelay => 2,
         }
     }
 
     pub fn get_addressing_time(&self) -> u8 {
          pc_state::PcState::CYCLES_TO_CLOCK * match self {
-            AddressingEnum::AddressingImmEnum => 0,
-            AddressingEnum::AddressingZpEnum => 1,
-            AddressingEnum::AddressingIzyEnum => 3,
-            AddressingEnum::AddressingIZYPageDelayEnum => 3,
-            AddressingEnum::AddressingIzxEnum => 4,
-            AddressingEnum::AddressingZpxEnum => 2,
-            AddressingEnum::AddressingZpyEnum => 2,
+            Addressing::Imm => 0,
+            Addressing::Zp => 1,
+            Addressing::Izy => 3,
+            Addressing::IZYPageDelay => 3,
+            Addressing::Izx => 4,
+            Addressing::Zpx => 2,
+            Addressing::Zpy => 2,
             
-            AddressingEnum::AddressingAbsEnum => 2,
-            AddressingEnum::AddressingIndirectEnum => 4,
-            AddressingEnum::AddressingAbyEnum => 2,
-            AddressingEnum::AddressingAbxEnum => 2,
-            AddressingEnum::AddressingAccumulatorEnum => 0,
+            Addressing::Abs => 2,
+            Addressing::Indirect => 4,
+            Addressing::Aby => 2,
+            Addressing::Abx => 2,
+            Addressing::Accumulator => 0,
             
-            AddressingEnum::AddressingAbyPageDelayEnum => 2,
-            AddressingEnum::AddressingAbxPageDelayEnum => 2,
+            Addressing::AbyPageDelay => 2,
+            Addressing::AbxPageDelay => 2,
         }
     }
 }

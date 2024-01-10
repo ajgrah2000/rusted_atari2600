@@ -27,7 +27,7 @@ pub fn read_write_instruction<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcS
     clock: &mut clocks::Clock,
     pc_state: &mut pc_state::PcState,
     memory: &mut memory::Memory,
-    address: &addressing::AddressingEnum,
+    address: &addressing::Addressing,
     read: R,
     write: W,
     instruction: I,
@@ -42,7 +42,7 @@ pub fn read_write_instruction_additional_delay<R, W, I: Fn(&mut clocks::Clock, &
     clock: &mut clocks::Clock,
     pc_state: &mut pc_state::PcState,
     memory: &mut memory::Memory,
-    address: &addressing::AddressingEnum,
+    address: &addressing::Addressing,
     read: R,
     write: W,
     instruction: I,
@@ -168,7 +168,7 @@ pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: 
     pc_state.increment_pc(1);
 }
 
-pub fn jump_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &addressing::AddressingEnum)
+pub fn jump_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &addressing::Addressing)
 {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     let addr = address.address16(clock, pc_state, memory);

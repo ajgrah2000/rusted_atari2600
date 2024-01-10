@@ -18,8 +18,8 @@ pub enum CartridgeType {
     F6SC,
     F8,
     F8SC,
-    CBS,
-    SUPER,
+    Cbs,
+    Super,
 }
 
 #[derive(Clone)]
@@ -198,8 +198,8 @@ pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> Gen
         CartridgeType::F6 => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
         CartridgeType::F6SC => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, RAM_128_BYTES),
 
-        CartridgeType::CBS => GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES),
-        CartridgeType::SUPER => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
+        CartridgeType::Cbs => GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES),
+        CartridgeType::Super => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
     }
 }
 
