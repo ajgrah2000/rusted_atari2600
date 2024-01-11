@@ -48,41 +48,61 @@ impl Instruction {
         pc_state: &mut pc_state::PcState,
         ports: &mut ports::Ports) {
 
+        use instruction_set::*;
+
         let op_fn = |op| match op {
-            Adc => instruction_set::adc,
-            And => instruction_set::and,
-            Asl => instruction_set::asl,
-            Bit => instruction_set::bit,
-            Clc => instruction_set::clc,
-            Cld => instruction_set::cld,
-            Cli => instruction_set::cli,
-            Clv => instruction_set::clv,
-            Cmp => instruction_set::cmp,
-            Cpx => instruction_set::cpx,
-            Cpy => instruction_set::cpy,
-            Dcp => instruction_set::dcp,
-            Dec => instruction_set::dec,
-            Eor => instruction_set::eor,
-            Inc => instruction_set::inc,
-            Lda => instruction_set::lda,
-            Ldx => instruction_set::ldx,
-            Ldy => instruction_set::ldy,
-            Lsr => instruction_set::lsr,
-            Nop => instruction_set::nop,
-            Or => instruction_set::or,
-            Rol => instruction_set::rol,
-            Ror => instruction_set::ror,
-            Sax => instruction_set::sax,
-            Sbc => instruction_set::sbc,
-            Sec => instruction_set::sec,
-            Sed => instruction_set::sed,
-            Sei => instruction_set::sei,
-            Sta => instruction_set::sta,
-            Stx => instruction_set::stx,
-            Sty => instruction_set::sty,
-            TNoStat => instruction_set::t_no_status,
-            TStat => instruction_set::t_status,
+            Adc => adc,
+            And => and,
+            Asl => asl,
+            Bit => bit,
+            Clc => clc,
+            Cld => cld,
+            Cli => cli,
+            Clv => clv,
+            Cmp => cmp,
+            Cpx => cpx,
+            Cpy => cpy,
+            Dcp => dcp,
+            Dec => dec,
+            Eor => eor,
+            Inc => inc,
+            Lda => lda,
+            Ldx => ldx,
+            Ldy => ldy,
+            Lsr => lsr,
+            Nop => nop,
+            Or => or,
+            Rol => rol,
+            Ror => ror,
+            Sax => sax,
+            Sbc => sbc,
+            Sec => sec,
+            Sed => sed,
+            Sei => sei,
+            Sta => sta,
+            Stx => stx,
+            Sty => sty,
+            TNoStat => t_no_status,
+            TStat => t_status,
             _ => {panic!("Unexpected operator");}
+        };
+
+        let addressing_fn = |addr| match addr {
+                IzxR | IzxRegW =>  &Addressing::Izx,
+                IzyR | IzyRegW =>  &Addressing::Izy,
+                ImmR =>  &Addressing::Imm,
+                ZpR | ZpW | ZpRegW =>  &Addressing::Zp,
+                ZpxR | ZpxW | ZpxRegW =>  &Addressing::Zpx,
+                ZpyR | ZpyRegW =>  &Addressing::Zpy,
+                IzyRD =>  &Addressing::IZYPageDelay,
+                AbsR | AbsW | AbsRegW =>  &Addressing::Abs,
+                AbxR | AbxW =>  &Addressing::Abx,
+                AbyR =>  &Addressing::Aby,
+                AbxRD | AbxWD =>  &Addressing::AbxPageDelay,
+                AbyRD => &Addressing::AbyPageDelay,
+                Acc =>  &Addressing::Accumulator,
+
+                _ => {panic!("Unexpected addressing mode");}
         };
 
         let read_fn = |read_type| match read_type {
@@ -105,30 +125,18 @@ impl Instruction {
             match (addr, op_arg) {
                 (Imp(r, w), o) => instruction_set::single_byte_instruction(clock, pc_state, memory, read_fn(r), write_fn(w), op_fn(o)),
 
-                (IzxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Izx, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (IzyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Izy, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (ImmR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Imm, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (ZpR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zp, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (ZpxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zpx, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (ZpyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zpy, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (IzyRD, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::IZYPageDelay, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (AbsR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Abs, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (AbxR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Abx, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (AbyR, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Aby, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (AbxRD, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::AbxPageDelay, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (AbyRD, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::AbyPageDelay, MEMORY_READ, MEMORY_NULL, op_fn(o)),
-                (ZpW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zp, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
-                (ZpxW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zpx, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
-                (AbsW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Abs, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
-                (AbxWD, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::AbxPageDelay, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
-                (AbxW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Abx, MEMORY_READ, MEMORY_WRITE, op_fn(o)),
-                (Acc, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Accumulator, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o)),
-                (IzxRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Izx, NULL_READ, REG_WRITE, op_fn(o)),
-                (ZpRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zp,  NULL_READ, REG_WRITE, op_fn(o)),
-                (ZpxRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zpx, NULL_READ, REG_WRITE, op_fn(o)),
-                (IzyRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Izy, NULL_READ, REG_WRITE, op_fn(o)),
-                (AbsRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Abs, NULL_READ, REG_WRITE, op_fn(o)),
-                (ZpyRegW, o) => instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Zpy, NULL_READ, REG_WRITE, op_fn(o)),
+                (read_null@(IzxR|IzyR|ImmR|ZpR|ZpxR|ZpyR|IzyRD|AbsR|AbxR|AbyR|AbxRD|AbyRD), o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_null), MEMORY_READ, MEMORY_NULL, op_fn(o));
+                },
+                (read_write@(ZpW|ZpxW|AbsW|AbxWD|AbxW), o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_write), MEMORY_READ, MEMORY_WRITE, op_fn(o));
+                },
+                (Acc, o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Accumulator, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o));
+                },
+                (reg_write@(IzxRegW|ZpRegW|ZpxRegW|IzyRegW|AbsRegW|ZpyRegW), o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(reg_write),  NULL_READ, REG_WRITE, op_fn(o));
+                },
 
                 (AbxRegWD, o) => instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &Addressing::Abx, NULL_READ, REG_WRITE, op_fn(o), pc_state::PcState::CYCLES_TO_CLOCK),
                 (AbyRegWD, o) => instruction_set::read_write_instruction_additional_delay(clock, pc_state, memory, &Addressing::Aby, NULL_READ, REG_WRITE, op_fn(o), pc_state::PcState::CYCLES_TO_CLOCK),
