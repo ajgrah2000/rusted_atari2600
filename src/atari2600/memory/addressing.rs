@@ -3,9 +3,9 @@ use super::super::cpu::pc_state;
 use super::memory;
 
 pub trait Address16 {
-    fn address16(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
-    fn get_addressing_size() -> u8;
-    fn get_addressing_time() -> u8;
+    fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16;
+    fn get_addressing_size(&self) -> u8;
+    fn get_addressing_time(&self) -> u8;
 }
 
 fn did_index_cross_page(base_address: u16, result_address: u16) -> bool {
@@ -96,8 +96,8 @@ pub enum Addressing {
     AbyPageDelay, AbxPageDelay,
 }
 
-impl Addressing {
-    pub fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
+impl Address16 for Addressing {
+    fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
     
         match self {
             Addressing::Imm => AllAddressingModes::address_imm(clock, pc_state, memory, false),
@@ -119,28 +119,15 @@ impl Addressing {
         }
     }
 
-    pub fn get_addressing_size(&self) -> u8 {
+    fn get_addressing_size(&self) -> u8 {
         match self {
-            Addressing::Imm => 1,
-            Addressing::Zp => 1,
-            Addressing::Izy => 1,
-            Addressing::IZYPageDelay => 1,
-            Addressing::Izx => 1,
-            Addressing::Zpx => 1,
-            Addressing::Zpy => 1,
-
-            Addressing::Abs => 2,
-            Addressing::Indirect => 2,
-            Addressing::Aby => 2,
-            Addressing::Abx => 2,
             Addressing::Accumulator => 0,
-
-            Addressing::AbyPageDelay => 2,
-            Addressing::AbxPageDelay => 2,
+            Addressing::Imm | Addressing::Zp | Addressing::Izy | Addressing::IZYPageDelay | Addressing::Izx | Addressing::Zpx | Addressing::Zpy => 1,
+            Addressing::Abs | Addressing::Indirect | Addressing::Aby | Addressing::Abx | Addressing::AbyPageDelay | Addressing::AbxPageDelay => 2,
         }
     }
 
-    pub fn get_addressing_time(&self) -> u8 {
+    fn get_addressing_time(&self) -> u8 {
          pc_state::PcState::CYCLES_TO_CLOCK * match self {
             Addressing::Imm => 0,
             Addressing::Zp => 1,
@@ -161,7 +148,6 @@ impl Addressing {
         }
     }
 }
-
 
 pub trait ReadData {
     fn read(&self, clock: &clocks::Clock, pc_state: &pc_state::PcState, memory: &mut memory::Memory, address: u16) -> u8;

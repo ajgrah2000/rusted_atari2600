@@ -1,5 +1,6 @@
 use super::super::clocks;
 use super::super::memory::addressing;
+use super::super::memory::addressing::Address16;
 use super::super::memory::memory;
 use super::pc_state;
 
