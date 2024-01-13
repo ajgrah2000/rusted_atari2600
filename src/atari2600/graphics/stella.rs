@@ -20,6 +20,15 @@ impl DebugControl {
     pub const SHOW_P1: bool = true;
     pub const SHOW_M0: bool = true;
     pub const SHOW_M1: bool = true;
+
+    pub const DEBUG_COLOURS: bool = false;
+    pub const DEBUG_BACKGROUND_COLOUR: display::Colour = display::Colour::new(255, 255, 255);
+    pub const DEBUG_BL_COLOUR: display::Colour = display::Colour::new(255, 0, 0);
+    pub const DEBUG_PF_COLOUR: display::Colour = display::Colour::new(0, 255, 0);
+    pub const DEBUG_M0_COLOUR: display::Colour = display::Colour::new(0, 0, 255);
+    pub const DEBUG_M1_COLOUR: display::Colour = display::Colour::new(0, 255, 255);
+    pub const DEBUG_P0_COLOUR: display::Colour = display::Colour::new(255, 0, 255);
+    pub const DEBUG_P1_COLOUR: display::Colour = display::Colour::new(255, 255, 0);
 }
 
 pub struct Constants {}
@@ -1154,32 +1163,44 @@ impl Stella {
                     //  P0, M0                   P1, M1
                     //  P1, M1                   PF, BL
                     //  BK                       BK
-                    let mut pixel_colour = if DebugControl::SHOW_BACKGROUND {nl_bg_colour } else { display::Colour::new(255, 255, 255) };
+                    let mut pixel_colour = if DebugControl::SHOW_BACKGROUND && !DebugControl::DEBUG_COLOURS {nl_bg_colour } else { DebugControl::DEBUG_BACKGROUND_COLOUR};
                     let mut hits = 0;
                     if priority_ctrl {
                         if pf || bl {
                             pixel_colour = nl_pf_colour;
+                            if bl && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_BL_COLOUR};
+                            if pf && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_PF_COLOUR};
                             hits += bl as u8 + pf as u8;
                         }
                         if p1 || m1 {
                             pixel_colour = nl_p_colour1;
+                            if p1 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_P1_COLOUR};
+                            if m1 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_M1_COLOUR};
                             hits += m1 as u8 + p1 as u8;
                         }
                         if p0 || m0 {
                             pixel_colour = nl_p_colour0;
+                            if p0 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_P0_COLOUR};
+                            if m0 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_M0_COLOUR};
                             hits += m0 as u8 + p0 as u8;
                         }
                     } else {
                         if p1 || m1 {
                             pixel_colour = nl_p_colour1;
+                            if p1 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_P1_COLOUR};
+                            if m1 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_M1_COLOUR};
                             hits += m1 as u8 + p1 as u8;
                         }
                         if p0 || m0 {
                             pixel_colour = nl_p_colour0;
+                            if p0 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_P0_COLOUR};
+                            if m0 && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_M0_COLOUR};
                             hits += m0 as u8 + p0 as u8;
                         }
                         if pf || bl {
                             pixel_colour = nl_pf_colour;
+                            if bl && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_BL_COLOUR};
+                            if pf && DebugControl::DEBUG_COLOURS { pixel_colour = DebugControl::DEBUG_PF_COLOUR};
                             hits += bl as u8 + pf as u8;
                         }
                     }
