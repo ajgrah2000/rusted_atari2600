@@ -9,6 +9,19 @@ use std::io::BufRead;
 
 use super::super::audio::soundchannel;
 
+pub struct DebugControl {}
+
+impl DebugControl {
+    // Currently impacts 'collissions', not just visibility.
+    pub const SHOW_BACKGROUND: bool = true;
+    pub const SHOW_PF: bool = true;
+    pub const SHOW_BL: bool = true;
+    pub const SHOW_P0: bool = true;
+    pub const SHOW_P1: bool = true;
+    pub const SHOW_M0: bool = true;
+    pub const SHOW_M1: bool = true;
+}
+
 pub struct Constants {}
 
 impl Constants {
@@ -296,8 +309,8 @@ impl MissileState {
                 // Uses same stretching as 'ball'
                 let width = 1 << ((self.nusiz & 0x30) >> 4);
                 // Uses similar position to 'player'
-                for i in 0..width {
-                    let x = (i + self.resm + n * self.gap * 8 - Stella::HORIZONTAL_BLANK as u8) % Stella::FRAME_WIDTH as u8;
+                for i in 0..width as u16 {
+                    let x = ((i + self.resm as u16 + n as u16  * self.gap as u16 * 8 - Stella::HORIZONTAL_BLANK as u16) % Stella::FRAME_WIDTH as u16) as u8;
                     self.scan_line[x as usize] = true;
                 }
             }
@@ -745,14 +758,12 @@ impl Stella {
     }
 
     pub fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
-        // tiasound and update scans
-
+        let future_pixels = self.get_write_delay(address);
         if !self.is_blank {
-            self.screen_scan(clock);
+            self.screen_scan(clock, future_pixels);
         }
 
-        self.write_functions(clock, address, data);
+        self.write_functions(clock, address, data, future_pixels);
     }
     pub fn get_paddle_inp_value(paddle_reset_ticks: clocks::ClockType, clock: &clocks::Clock, paddle_position: f32, current_inp: &mut u8) {
         // TODO: Check 'capacitor delay' relating to paddles.
@@ -788,8 +799,59 @@ impl Stella {
         }
     }
 
-    fn write_functions(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        // TODO
+    fn get_write_delay(&mut self, address: u16) -> u8 {
+        let default_future = 1;
+        // Pulling out simulate the 'delay' of the particular command.  Leads to how far in advance the screen is 'written' to, before the register/value is changed.
+        // Currently these are 'fudge' values.  Need to check/confirm each delay (and see how/if they couple with the instruction write timing).
+        match address & 0x3F {
+            0x00 => default_future, // write_vsync
+            0x01 => default_future, // write_vblank
+            0x02 => default_future, // write_wsync
+            0x03 => default_future, // write_rsync
+            0x04 => default_future, // write_nusiz0
+            0x05 => default_future, // write_nusiz1
+            0x06 => default_future, // write_colump0
+            0x07 => default_future, // write_colump1
+            0x08 => default_future, // write_colupf
+            0x09 => default_future, // write_colubk
+            0x0A => default_future, // write_ctrlpf
+            0x0B => default_future, // write_refp0
+            0x0C => default_future, // write_refp1
+            0x0D => 5, // write_pf0
+            0x0E => 5, // write_pf1
+            0x0F => 5, // write_pf2
+            0x10 => 5, // write_resp0
+            0x11 => 5, // write_resp1
+            0x12 => 4, // write_resm0
+            0x13 => 4, // write_resm1
+            0x14 => 4, // write_resbl
+            0x15 => default_future, // tiasound.write_audio_ctrl_0
+            0x16 => default_future, // tiasound.write_audio_ctrl_1
+            0x17 => default_future, // tiasound.write_audio_freq_0
+            0x18 => default_future, // tiasound.write_audio_freq_1
+            0x19 => default_future, // tiasound.write_audio_vol_0
+            0x1A => default_future, // tiasound.write_audio_vol_1
+            0x1B => default_future, // write_grp0
+            0x1C => default_future, // write_grp1
+            0x1D => default_future, // write_enam0
+            0x1E => default_future, // write_enam1
+            0x1F => default_future, // write_enabl
+            0x20 => default_future, // write_hmp0
+            0x21 => default_future, // write_hmp1
+            0x22 => default_future, // write_hmm0
+            0x23 => default_future, // write_hmm1
+            0x24 => default_future, // write_hmbl
+            0x2A => 6, // write_hmove
+            0x2B => default_future, // write_hclr
+            0x25 => default_future, // write_vdelp0
+            0x26 => default_future, // write_vdelp1
+            0x27 => default_future, // write_vdelbl
+            0x2C => default_future, // write_cxclr
+            _ => {default_future}, 
+        }
+    }
+
+    fn write_functions(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
         match address & 0x3F {
 
             0x00 => {self.write_vsync(clock, address, data); }
@@ -808,11 +870,11 @@ impl Stella {
             0x0D => {self.write_pf0(clock, address, data); }
             0x0E => {self.write_pf1(clock, address, data); }
             0x0F => {self.write_pf2(clock, address, data); }
-            0x10 => {self.write_resp0(clock, address, data); }
-            0x11 => {self.write_resp1(clock, address, data); }
-            0x12 => {self.write_resm0(clock, address, data); }
-            0x13 => {self.write_resm1(clock, address, data); }
-            0x14 => {self.write_resbl(clock, address, data); }
+            0x10 => {self.write_resp0(clock, address, data, future_pixels); }
+            0x11 => {self.write_resp1(clock, address, data, future_pixels); }
+            0x12 => {self.write_resm0(clock, address, data, future_pixels); }
+            0x13 => {self.write_resm1(clock, address, data, future_pixels); }
+            0x14 => {self.write_resbl(clock, address, data, future_pixels); }
             0x15 => {self.tiasound.write_audio_ctrl_0(clock, address, data); }
             0x16 => {self.tiasound.write_audio_ctrl_1(clock, address, data); }
             0x17 => {self.tiasound.write_audio_freq_0(clock, address, data); }
@@ -937,25 +999,25 @@ impl Stella {
         self.playfield_state.update_pf2(data);
     }
 
-    fn write_resp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        let resp_value = ((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8;
+    fn write_resp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
+        let resp_value = ((clock.ticks.wrapping_add(future_pixels as u64).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8;
         self.p0_state.update_resp(resp_value);
     }
 
-    fn write_resp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.p1_state.update_resp(((clock.ticks + 5 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+    fn write_resp1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
+        self.p1_state.update_resp(((clock.ticks.wrapping_add(future_pixels as u64).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
-    fn write_resm0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.missile0.update_resm(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+    fn write_resm0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
+        self.missile0.update_resm(((clock.ticks.wrapping_add(future_pixels as u64).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
-    fn write_resm1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.missile1.update_resm(((clock.ticks + 4 - self.screen_start_clock) % Stella::HORIZONTAL_TICKS) as u8);
+    fn write_resm1(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
+        self.missile1.update_resm(((clock.ticks.wrapping_add(future_pixels as u64).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
-    fn write_resbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
-        self.ball.update_resbl(((clock.ticks.wrapping_add(4).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
+    fn write_resbl(&mut self, clock: &mut clocks::Clock, address: u16, data: u8, future_pixels: u8) {
+        self.ball.update_resbl(((clock.ticks.wrapping_add(future_pixels as u64).wrapping_sub(self.screen_start_clock)) % Stella::HORIZONTAL_TICKS) as u8);
     }
 
     fn write_grp0(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
@@ -1029,8 +1091,7 @@ impl Stella {
         self.collision_state.clear();
     }
 
-    pub fn screen_scan(&mut self, clock: &mut clocks::Clock) {
-        let future_pixels = 1;
+    pub fn screen_scan(&mut self, clock: &mut clocks::Clock, future_pixels: u8) {
 
         let last_screen_pos = self.last_screen_update_clock - self.screen_start_clock;
         let screen_pos = (clock.ticks - self.screen_start_clock).wrapping_add(future_pixels as clocks::ClockType);
@@ -1081,19 +1142,19 @@ impl Stella {
 
                 let current_y_line = &mut self.display_lines[y as usize];
                 for x in x_start as usize..x_stop as usize {
-                    let pf = pf_scan[x];
-                    let bl = bl_scan[x];
-                    let m1 = m1_scan[x];
-                    let p1 = p1_scan[x];
-                    let m0 = m0_scan[x];
-                    let p0 = p0_scan[x];
+                    let pf = pf_scan[x] && DebugControl::SHOW_PF;
+                    let bl = bl_scan[x] && DebugControl::SHOW_BL;
+                    let m1 = m1_scan[x] && DebugControl::SHOW_M1;
+                    let p1 = p1_scan[x] && DebugControl::SHOW_P1;
+                    let m0 = m0_scan[x] && DebugControl::SHOW_M0;
+                    let p0 = p0_scan[x] && DebugControl::SHOW_P0;
 
                     // Priorities (bit 2 set):  Priorities (bit 2 clear):
                     //  PF, BL                   P0, M0
                     //  P0, M0                   P1, M1
                     //  P1, M1                   PF, BL
                     //  BK                       BK
-                    let mut pixel_colour = nl_bg_colour;
+                    let mut pixel_colour = if DebugControl::SHOW_BACKGROUND {nl_bg_colour } else { display::Colour::new(255, 255, 255) };
                     let mut hits = 0;
                     if priority_ctrl {
                         if pf || bl {
