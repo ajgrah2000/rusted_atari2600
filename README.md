@@ -72,6 +72,8 @@ Somewhat working ROMs:
         
         This uses cartridge type 'F4SC', so add the command line option '-c F4SC'
 
+        Demo: 'Doctor by Trilobit', appears to work (after adding more (well documented) undocumented op-codes)
+
 Rust dependencies:
         cargo add argh
         cargo add sdl2

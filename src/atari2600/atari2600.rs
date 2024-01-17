@@ -39,7 +39,7 @@ impl Atari2600 {
 
         let stella = graphics::stella::Stella::new(debug, realtime, pal_palette);
         let riot = memory::riot::Riot::new();
-        let memory = memory::memory::Memory::new(Box::new(cartridge), Box::new(stella), Box::new(riot));
+        let memory = memory::memory::Memory::new(cartridge, Box::new(stella), Box::new(riot));
 
         let ports = ports::Ports::new();
 

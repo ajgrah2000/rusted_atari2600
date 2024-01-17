@@ -435,6 +435,24 @@ pub fn inc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
     incremented
 }
 
+// Undocumented instruction
+pub fn isc(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
+    let increment = inc(clock, pc_state, memory, data);
+    sbc(clock, pc_state, memory, increment);
+    increment
+}
+
+pub fn slo(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
+    let shift = asl(clock, pc_state, memory, data);
+    or(clock, pc_state, memory, shift);
+    shift
+}
+
+pub fn lax(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
+     lda(clock, pc_state, memory, data);
+     ldx(clock, pc_state, memory, data)
+}
+
 pub fn t_no_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
     data
 }

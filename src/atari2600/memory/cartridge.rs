@@ -65,7 +65,7 @@ pub struct GenericCartridge {
 }
 
 impl GenericCartridge {
-    pub fn new(filename: &str, max_banks: u8, bank_size: u16, hot_swap: u16, ram_size: u16) -> Self {
+    pub fn new(filename: &str, max_banks: u8, current_bank: u8, bank_size: u16, hot_swap: u16, ram_size: u16) -> Self {
         Self {
             filename: filename.to_string(),
             cartridge_banks: Vec::new(),
@@ -76,7 +76,7 @@ impl GenericCartridge {
             ram_size,
             ram_addr_mask: ram_size.wrapping_sub(1),
             num_banks: 0,
-            current_bank: 0,
+            current_bank,
             bank_select: 0,
         }
     }
@@ -181,25 +181,26 @@ impl Cartridge for GenericCartridge {
     }
 }
 
-pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> GenericCartridge {
+pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> Box<GenericCartridge> {
     const NO_RAM: u16 = 0x0000;
     const RAM_128_BYTES: u16 = 0x0080;
     const RAM_256_BYTES: u16 = 0x0100;
     match cartridge_type {
         // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
         // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
-        CartridgeType::Default => GenericCartridge::new(&filename, 8, 0x1000, 0xFF9, NO_RAM),
-        CartridgeType::F4 => GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, NO_RAM),
-        CartridgeType::F4SC => GenericCartridge::new(&filename, 8, 0x1000, 0xFFB, RAM_128_BYTES),
+        // TODO: Confirm initial/starting bank for each type.
+        CartridgeType::Default => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F4 => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, NO_RAM)),
+        CartridgeType::F4SC => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, RAM_128_BYTES)),
 
-        CartridgeType::F8 => GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, NO_RAM),
-        CartridgeType::F8SC => GenericCartridge::new(&filename, 2, 0x1000, 0xFF9, RAM_128_BYTES),
+        CartridgeType::F8 => Box::new(GenericCartridge::new(&filename, 2, 1, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F8SC => Box::new(GenericCartridge::new(&filename, 2, 1, 0x1000, 0xFF9, RAM_128_BYTES)),
 
-        CartridgeType::F6 => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
-        CartridgeType::F6SC => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, RAM_128_BYTES),
+        CartridgeType::F6 => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F6SC => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, RAM_128_BYTES)),
 
-        CartridgeType::Cbs => GenericCartridge::new(&filename, 3, 0x1000, 0xFFA, RAM_256_BYTES),
-        CartridgeType::Super => GenericCartridge::new(&filename, 4, 0x1000, 0xFF9, NO_RAM),
+        CartridgeType::Cbs => Box::new(GenericCartridge::new(&filename, 3, 0, 0x1000, 0xFFA, RAM_256_BYTES)),
+        CartridgeType::Super => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
     }
 }
 
