@@ -38,6 +38,27 @@ Building/Running:
 		"C:\Program Files\CMake\bin\cmake.exe" --build . --config Release --parallel
                  copy Release\SDL2.* %USERPROFILE%\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib
 
+        Webassembly
+                From: https://puddleofcode.com/story/definitive-guide-to-rust-sdl2-and-emscriptem
+                Then: https://users.rust-lang.org/t/sdl2-emscripten-asmjs-and-invalid-renderer-panic/66567
+                Taken from: https://github.com/therocode/rust_emscripten_main_loop
+
+
+                sudo apt-get install emscripten
+                rustup target add asmjs-unknown-emscripten
+                EM_CONFIG=$HOME/.emscripten emcc --generate-config
+                (pushd projects/emscripten/; cargo build --release; popd)
+
+                # Start a web server and load in browser
+                python3 -m http.server
+
+                Note, rom file is statically included in the build (not as a command line argument).
+                Place a file in "/tmp/test_file.rom" before building.
+
+                # Note, the configuration file in 'projects/emscripten' are the same as running:
+                export EMCC_CFLAGS="-s USE_SDL=2"
+                cargo build --target asmjs-unknown-emscripten
+
 Build and run:
     cargo run --release <rom_file>
 

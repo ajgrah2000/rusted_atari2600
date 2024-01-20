@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::Read;
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
 
@@ -82,18 +80,35 @@ impl GenericCartridge {
     }
 
     pub fn load(&mut self) -> std::io::Result<()> {
-        let f = File::open(&self.filename);
-        match f {
-            Ok(mut file) => {
-                self.load_banks(&mut file);
-                self.summary();
-                Ok(())
+        let mut buffer;
+
+        #[cfg(not(target_os = "emscripten"))]
+        { 
+            use std::fs::File;
+            use std::io::Read;
+
+            buffer = Vec::new();
+            let f = File::open(&self.filename);
+            match f {
+                Ok(mut file) => {
+                    file.read_to_end(&mut buffer)?;
+                }
+                Err(e) => return Err(e),
             }
-            Err(e) => Err(e),
         }
+
+        #[cfg(target_os = "emscripten")]
+        {
+            buffer = include_bytes!("/tmp/test_file.rom").to_vec();
+        }
+
+        self.load_banks(&mut buffer);
+        self.summary();
+
+        Ok(())
     }
 
-    fn load_banks(&mut self, source: &mut dyn Read) {
+    fn load_banks(&mut self, source: &mut Vec<u8>) {
         let total_bytes_read = 0;
 
         for i in 0..self.max_banks {
@@ -105,30 +120,37 @@ impl GenericCartridge {
         }
 
         // Consumes and counts the remaining bytes.
-        let remaining_bytes = source.bytes().count();
+        let remaining_bytes = source.len();
         if remaining_bytes > 0 {
             println!("Extra bytes in cartridge: {} bytes", remaining_bytes);
         }
     }
 
-    fn load_bank(&mut self, source: &mut dyn Read) -> (Option<Bank>, NumBanksType) {
+    fn load_bank(&mut self, source: &mut Vec<u8>) -> (Option<Bank>, NumBanksType) {
         let mut bank = Bank::new(self.bank_size);
 
         // Try to read an entire bank.
-        match source.read(&mut bank.data) {
-            Ok(0) => (None, 0),
-            Ok(n) if 2048 == n && 0 == self.num_banks => {
+        match source.len() {
+            0 => (None, 0),
+            n if 2048 == n && 0 == self.num_banks => {
                 println!("Assuming this to be a '2k' cartridge with no bank switching.");
+                bank.data = source[0..self.bank_size as usize].try_into().unwrap();
                 self.bank_size = n as u16;
                 (Some(bank), n as NumBanksType)
             }
-            Ok(n) if n < bank.data.len() => {
+            n if n < bank.data.len() => {
+                bank.data = source[0..n as usize].try_into().unwrap();
+                source.drain(0..n);
                 self.bank_size = bank.data.len() as u16;
                 println!("Bank incomplete ({} bytes found in last bank), will be padded with zeros", n);
                 (Some(bank), n as NumBanksType)
             }
-            Ok(n) => (Some(bank), n as NumBanksType),
-            _ => (None, 0),
+            n => {
+                bank.data = source[0..self.bank_size as usize].try_into().unwrap();
+                source.drain(0..self.bank_size as usize);
+                self.bank_size = bank.data.len() as u16;
+                (Some(bank), self.bank_size as NumBanksType)
+            }
         }
     }
 

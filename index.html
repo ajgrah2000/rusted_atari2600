@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Emscripten-Generated Code</title>
+    <style>
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: none;
+        background-color: black;
+        color: white;
+      }
+      .emscripten {
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+      div.emscripten {
+        text-align: center;
+      }
+      div.emscripten_border {
+        border: 1px solid black;
+      }
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten {
+        border: 0px none;
+        background-color: black;
+      }
+      #controls {
+        display: inline-block;
+        float: right;
+        vertical-align: top;
+        margin-top: 30px;
+        margin-right: 20px;
+      }
+      #output {
+        width: 100%;
+        height: 300px;
+        margin: 0 auto;
+        margin-top: 10px;
+        border-left: 0px;
+        border-right: 0px;
+        padding-left: 0px;
+        padding-right: 0px;
+        display: block;
+        background-color: black;
+        color: white;
+        font-family: 'Lucida Console', Monaco, monospace;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <span id="controls">
+      <span
+        ><input
+          type="button"
+          value="Fullscreen"
+          /* pointerLock, resize */
+          onclick="Module.requestFullscreen(false, false)"
+        />
+      </span>
+    </span>
+
+    <div class="emscripten_border">
+      <canvas
+        class="emscripten"
+        id="canvas"
+        oncontextmenu="event.preventDefault()"
+      ></canvas>
+    </div>
+    <textarea id="output" rows="8"></textarea>
+
+    <script type="text/javascript">
+      var Module = {
+        print: (function() {
+          var element = document.getElementById('output')
+          if (element) element.value = '' // clear browser cache
+          return function(text) {
+            if (arguments.length > 1)
+              text = Array.prototype.slice.call(arguments).join(' ')
+            console.log(text)
+            if (element) {
+              element.value += text + '\n'
+              element.scrollTop = element.scrollHeight // focus on bottom
+            }
+          }
+        })(),
+        canvas: (function() {
+          return document.getElementById('canvas')
+        })(),
+      }
+    </script>
+    <script
+      type="text/javascript"
+      src="target/asmjs-unknown-emscripten/release/rusted_atari2600.js"
+      onerror="alert('Script not found: target/asmjs-unknown-emscripten/release/rusted_atari2600.js\nbuild with:\n(cd projects/emscripten && cargo build --release)')"
+    ></script>
+  </body>
+</html>

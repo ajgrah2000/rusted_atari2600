@@ -8,7 +8,18 @@ use argh::FromArgs;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
+#[cfg(target_os = "emscripten")]
+pub mod emscripten;
+
 pub struct Core {}
+
+impl Drop for Core {
+    fn drop(&mut self) {
+        println!("Core is being dropped");
+    }
+}
+
+fn default_cart() -> String {"".to_string()}
 
 #[derive(FromArgs)]
 /// Rusty Atari 2600 Emulator.
@@ -38,7 +49,7 @@ struct RustAtari2600Args {
     list_drivers: bool,
 
     /// name of cartridge to run
-    #[argh(positional)]
+    #[argh(positional,default="default_cart()")]
     cartridge_name: String,
 
     /// replay file
@@ -78,7 +89,8 @@ fn main() {
         println!("{}", full_description_string());
     }
 
-    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette);
+    // Essentially make atari_machine 'static', via 'leak'
+    let atari_machine = Box::leak(Box::new(atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette)));
 
     atari_machine.power_atari2600();
 

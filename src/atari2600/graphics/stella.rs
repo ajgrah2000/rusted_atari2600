@@ -5,7 +5,6 @@ use super::super::inputs;
 use super::super::io;
 use super::display;
 use std;
-use std::io::BufRead;
 
 use super::super::audio::soundchannel;
 
@@ -349,8 +348,6 @@ pub struct PlayerState {
     pos_start: u16,
 
     scan_line: Vec<bool>,
-
-    player_scan_unshifted: Vec<Vec<Vec<Vec<Vec<Vec<bool>>>>>>,
 }
 
 impl PlayerState {
@@ -368,7 +365,7 @@ impl PlayerState {
     const GRAPHIC_RANGE: usize = 256;
 
     fn new() -> Self {
-        let mut instance = Self {
+        Self {
             nusiz: 0,
             p: 0,
             p_old: 0,
@@ -386,13 +383,7 @@ impl PlayerState {
             pos_start: 0,
 
             scan_line: vec![false; Stella::FRAME_WIDTH as usize],
-
-            player_scan_unshifted: vec![vec![vec![vec![vec![vec![false; Stella::FRAME_WIDTH as usize]; PlayerState::GRAPHIC_RANGE]; PlayerState::REFLECT_RANGE]; PlayerState::GAP_RANGE]; PlayerState::SIZE_RANGE]; PlayerState::NUMBER_RANGE],
-        };
-
-        instance.pre_calc_player();
-
-        instance
+        }
     }
 
     fn update_nusiz(&mut self, data: u8) {
@@ -425,47 +416,36 @@ impl PlayerState {
         self.update();
     }
 
-    fn pre_calc_player(&mut self) {
-        // Precalculate all number, gap, size, graphic combinations.
+    fn calculate_player_scan(number:u8, size:u8, gap:u8, reflect:u8, g:u8) -> Vec<bool> {
 
         // Create enough empty lists to allow direct indexing.
-        for number in [1, 2, 3] {
-            for size in [1, 2, 4] {
-                for gap in [0, 2, 4, 8] {
-                    for reflect in 0..2 {
-                        for g in 0..PlayerState::GRAPHIC_RANGE {
-                            // Create the 8-bit 'graphic'
-                            let mut graphic = [false; 8];
-                            for (i, graphic_value) in graphic.iter_mut().enumerate() {
-                                if 0 != (g >> i) & 0x01 {
-                                    *graphic_value = true;
-                                }
-                            }
-
-                            if 0 != reflect {
-                                graphic.reverse();
-                            }
-
-                            // Scale the graphic, so each pixel is 'size' big
-                            let mut scaled_graphic = vec![false; graphic.len() * size];
-                            for i in 0..graphic.len() {
-                                for s in 0..size {
-                                    scaled_graphic[i * size + s] = graphic[i];
-                                }
-                            }
-
-                            let mut scan = vec![false; Stella::FRAME_WIDTH as usize];
-                            for n in 0..number {
-                                let offset = n * gap * 8;
-                                scan[offset..(scaled_graphic.len() + offset)].copy_from_slice(&scaled_graphic[..]);
-                            }
-
-                            self.player_scan_unshifted[number][size][gap][reflect][g] = scan;
-                        }
-                    }
-                }
+        // Create the 8-bit 'graphic'
+        let mut graphic = [false; 8];
+        for (i, graphic_value) in graphic.iter_mut().enumerate() {
+            if 0 != (g >> i) & 0x01 {
+                *graphic_value = true;
             }
         }
+
+        if 0 != reflect {
+            graphic.reverse();
+        }
+
+        // Scale the graphic, so each pixel is 'size' big
+        let mut scaled_graphic = vec![false; graphic.len() * size as usize];
+        for i in 0..graphic.len() {
+            for s in 0..size as usize{
+                scaled_graphic[i * size as usize + s] = graphic[i];
+            }
+        }
+
+        let mut scan = vec![false; Stella::FRAME_WIDTH as usize];
+        for n in 0..number {
+            let offset = (n * gap * 8) as usize;
+            scan[offset..(scaled_graphic.len() + offset)].copy_from_slice(&scaled_graphic[..]);
+        }
+
+        scan
     }
 
     fn update(&mut self) {
@@ -501,7 +481,8 @@ impl PlayerState {
     fn calc_player_scan(&mut self) {
         // Rotate the scan.
         let rotation = Stella::FRAME_WIDTH - self.pos_start;
-        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize][self.gap as usize][self.reflect as usize][self.grp as usize];
+//        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize][self.gap as usize][self.reflect as usize][self.grp as usize];
+        let scan = PlayerState::calculate_player_scan(self.number, self.size, self.gap, self.reflect, self.grp);
         self.scan_line = scan[rotation as usize..].to_vec();
         self.scan_line.append(&mut scan[..rotation as usize].to_vec());
     }
@@ -669,13 +650,35 @@ impl Colours {
         }
     }
 
-    pub fn load(&mut self, palette_filename: &str) {
-        let buf_read = std::io::BufReader::new(std::fs::File::open(palette_filename).unwrap_or_else(|_| panic!("file not found! {}", palette_filename)));
-        let lines: Vec<String> = buf_read.lines().map(|x| x.unwrap()).collect();
+    pub fn load(&mut self, pal_palette: bool) {
+
+        #[cfg(target_os = "emscripten")]
+        let buffer = {
+             if pal_palette { 
+                 include_bytes!("../../../palette_pal.dat").to_vec() 
+             } else {
+                 include_bytes!("../../../palette_ntsc.dat").to_vec() 
+             }
+        };
+
+        #[cfg(not(target_os = "emscripten"))]
+        let buffer = { 
+            let mut inner_buffer = Vec::new();
+            use std::fs::File;
+            use std::io::Read;
+            let palette_filename = if pal_palette { "palette_pal.dat" } else { "palette_ntsc.dat" };
+            let mut file = File::open(palette_filename).unwrap_or_else(|_| panic!("file not found! {}", palette_filename));
+            let _ = file.read_to_end(&mut inner_buffer);
+            inner_buffer
+        };
+
+        let lines: Vec<String> = std::str::from_utf8(&buffer).unwrap().split('\n').map(|x| x.to_string()).collect();
         for (i, line) in lines.iter().enumerate() {
-            let line_without_comments = &line[0..line.find('#').unwrap_or(line.len())].trim_end_matches(' ');
-            let values: Vec<u8> = line_without_comments.split(' ').collect::<Vec<&str>>().iter().map(|x| x.parse::<u8>().unwrap()).collect::<Vec<u8>>();
-            self.colours[i] = display::Colour::new(values[0], values[1], values[2]);
+            if line.len() > 0 {
+                let line_without_comments = &line[0..line.find('#').unwrap_or(line.len())].trim_end_matches(' ');
+                let values: Vec<u8> = line_without_comments.split(' ').collect::<Vec<&str>>().iter().map(|x| x.parse::<u8>().unwrap()).collect::<Vec<u8>>();
+                self.colours[i] = display::Colour::new(values[0], values[1], values[2]);
+            }
         }
     }
 
@@ -738,7 +741,7 @@ impl Stella {
 
     pub fn new(scanline_debug: bool, realtime: bool, pal_palette: bool) -> Self {
         let mut colours = Colours::new();
-        colours.load(if pal_palette { "palette_pal.dat" } else { "palette_ntsc.dat" });
+        colours.load(pal_palette);
 
         Self {
             tiasound: tiasound::TiaSound::new(realtime),

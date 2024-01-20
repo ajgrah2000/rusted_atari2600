@@ -94,7 +94,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusted_atari"
+name = "rusted_atari2600"
 version = "0.1.0"
 dependencies = [
  "argh",

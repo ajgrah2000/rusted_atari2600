@@ -1,0 +1,7 @@
+[build]
+target="asmjs-unknown-emscripten"
+release=true
+
+[env]
+EM_CONFIG="~/.emscripten"
+EMCC_CFLAGS="-s USE_SDL=2"

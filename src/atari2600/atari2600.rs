@@ -49,7 +49,7 @@ impl Atari2600 {
         core
     }
 
-    pub fn power_atari2600(&mut self) {
+    pub fn power_atari2600(&'static mut self) {
         inputs::UserInput::print_keys();
 
         // Default scaling (if not full screen)
@@ -61,8 +61,6 @@ impl Atari2600 {
 
         let frame_width = BLIT_WIDTH;
         let frame_height = ((frame_width as u32) * (BLIT_HEIGHT as u32) / (BLIT_WIDTH as u32)) as u16;
-
-        println!("powering on Atari 2600 Emulator.");
 
         let window_size = graphics::display::WindowSize::new(frame_width, frame_height, graphics::stella::Constants::ATARI2600_WIDTH, graphics::stella::Constants::ATARI2600_HEIGHT, self.fullscreen);
 
@@ -80,8 +78,7 @@ impl Atari2600 {
 
         // Creating the texture creator and texture is slow, so perform multiple display updates per creation.
         let texture_creator = graphics::display::SDLUtility::texture_creator(canvas);
-        let mut texture;
-        texture = graphics::display::SDLUtility::create_texture(&texture_creator, pixel_format, window_size.console_width, window_size.console_height);
+        let mut texture = graphics::display::SDLUtility::create_texture(&texture_creator, pixel_format, window_size.console_width, window_size.console_height);
 
         let mut audio_steps = 0;
         let mut display_refreshes = 0;
@@ -116,7 +113,7 @@ impl Atari2600 {
         true
     }
 
-    pub fn main_loop(&mut self, mut window_size: graphics::display::WindowSize, pixel_format: pixels::PixelFormatEnum) {
+    pub fn main_loop(&'static mut self, mut window_size: graphics::display::WindowSize, pixel_format: pixels::PixelFormatEnum) {
         let mut sdl_context = sdl2::init().unwrap();
 
         let mut canvas = graphics::display::SDLUtility::create_canvas(&mut sdl_context, "rust-atari2600 emulator", window_size.frame_width, window_size.frame_height, window_size.fullscreen);
@@ -124,16 +121,15 @@ impl Atari2600 {
         canvas.set_logical_size(graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_width as u32, window_size.console_height as u32).unwrap();
 
         let mut audio_queue = sound::SDLUtility::get_audio_queue(&mut sdl_context);
-        //        let mut audio_queue = Box::new(sound::HoundOutput::new("SampleOutput.wav"));
 
         let mut event_pump = sdl_context.event_pump().unwrap();
 
-        'running: loop {
+        let mut main_loop = move || {
             for event in event_pump.poll_iter() {
                 graphics::display::SDLUtility::handle_events(&event, &mut window_size);
 
                 if !inputs::UserInput::handle_events(event, &mut self.core.ports.joysticks) {
-                    break 'running;
+                    return false;
                 };
                 self.core.memory.riot.set_inputs(self.core.ports.joysticks.input);
                 self.core.memory.stella.set_inputs(self.core.ports.joysticks.input);
@@ -141,8 +137,24 @@ impl Atari2600 {
 
             // First loop, draw DISPLAY_UPDATES_PER_KEY_EVENT frames at a time.
             if !self.draw_loop(&mut canvas, pixel_format, &window_size, Atari2600::DISPLAY_UPDATES_PER_KEY_EVENT, &mut *audio_queue) {
-                break 'running;
+                return false;
             }
-        }
+            true
+        };
+
+        #[cfg(target_os = "emscripten")]
+        use super::super::emscripten::{emscripten};
+
+        #[cfg(target_os = "emscripten")]
+        emscripten::set_main_loop_callback(move ||{main_loop();});
+
+        #[cfg(not(target_os = "emscripten"))]
+        loop {if !main_loop() { break;}} 
+    }
+}
+
+impl Drop for Atari2600 {
+    fn drop(&mut self) {
+        println!("Atari2600 is being dropped");
     }
 }
