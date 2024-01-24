@@ -3,9 +3,9 @@ use super::super::io;
 use super::cartridge;
 
 pub struct Memory {
-    cartridge: Box<dyn cartridge::Cartridge>,
-    pub stella: Box<dyn io::StellaIO>,
-    pub riot: Box<dyn io::RiotIO>,
+    cartridge: Box<dyn cartridge::Cartridge + Sync + Send>,
+    pub stella: Box<dyn io::StellaIO + Sync + Send>,
+    pub riot: Box<dyn io::RiotIO + Sync + Send>,
 }
 
 impl Memory {
@@ -18,7 +18,7 @@ impl Memory {
     const ROM_MASK: u16 = 0xD000;
     const ROM_ADDRLINE: u16 = 0x1000;
 
-    pub fn new(cartridge: Box<dyn cartridge::Cartridge>, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::RiotIO>) -> Self {
+    pub fn new(cartridge: Box<dyn cartridge::Cartridge + Sync + Send>, stella: Box<dyn io::StellaIO + Sync + Send>, riot: Box<dyn io::RiotIO + Sync + Send>) -> Self {
         Self { cartridge, stella, riot }
     }
 

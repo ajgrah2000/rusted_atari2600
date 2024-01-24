@@ -83,16 +83,31 @@ fn full_description_string() -> String {
 }
 
 fn main() {
+
     let args: RustAtari2600Args = argh::from_env();
 
     if args.list_drivers {
         println!("{}", full_description_string());
     }
 
-    // Essentially make atari_machine 'static', via 'leak'
-    let atari_machine = Box::leak(Box::new(atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette)));
+    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette);
 
     atari_machine.power_atari2600();
+
+    let mut main_loop = move || {
+        atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine)
+    };
+
+    #[cfg(target_os = "emscripten")]
+    use emscripten::{emscripten};
+
+    // After some 'static' wrangling, having the 'set_main_loop_callback' exist
+    // in main appears to appease the lifetime checks.
+    #[cfg(target_os = "emscripten")]
+    emscripten::set_main_loop_callback(move ||{main_loop();});
+
+    #[cfg(not(target_os = "emscripten"))]
+    loop {if !main_loop() { break;}} 
 
     println!("Finished.");
 }

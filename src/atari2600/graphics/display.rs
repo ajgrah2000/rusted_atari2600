@@ -5,21 +5,35 @@ use sdl2::video;
 
 use std::fmt;
 
+// Splitting Console Size and windows size, as the console size if 'fixed',
+// only window size changes/is scalable.
+pub struct ConsoleSize {
+    pub console_width: u16,
+    pub console_height: u16,
+}
+
+impl ConsoleSize {
+    pub fn new(console_width: u16, console_height: u16) -> Self {
+        Self {
+            console_width,
+            console_height,
+        }
+    }
+}
+
 pub struct WindowSize {
     pub frame_width: u16,
     pub frame_height: u16,
-    pub console_width: u16,
-    pub console_height: u16,
     pub fullscreen: bool,
+    pub console_size: ConsoleSize,
 }
 
 impl WindowSize {
-    pub fn new(frame_width: u16, frame_height: u16, console_width: u16, console_height: u16, fullscreen: bool) -> Self {
+    pub fn new(frame_width: u16, frame_height: u16, console_size:ConsoleSize, fullscreen: bool) -> Self {
         Self {
             frame_width,
             frame_height,
-            console_width,
-            console_height,
+            console_size: console_size,
             fullscreen,
         }
     }
@@ -90,14 +104,12 @@ impl SDLUtility {
         texture_creator.create_texture_streaming(pixel_format, frame_width as u32, frame_height as u32).map_err(|e| e.to_string()).unwrap()
     }
 
-    pub fn handle_events(event: &event::Event, window_size: &mut WindowSize) {
+    pub fn handle_events(event: &event::Event) {
         // Handle window events.
         if let event::Event::Window {
             win_event: event::WindowEvent::Resized(w, h), ..
         } = event
         {
-            window_size.frame_width = *w as u16;
-            window_size.frame_height = *h as u16;
         }
     }
 }
