@@ -56,6 +56,8 @@ impl TiaSound {
             // This is coupled with the sleep in 'core', it essentially
             // relies on that sleep not quite long enough to ensure sound is correct. '(otherwise the sound queue will be starved).
             if self.realtime  {
+                // TODO: Check/Fix timing difference.
+                #[cfg(not(target_os = "emscripten"))]
                 thread::sleep(time::Duration::from_millis(1));
             }
         }
@@ -70,10 +72,16 @@ impl TiaSound {
             }
         }
 
-        if !self.realtime && stream.len() == stream.capacity() {
-            // If the stream is at capacity, then drain it (so as to not slow down
-            // the emulation, as it's behind where it wants to be)
+        if stream.len() == stream.capacity() {
+            #[cfg(target_os = "emscripten")]
             stream.clear();
+
+            #[cfg(not(target_os = "emscripten"))]
+            if !self.realtime && stream.len() == stream.capacity() {
+                // If the stream is at capacity, then drain it (so as to not slow down
+                // the emulation, as it's behind where it wants to be)
+                stream.clear();
+            }
         }
 
         stream
