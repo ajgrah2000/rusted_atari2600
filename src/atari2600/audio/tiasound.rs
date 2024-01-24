@@ -49,13 +49,13 @@ impl TiaSound {
     pub fn get_next_audio_chunk(&mut self, length: u32) -> Vec<soundchannel::PlaybackType> {
         let mut stream = Vec::with_capacity((2 * length) as usize);
 
-        if self.realtime {
-            // If there's too much of a backlog of sound data for the sound card, then sleep a little longer.
-            let sound_delay_ms = 1_000 * self.working_stream.len() / TiaSound::SAMPLERATE as usize;
-            if sound_delay_ms > 10 {
-                // TODO; Find a better way to manage time (in a single location).
-                // This is coupled with the sleep in 'core', it essentially
-                // relies on that sleep not quite long enough to ensure sound is correct. '(otherwise the sound queue will be starved).
+        // If there's too much of a backlog of sound data for the sound card, then sleep a little longer.
+        let sound_delay_ms = 1_000 * self.working_stream.len() / TiaSound::SAMPLERATE as usize;
+        if sound_delay_ms > 10 {
+            // TODO; Find a better way to manage time (in a single location).
+            // This is coupled with the sleep in 'core', it essentially
+            // relies on that sleep not quite long enough to ensure sound is correct. '(otherwise the sound queue will be starved).
+            if self.realtime  {
                 thread::sleep(time::Duration::from_millis(1));
             }
         }
@@ -68,6 +68,12 @@ impl TiaSound {
                     }
                 }
             }
+        }
+
+        if !self.realtime && stream.len() == stream.capacity() {
+            // If the stream is at capacity, then drain it (so as to not slow down
+            // the emulation, as it's behind where it wants to be)
+            stream.clear();
         }
 
         stream
@@ -165,27 +171,24 @@ impl TiaSound {
         self.pre_write_generate_sound(clock);
     }
 
-    // Wav
     fn pre_write_generate_sound(&mut self, clock: &clocks::Clock) {
-        if self.realtime {
-            let audio_ticks: u32 = (clock.ticks - self.last_update_time) as u32;
+        let audio_ticks: u32 = (clock.ticks - self.last_update_time) as u32;
 
-            let mut raw_audio: (Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
+        let mut raw_audio: (Vec<u8>, Vec<u8>) = (Vec::new(), Vec::new());
 
-            let num_samples = ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64) / TiaSound::CPU_CLOCK_RATE as u64) as u16;
-            raw_audio.0.append(&mut self.get_channel_data(0, num_samples));
-            raw_audio.1.append(&mut self.get_channel_data(1, num_samples));
+        let num_samples = ((TiaSound::SAMPLERATE as u64 * audio_ticks as u64) / TiaSound::CPU_CLOCK_RATE as u64) as u16;
+        raw_audio.0.append(&mut self.get_channel_data(0, num_samples));
+        raw_audio.1.append(&mut self.get_channel_data(1, num_samples));
 
-            // Update the time based on the number of samples.
-            self.last_update_time += ((num_samples as u64 * TiaSound::CPU_CLOCK_RATE as u64) / TiaSound::SAMPLERATE as u64) as clocks::ClockType;
+        // Update the time based on the number of samples.
+        self.last_update_time += ((num_samples as u64 * TiaSound::CPU_CLOCK_RATE as u64) / TiaSound::SAMPLERATE as u64) as clocks::ClockType;
 
-            while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
-                if 2 == sound::SDLUtility::MONO_STERO_FLAG {
-                    self.working_stream.push(raw_audio.0.remove(0));
-                    self.working_stream.push(raw_audio.1.remove(0));
-                } else {
-                    self.working_stream.push(((raw_audio.0.remove(0) as u16 + raw_audio.1.remove(0) as u16) / 2) as u8);
-                }
+        while !raw_audio.0.is_empty() && !raw_audio.1.is_empty() {
+            if 2 == sound::SDLUtility::MONO_STERO_FLAG {
+                self.working_stream.push(raw_audio.0.remove(0));
+                self.working_stream.push(raw_audio.1.remove(0));
+            } else {
+                self.working_stream.push(((raw_audio.0.remove(0) as u16 + raw_audio.1.remove(0) as u16) / 2) as u8);
             }
         }
     }
