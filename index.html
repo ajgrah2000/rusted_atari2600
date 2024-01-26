@@ -55,8 +55,8 @@
   </head>
   <body>
     <span id="controls">
-      <span
-        ><input
+      <span>
+      <input
           type="button"
           value="Fullscreen"
           /* pointerLock, resize */
@@ -64,18 +64,35 @@
         />
       </span>
     </span>
-
-    <div class="emscripten_border">
+    <article>
+    </div>
+    </article>
+    <div class="emscripten_border" id="rom_drop">
       <canvas
         class="emscripten"
         id="canvas"
         oncontextmenu="event.preventDefault()"
-      ></canvas>
+      >
+      <style>
+          #rom_drop { border: 5px dashed #ccc; margin: 10px auto;} 
+          #rom_drop.hide_border { border: none;} 
+          #rom_drop.highlight { border-color: purple; }
+      </style>
+      </canvas>
+      <p>Drop Atari 2600 Rom here to start emulation.</p>
+      <p>Refresh page to start again.</p>
     </div>
     <textarea id="output" rows="8"></textarea>
-
     <script type="text/javascript">
+      var greet;
+      var display_data;
       var Module = {
+        arguments: ["-n"],
+        onRuntimeInitialized: (function() {
+            greet = Module.cwrap('greet');
+            display_data = Module.cwrap('display_data', 'void', ['array', 'number']);
+        }
+        ),
         print: (function() {
           var element = document.getElementById('output')
           if (element) element.value = '' // clear browser cache
@@ -99,5 +116,11 @@
       src="target/asmjs-unknown-emscripten/release/rusted_atari2600.js"
       onerror="alert('Script not found: target/asmjs-unknown-emscripten/release/rusted_atari2600.js\nbuild with:\n(cd projects/emscripten && cargo build --release)')"
     ></script>
+    <script>
+        function handleNewFileData(data) {
+          display_data(data, data.length);
+        }
+    </script>
+    <script type="module" src="file_drop.js"></script>
   </body>
 </html>

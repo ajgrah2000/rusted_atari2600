@@ -99,7 +99,8 @@ impl GenericCartridge {
 
         #[cfg(target_os = "emscripten")]
         {
-            buffer = include_bytes!("/tmp/test_file.rom").to_vec();
+            buffer = Vec::new();
+            JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { buffer = ref_cell_data.borrow().raw_cart_data.clone();});
         }
 
         self.load_banks(&mut buffer);
@@ -167,7 +168,11 @@ impl GenericCartridge {
                 self.current_bank = self.num_banks - ((self.hot_swap + 1) - address) as u8;
             }
 
-            self.cartridge_banks[self.current_bank as usize].data[address as usize]
+            if !self.cartridge_banks.is_empty() {
+                self.cartridge_banks[self.current_bank as usize].data[address as usize]
+            } else {
+                0
+            }
         }
     }
 
@@ -191,7 +196,9 @@ impl Cartridge for GenericCartridge {
     fn summary(&self) {
         println!("cartridge read: {}", self.filename);
         println!(" num banks: {}", self.num_banks);
-        println!(" bank size = {}", self.cartridge_banks[0].data.len());
+        if self.cartridge_banks.len() > 0 {
+            println!(" bank size = {}", self.cartridge_banks[0].data.len());
+        }
     }
 
     fn read(&mut self, address: u16) -> u8 {
@@ -203,7 +210,40 @@ impl Cartridge for GenericCartridge {
     }
 }
 
-pub fn get_new_carterage(filename: String, cartridge_type: CartridgeType) -> Box<GenericCartridge> {
+struct JavaScriptData {
+    pub raw_cart_data: Vec<u8>,
+}
+impl JavaScriptData {
+    pub fn new() -> Self {
+        Self {
+            raw_cart_data: Vec::new(),
+        }
+    }
+}
+
+use std::cell::RefCell;
+
+thread_local! {
+    static JAVASCRIPT_DATA_STORE: RefCell<JavaScriptData> = RefCell::new(JavaScriptData::new());
+}
+
+pub fn is_cart_ready() -> bool {
+    let mut is_ready = false;
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { is_ready = !ref_cell_data.borrow().raw_cart_data.is_empty();});
+    is_ready
+}
+
+#[no_mangle]
+pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize) {
+    // TODO: Although it's possible there's another way (alternate arguments), I'll just use the unsafe option for now.
+    let v = unsafe {std::slice::from_raw_parts(raw_data_ptr, raw_data_length)};
+    println!("Called from javascript {:x} {}", v[0], v.len());
+
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { ref_cell_data.borrow_mut().raw_cart_data = v.to_vec()});
+}
+
+
+pub fn get_new_carterage(filename: String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
     const NO_RAM: u16 = 0x0000;
     const RAM_128_BYTES: u16 = 0x0080;
     const RAM_256_BYTES: u16 = 0x0100;

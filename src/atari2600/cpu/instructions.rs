@@ -188,7 +188,7 @@ impl Instruction {
                 5 => op(op5, a5),
                 6 => op(op6, a6),
                 7 => op(op7, a7), 
-                _ => panic!("Not Possible")
+                _ => unreachable!("Me panic? Not Possible.")
             }
 
         };

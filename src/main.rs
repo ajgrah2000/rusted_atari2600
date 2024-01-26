@@ -64,11 +64,17 @@ struct RustAtari2600Args {
 fn cartridge_type_help_fn() -> String {
     atari2600::memory::cartridge::CartridgeType::iter().fold("cartridge type: ".to_owned(), |all, value| format!("{} {:?}", all, value))
 }
+
 fn parse_cartridge(value: &str) -> Result<atari2600::memory::cartridge::CartridgeType, String> {
     match atari2600::memory::cartridge::CartridgeType::from_str(value) {
         Ok(x) => Ok(x),
         Err(x) => Err(format!("Supplied {}. Error: {}\n{}", value, x, cartridge_type_help_fn())),
     }
+}
+
+#[no_mangle]
+pub extern fn greet() {
+    println!("Callable from javascript");
 }
 
 fn full_description_string() -> String {
@@ -90,24 +96,37 @@ fn main() {
         println!("{}", full_description_string());
     }
 
-    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name, args.cartridge_type, args.fullscreen, args.pal_palette);
-
-    atari_machine.power_atari2600();
-
-    let mut main_loop = move || {
-        atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine)
-    };
+    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name.clone(), &args.cartridge_type, args.fullscreen, args.pal_palette);
 
     #[cfg(target_os = "emscripten")]
-    use emscripten::{emscripten};
+    {
+        let mut main_loop = move || {
+            if atari2600::memory::cartridge::is_cart_ready() {
+                if !atari_machine.powered {
+                    atari_machine.reset(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name.clone(), &args.cartridge_type, args.fullscreen, args.pal_palette);
+                    atari_machine.power_atari2600();
+                    false
+                } else {
+                    atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine)
+                }
+            } else {
+                false
+            }
+        };
 
-    // After some 'static' wrangling, having the 'set_main_loop_callback' exist
-    // in main appears to appease the lifetime checks.
-    #[cfg(target_os = "emscripten")]
-    emscripten::set_main_loop_callback(move ||{main_loop();});
+        use emscripten::{emscripten};
+
+        // After some 'static' wrangling, having the 'set_main_loop_callback' exist
+        // in main appears to appease the lifetime checks.
+        #[cfg(target_os = "emscripten")]
+        emscripten::set_main_loop_callback(move ||{main_loop();});
+    }
 
     #[cfg(not(target_os = "emscripten"))]
-    loop {if !main_loop() { break;}} 
+    {
+        atari_machine.power_atari2600();
+        loop {if !atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine) { break;}} 
+    }
 
     println!("Finished.");
 }

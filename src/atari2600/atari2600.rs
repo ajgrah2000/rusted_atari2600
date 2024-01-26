@@ -18,6 +18,7 @@ pub struct Atari2600 {
     stop_clock: clocks::ClockType,
     fullscreen: bool,
     counter: u32,
+    pub powered: bool,
 
     // These appear as 'Options' to simplify delayed initialisation.
     sdl_context: Option<sdl2::Sdl>,
@@ -29,7 +30,7 @@ impl Atari2600 {
     const DISPLAY_UPDATES_PER_KEY_EVENT: u32 = 10000; // Number of display updates per key press event. (reduces texture creation overhead).
     const CPU_STEPS_PER_AUDIO_UPDATE: u32 = 50; // Number of times to step the CPU before updating the audio.
 
-    pub fn build_atari2600(cartridge_name: String, cartridge_type: memory::cartridge::CartridgeType, debug: bool, realtime: bool, pal_palette: bool) -> cpu::core::Core {
+    pub fn build_atari2600(cartridge_name: String, cartridge_type: &memory::cartridge::CartridgeType, debug: bool, realtime: bool, pal_palette: bool) -> cpu::core::Core {
         let clock = clocks::Clock::new();
         let pc_state = cpu::pc_state::PcState::new();
         // Default Cartridge.
@@ -102,11 +103,16 @@ impl Atari2600 {
         let window_size = Self::get_window_size();
 
         self.configure_sdl(window_size, graphics::display::SDLUtility::PIXEL_FORMAT);
+        self.powered = true;
     }
 
-    pub fn new(debug: bool, realtime: bool, stop_clock: clocks::ClockType, cartridge_name: String, cartridge_type: memory::cartridge::CartridgeType, fullscreen: bool, pal_palette: bool) -> Self {
+    pub fn new(debug: bool, realtime: bool, stop_clock: clocks::ClockType, cartridge_name: String, cartridge_type: &memory::cartridge::CartridgeType, fullscreen: bool, pal_palette: bool) -> Self {
         let core = Self::build_atari2600(cartridge_name, cartridge_type, debug, realtime, pal_palette);
-        Self { core, debug, realtime, stop_clock, fullscreen, counter:0, sdl_context:None , canvas:None, audio_queue:None}
+        Self { core, debug, realtime, stop_clock, fullscreen, counter:0, powered:false, sdl_context:None , canvas:None, audio_queue:None}
+    }
+
+    pub fn reset(&mut self, debug: bool, realtime: bool, stop_clock: clocks::ClockType, cartridge_name: String, cartridge_type: &memory::cartridge::CartridgeType, fullscreen: bool, pal_palette: bool) {
+        self.core = Self::build_atari2600(cartridge_name, cartridge_type, debug, realtime, pal_palette);
     }
 
     pub fn draw_loop(&mut self,  pixel_format: pixels::PixelFormatEnum, console_size: &graphics::display::ConsoleSize, iterations: u32) -> bool {
