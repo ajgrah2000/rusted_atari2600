@@ -33,6 +33,8 @@ jobs:
       run: sudo apt-get install lld
     - name: install_dependencies_06
       run: sudo apt-get install binaryen
+    - name: install_dependencies_07
+      run: sudo apt-get install emscripten
     - name: install_dependencies_08
       run: sudo apt-get install nodejs npm node-acorn
     - name: install_dependencies_09
