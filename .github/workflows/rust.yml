@@ -33,8 +33,6 @@ jobs:
       run: sudo apt-get install binaryen
     - name: install_dependencies_07
       run: rustup target add asmjs-unknown-emscripten
-    - name: Verify wasm-lld
-      run: wasm-lld --version
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build javascript
