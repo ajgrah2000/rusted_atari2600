@@ -34,7 +34,9 @@ jobs:
     - name: install_dependencies_08
       run: rustup target add asmjs-unknown-emscripten
     - name: install_dependencies_09
-      run: emcc --generate-config
+      run: sudo echo "" > $EM_CONFIG
+    - name: install_dependencies_10
+      run: sudo emcc --generate-config
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build javascript
