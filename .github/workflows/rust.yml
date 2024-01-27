@@ -17,6 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - uses: mymindstorm/setup-emsdk@v14
+    - name: Verify EMCC
+      run: emcc -v
     - name: install_dependencies_01
       run: sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
     - name: install_dependencies_02
@@ -26,9 +28,13 @@ jobs:
     - name: install_dependencies_04
       run: sudo apt-get install llvm
     - name: install_dependencies_05
-      run: sudo apt-get install binaryen
+      run: sudo apt-get install lld
     - name: install_dependencies_06
+      run: sudo apt-get install binaryen
+    - name: install_dependencies_07
       run: rustup target add asmjs-unknown-emscripten
+    - name: Verify wasm-lld
+      run: wasm-lld --version
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build javascript
