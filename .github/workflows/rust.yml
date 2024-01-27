@@ -29,6 +29,8 @@ jobs:
       run: sudo apt-get install libsdl2-dev
     - name: install_dependencies_04
       run: sudo apt-get install llvm
+    - name: install_dependencies_04
+      run: sudo apt-get install clang-18
     - name: install_dependencies_05
       run: sudo apt-get install lld
     - name: install_dependencies_06
