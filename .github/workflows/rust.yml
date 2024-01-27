@@ -32,8 +32,10 @@ jobs:
     - name: install_dependencies_07
       run: sudo apt-get install emscripten
     - name: install_dependencies_08
-      run: rustup target add asmjs-unknown-emscripten
+      run: sudo apt-get install nodejs npm
     - name: install_dependencies_09
+      run: rustup target add asmjs-unknown-emscripten
+    - name: install_dependencies_10
       run: sudo emcc --generate-config $EM_CONFIG
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
