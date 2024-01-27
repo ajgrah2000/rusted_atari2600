@@ -11,7 +11,6 @@ opt-level = 2
 argh = "0.1.12"
 bitfield = "0.14.0"
 hound = "3.5.1"
-js-sys = "0.3.67"
 sdl2 = "0.35.2"
 strum = "0.25.0"
 strum_macros = "0.25.3"

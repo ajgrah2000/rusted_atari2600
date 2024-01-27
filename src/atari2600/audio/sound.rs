@@ -67,7 +67,7 @@ impl SDLUtility {
 
     pub const MONO_STERO_FLAG: u8 = 2; // TODO: Make this configurable 1 - mono, 2 - stereo
 
-    pub fn get_audio_queue(sdl_context: &mut sdl2::Sdl) -> Box<dyn SoundQueue> {
+    pub fn get_audio_queue(sdl_context: &mut sdl2::Sdl) -> Option<Box<dyn SoundQueue>> {
         let audio_subsystem = sdl_context.audio().unwrap();
 
         let desired_spec = audio::AudioSpecDesired {
@@ -76,12 +76,18 @@ impl SDLUtility {
             samples: Some(SDLUtility::AUDIO_SAMPLE_SIZE),
         };
 
-        let audio_queue = audio_subsystem.open_queue::<soundchannel::PlaybackType, _>(None, &desired_spec).unwrap();
+        match audio_subsystem.open_queue::<soundchannel::PlaybackType, _>(None, &desired_spec) {
+            Ok(audio_queue) => {
+                audio_queue.clear();
+                audio_queue.resume(); // Start the audio (nothing in the queue at this point).
 
-        audio_queue.clear();
-        audio_queue.resume(); // Start the audio (nothing in the queue at this point).
-
-        Box::new(audio_queue)
+                Some(Box::new(audio_queue))
+            },
+            Err(e) => {
+                println!("Error while opening audio.  Setting audio queue to None/no audio. {}", e);
+                None
+            }
+        }
     }
 
     pub fn top_up_audio_queue<F>(audio_queue: &mut dyn SoundQueue, mut get_additional_buffer: F)

@@ -80,14 +80,13 @@ impl GenericCartridge {
     }
 
     pub fn load(&mut self) -> std::io::Result<()> {
-        let mut buffer;
+        let mut buffer = Vec::new();
 
         #[cfg(not(target_os = "emscripten"))]
         { 
             use std::fs::File;
             use std::io::Read;
 
-            buffer = Vec::new();
             let f = File::open(&self.filename);
             match f {
                 Ok(mut file) => {
@@ -99,7 +98,6 @@ impl GenericCartridge {
 
         #[cfg(target_os = "emscripten")]
         {
-            buffer = Vec::new();
             JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { buffer = ref_cell_data.borrow().raw_cart_data.clone();});
         }
 
@@ -243,11 +241,11 @@ pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize) {
 }
 
 
-pub fn get_new_carterage(filename: String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
+pub fn get_new_carterage(filename: &String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
     const NO_RAM: u16 = 0x0000;
     const RAM_128_BYTES: u16 = 0x0080;
     const RAM_256_BYTES: u16 = 0x0100;
-    match cartridge_type {
+    let mut new_cartridge = match cartridge_type {
         // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
         // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
         // TODO: Confirm initial/starting bank for each type.
@@ -263,7 +261,19 @@ pub fn get_new_carterage(filename: String, cartridge_type: &CartridgeType) -> Bo
 
         CartridgeType::Cbs => Box::new(GenericCartridge::new(&filename, 3, 0, 0x1000, 0xFFA, RAM_256_BYTES)),
         CartridgeType::Super => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
+    };
+
+    // Load the cartridge.
+    match new_cartridge.load() {
+        Ok(()) => {
+            println!("Ok");
+        }
+        Err(e) => {
+            panic!("Error loading cartridge \"{}\".\n {}", filename, e);
+        }
     }
+
+    new_cartridge
 }
 
 #[cfg(test)]

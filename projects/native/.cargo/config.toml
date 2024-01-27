@@ -1,4 +1,4 @@
 [alias]
 
 [build]
-rustflags=["-C","target-cpu=native"]
+rustflags=["-C","target-cpu=native", "-Wunused-crate-dependencies"]

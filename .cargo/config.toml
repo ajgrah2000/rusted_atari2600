@@ -1,0 +1,6 @@
+[alias]
+build-native = "build --release --config ./projects/native/.cargo/config.toml"
+build-emscripten = "build --release --config ./projects/emscripten/.cargo/config.toml"
+
+[build]
+rustflags=["-Wunused-crate-dependencies"]

@@ -47,13 +47,15 @@ Building/Running:
                 sudo apt-get install emscripten
                 rustup target add asmjs-unknown-emscripten
                 EM_CONFIG=$HOME/.emscripten emcc --generate-config
-                (pushd projects/emscripten/; cargo build --release; popd)
+                  Note: May have to manuall update/adjust available system versions in the '.emscripten' config file
 
-                # Start a web server and load in browser
+                cargo build-emscripten
+                  Note: It's just an alias for 'cargo build --release --config projects/emscripten/'
+
+                # Start a web server and load in browser (point it to the location reported by the python server)
                 python3 -m http.server
 
-                Note, rom file is statically included in the build (not as a command line argument).
-                Place a file in "/tmp/test_file.rom" before building.
+                # Drag a rom into the 'rom drop' location in the browser.
 
                 # Note, the configuration file in 'projects/emscripten' are the same as running:
                 export EMCC_CFLAGS="-s USE_SDL=2"

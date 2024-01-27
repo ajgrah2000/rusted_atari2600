@@ -84,12 +84,10 @@
     </div>
     <textarea id="output" rows="8"></textarea>
     <script type="text/javascript">
-      var greet;
       var display_data;
       var Module = {
         arguments: ["-n"],
         onRuntimeInitialized: (function() {
-            greet = Module.cwrap('greet');
             display_data = Module.cwrap('display_data', 'void', ['array', 'number']);
         }
         ),

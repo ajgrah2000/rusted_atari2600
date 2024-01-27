@@ -1,4 +1,33 @@
-// While in progress, allow dead code (at least until it's all hooked up)
+//! Main function for the emulator (argument parsing and re-entrant main for webassembly).
+//! 
+//! Intent is to handle the command line arguments/flags and overall loop.
+//! Trying to avoid emulation functionality.
+//! 
+//! Looking to make this as 'portable/common' as possible.  
+//!
+//! # Javascript 
+//!
+//!   To expose functions to javascript (other than what's automatically handled via 'emscripten'):
+//!   
+//!   In Rust:
+//!   
+//!   `#[no_mangle]`
+//!   `pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize) {`
+//!
+//!   In javascript (using 'cwrap' at a point in time at which it seems to be 'ready'):
+//!   
+//!   `var Module = {onRuntimeInitialized: (function() { display_data = Module.cwrap('display_data', 'void', ['array', 'number']);}`
+//!   
+//!   `...`
+//!   
+//!   `display_data(data, data.length);`
+//!
+//! # TODO 
+//!   - There are more 'emscripten' tags/switches than
+//!     desirable. Prefer it to be more 'common', may look to split it further
+//!     (particularly if the args get promoted to be switches/nobs/dials via some
+//!     other mechanism)..
+
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
@@ -21,8 +50,8 @@ impl Drop for Core {
 
 fn default_cart() -> String {"".to_string()}
 
-#[derive(FromArgs)]
 /// Rusty Atari 2600 Emulator.
+#[derive(FromArgs)]
 struct RustAtari2600Args {
     /// print PC State Debug Info
     #[argh(switch, short = 'd')]
@@ -72,11 +101,6 @@ fn parse_cartridge(value: &str) -> Result<atari2600::memory::cartridge::Cartridg
     }
 }
 
-#[no_mangle]
-pub extern fn greet() {
-    println!("Callable from javascript");
-}
-
 fn full_description_string() -> String {
     let mut description = "Possible audio drivers, to use prefix command with: SDL_AUDIODRIVER=<driver>\n".to_owned();
     description += &sdl2::audio::drivers().map(|s| s.to_string()).reduce(|cur: String, nxt: String| cur + ", " + &nxt).unwrap();
@@ -96,14 +120,14 @@ fn main() {
         println!("{}", full_description_string());
     }
 
-    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name.clone(), &args.cartridge_type, args.fullscreen, args.pal_palette);
+    let mut atari_machine = atari2600::atari2600::Atari2600::new(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), &args.cartridge_name, &args.cartridge_type, args.fullscreen, args.pal_palette);
 
     #[cfg(target_os = "emscripten")]
     {
         let mut main_loop = move || {
             if atari2600::memory::cartridge::is_cart_ready() {
                 if !atari_machine.powered {
-                    atari_machine.reset(args.debug, !args.no_delay, args.stop_clock.unwrap_or(0), args.cartridge_name.clone(), &args.cartridge_type, args.fullscreen, args.pal_palette);
+                    atari_machine.reset(&args.cartridge_name, &args.cartridge_type);
                     atari_machine.power_atari2600();
                     false
                 } else {

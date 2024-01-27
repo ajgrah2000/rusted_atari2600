@@ -86,14 +86,28 @@ impl SDLUtility {
         SDLUtility::PIXEL_FORMAT.byte_size_per_pixel() as u16
     }
 
-    pub fn create_canvas(sdl_context: &mut sdl2::Sdl, name: &str, frame_width: u16, frame_height: u16, fullscreen: bool) -> render::Canvas<video::Window> {
+    pub fn create_canvas(sdl_context: &mut sdl2::Sdl, name: &str, frame_width: u16, frame_height: u16, fullscreen: bool) -> Option<render::Canvas<video::Window>> {
         let video_subsystem = sdl_context.video().unwrap();
         let mut renderer = video_subsystem.window(name, frame_width as u32, frame_height as u32);
 
         // Just playing with if statement (to toggle full screen)
         let window = if fullscreen { renderer.fullscreen() } else { renderer.position_centered().resizable() };
 
-        window.build().map_err(|e| e.to_string()).unwrap().into_canvas().accelerated().build().map_err(|e| e.to_string()).unwrap()
+        match window.build().map_err(|e| e.to_string()) {
+                Ok(built_window) => { 
+                    match built_window.into_canvas().accelerated().build().map_err(|e| e.to_string())  {
+                        Ok(canvas) => { Some(canvas)},
+                        Err(e) => { 
+                            println!("Error while building accelerated canvas, will leave canvas empty. {}", e);
+                            None
+                        },
+                    }},
+                    Err(e) => {
+                        println!("Error while building window, will leave canvas empty. {}", e);
+                        None
+                        },
+        }
+//        window.build().map_err(|e| e.to_string()).unwrap().into_canvas().accelerated().build().map_err(|e| e.to_string()).unwrap()
     }
 
     pub fn texture_creator(canvas: &render::Canvas<video::Window>) -> render::TextureCreator<video::WindowContext> {

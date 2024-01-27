@@ -4,4 +4,4 @@ release=true
 
 [env]
 EM_CONFIG="~/.emscripten"
-EMCC_CFLAGS="-s USE_SDL=2 -sEXPORTED_FUNCTIONS=_main,_greet,_display_data -sEXPORTED_RUNTIME_METHODS=ccall,cwrap"
+EMCC_CFLAGS="-s USE_SDL=2 -sEXPORTED_FUNCTIONS=_main,_display_data -sEXPORTED_RUNTIME_METHODS=ccall,cwrap"
