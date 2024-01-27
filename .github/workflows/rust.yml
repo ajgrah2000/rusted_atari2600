@@ -42,6 +42,8 @@ jobs:
     - name: install_dependencies_09
       run: rustup target add asmjs-unknown-emscripten
     - name: install_dependencies_10
+      run: emsdk install sdk-upstream-master-64bit
+    - name: install_dependencies_11
       run: sudo emcc --generate-config $EM_CONFIG
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
