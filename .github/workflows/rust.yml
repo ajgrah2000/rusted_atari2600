@@ -23,6 +23,8 @@ jobs:
       run: sudo apt-get update -y -qq
     - name: install_dependencies_03
       run: sudo apt-get install libsdl2-dev
+    - name: install_dependencies_04
+      run: sudo apt-get install binaryen
     - name: install_dependencies_05
       run: rustup target add asmjs-unknown-emscripten
     - name: Build native
