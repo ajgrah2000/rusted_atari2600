@@ -18,5 +18,5 @@ jobs:
     - uses: actions/checkout@main
     - name: Build
       run: cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
-           cargo build --release --verbose --config projects/native/.cargo/config.toml
+      run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     
