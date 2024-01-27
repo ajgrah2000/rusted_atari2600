@@ -10,6 +10,10 @@ env:
   CARGO_TERM_COLOR: always
   EM_CONFIG: ${{ github.workspace }}/emscripten_config
 
+strategy:
+  matrix:
+    node-version: ['14.x', '16.x', '18.x', '20.x']
+
 jobs:
   build:
 
@@ -17,6 +21,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
     - name: install_dependencies_01
       run: sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
     - name: install_dependencies_02
@@ -37,8 +44,6 @@ jobs:
       run: rustup target add asmjs-unknown-emscripten
     - name: install_dependencies_10
       run: sudo emcc --generate-config $EM_CONFIG
-    - name: install_dependencies_11
-      run: sudo npm init && sudo npm install
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build javascript
