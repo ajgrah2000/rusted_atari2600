@@ -32,7 +32,7 @@ jobs:
     - name: install_dependencies_07
       run: sudo apt-get install emscripten
     - name: install_dependencies_08
-      run: sudo apt-get install nodejs npm
+      run: sudo apt-get install nodejs npm node-acorn
     - name: install_dependencies_09
       run: rustup target add asmjs-unknown-emscripten
     - name: install_dependencies_10
