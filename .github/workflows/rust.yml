@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  EM_CONFIG: /tmp/emscripten_config
 
 jobs:
   build:
@@ -32,8 +33,6 @@ jobs:
       run: sudo apt-get install emscripten
     - name: install_dependencies_08
       run: rustup target add asmjs-unknown-emscripten
-    - name: install_dependencies_09
-      run: export EM_CONFIG=$(mktemp)
     - name: install_dependencies_10
       run: emcc --generate-config
     - name: Build native
