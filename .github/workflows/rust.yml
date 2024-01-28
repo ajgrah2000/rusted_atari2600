@@ -44,33 +44,3 @@ jobs:
               file_drop.js
               run_sample_server.sh
               target/**/rusted_atari2600.js
-    - name: release
-      uses: actions/create-release@v1
-      id: create_release
-      with:
-        draft: true
-        prerelease: true
-        release_name: ${{ steps.version.outputs.version }}
-        tag_name: ${{ github.ref }}
-        body: |
-              Changes in this Release
-              - Trying out github release action.
-              To use: 
-              mkdir web_content
-              cd web_content
-              unzip -x ../emscripten-artifact.zip
-              python -m http.server
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./emscripten-artifact.zip
-        asset_name: emscripten-artifact.zip
-        asset_content_type: application/zip
-    
