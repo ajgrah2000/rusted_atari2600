@@ -61,7 +61,7 @@ jobs:
     - name: Create windows release zip
       run: |
            cd ..
-           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette*.dat ${{ env.RELEASE_PREP_DIR }}/../sdl_dll/*
+           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette*.dat ${{ env.RELEASE_PREP_DIR }}/sdl_dll/*
            mv windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{ env.RELEASE_PREP_DIR }}/
 
     - name: Artifact generation - Windows
