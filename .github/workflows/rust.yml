@@ -36,7 +36,7 @@ jobs:
            source emsdk_env.sh
            cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
     - name: Artifact generation
-      uses: action/upload-artifact@v4
+      uses: actions/upload-artifact@v4
       with:
         name: emscripten-artifact
         path: |
