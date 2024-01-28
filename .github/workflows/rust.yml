@@ -36,6 +36,12 @@ jobs:
             curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ../sdl_mingw
             cp -r ../sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
 
+            mkdir ../sdl_dll
+            cd ../sdl_dll
+            cp  -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
+            unzip SDL2-2.0.22-win32-x64.zip
+
+
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build windows
@@ -62,10 +68,15 @@ jobs:
               run_sample_server.sh
               target/**/rusted_atari2600.js
 
-    - name: Create release zip
+    - name: Create emscripten release zip
       run: |
            cd ..
            zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
+
+    - name: Create windows release zip
+      run: |
+           cd ..
+           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe sdl_dll/*
 
     - name: release
       uses: actions/create-release@v1
@@ -95,6 +106,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
-        asset_name: rusted_atari2600_exe_${{ env.AUTO_TAG_NAME }}
-        asset_content_type: application/vnd.microsoft.portable-executable
+        asset_path: ../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_content_type: application/zip
