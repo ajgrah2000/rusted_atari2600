@@ -86,8 +86,15 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: |
-                    ../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
-                    target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
+        asset_path: ../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
+    - name: release windows artifacts
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
+        asset_name: rusted_atari2600_exe_${{ env.AUTO_TAG_NAME }}
+        asset_content_type: application/vnd.microsoft.portable-executable
