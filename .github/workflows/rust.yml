@@ -7,7 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  AUTO_TAG_NAME: ${{ github.ref_name }_${{ github.sha }}
+  AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
   EM_CONFIG: ${{ github.workspace }}/emscripten_config
 
 jobs:
