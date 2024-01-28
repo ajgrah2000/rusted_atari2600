@@ -27,14 +27,30 @@ jobs:
             sudo apt-get update -y -qq
             sudo apt-get install libsdl2-dev binaryen llvm lld
             rustup target add asmjs-unknown-emscripten
+    - name: install_windows_cross_compiler
+      run: |
+            sudo apt-get install gcc-mingw-w64
+            rustup target add x86_64-pc-windows-gnu
+            sudo apt-get install libsdl2-dev -y
+            curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ../sdl_mingw
+            cp -r ../sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
+
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
+    - name: Build windows
+      run: cargo build --target x86_64-pc-windows-gnu --release
     - name: Build javascript
       run: |
            emsdk install latest
            emsdk activate latest
            source emsdk_env.sh
            cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
+    - name: Artifact generation - Windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows_artifact_${{ env.AUTO_TAG_NAME }}
+        path: |
+              target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
     - name: Artifact generation
       uses: actions/upload-artifact@v4
       with:
