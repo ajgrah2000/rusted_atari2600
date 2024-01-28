@@ -42,6 +42,7 @@ jobs:
         path: |
               index.html
               file_drop.js
+              run_sample_server.sh
               target/**/rusted_atari2600.js
     - name: release
       uses: actions/create-release@v1
