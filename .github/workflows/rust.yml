@@ -49,7 +49,7 @@ jobs:
       uses: actions/create-release@v1
       id: create_release
       with:
-        draft: true
+        draft: false
         prerelease: true
         release_name: ${{ github.ref }}
         tag_name: ${{ github.ref }}
@@ -58,3 +58,12 @@ jobs:
               - Trying to create a release via an action.
       env:
         GITHUB_TOKEN: ${{ github.token }}
+    - name: upload emscripten artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./emscripten-artifact.zip
+        asset_name: emscripten-artifact.zip
+        asset_content_type: application/zip
