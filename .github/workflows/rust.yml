@@ -45,14 +45,18 @@ jobs:
               run_sample_server.sh
               target/**/rusted_atari2600.js
 
+    - name: Get tag name from ref
+      shell: bash
+      run: echo "::set-output name=tag::${GITHUB_REF@refs/tags/}"
+      id: get_tag
     - name: release
       uses: actions/create-release@v1
       id: create_release
       with:
         draft: false
         prerelease: true
-        release_name: ${{ github.ref }}
-        tag_name: ${{ github.ref }}
+        release_name: ${{ steps.get_tag.outputs.tag }}
+        tag_name: ${{ steps.get_tag.outputs.tag }}
         body: |
               Change Log
               - Trying to create a release via an action.
