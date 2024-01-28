@@ -60,7 +60,7 @@ jobs:
               unzip -x ../emscripten-artifact.zip
               python -m http.server
       env:
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Release Asset
       id: upload-release-asset
