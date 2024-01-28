@@ -121,6 +121,7 @@ impl Atari2600 {
 
     pub fn reset(&mut self, cartridge_name: &String, cartridge_type: &memory::cartridge::CartridgeType) {
         self.core.memory.reset(cartridge_name, cartridge_type);
+        self.core.reset();
     }
 
     pub fn draw_loop(&mut self,  pixel_format: pixels::PixelFormatEnum, console_size: &graphics::display::ConsoleSize, iterations: u32) -> bool {
