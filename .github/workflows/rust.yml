@@ -54,6 +54,11 @@ jobs:
         body: |
               Changes in this Release
               - Trying out github release action.
+              To use: 
+              mkdir web_content
+              cd web_content
+              unzip -x ../emscripten-artifact.zip
+              python -m http.server
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
