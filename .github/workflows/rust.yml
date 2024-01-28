@@ -56,7 +56,7 @@ jobs:
         draft: true
         prerelease: true
         release_name: ${{ github.ref_name }}
-        tag_name: ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}_released
         body: |
               Change Log
               - Trying to create a release via an action.
