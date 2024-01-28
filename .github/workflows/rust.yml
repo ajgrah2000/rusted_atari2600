@@ -2,7 +2,6 @@ name: Rust
 
 on:
   push:
-    branches: [ "master", "javascript_cart_load" ]
   pull_request:
     branches: [ "master" ]
 
