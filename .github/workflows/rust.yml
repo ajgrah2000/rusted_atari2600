@@ -47,7 +47,7 @@ jobs:
 
     - name: Get tag name from ref
       shell: bash
-      run: echo "::set-output name=tag::${GITHUB_REF@refs/tags/}"
+      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
       id: get_tag
     - name: release
       uses: actions/create-release@v1
