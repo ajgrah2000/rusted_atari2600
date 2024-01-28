@@ -58,6 +58,7 @@ jobs:
         name: windows_artifact_${{ env.AUTO_TAG_NAME }}
         path: |
               target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
+              ../sdl_dll/*
     - name: Artifact generation
       uses: actions/upload-artifact@v4
       with:
