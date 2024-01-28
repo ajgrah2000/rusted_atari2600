@@ -8,7 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
-  RELEASE_PREP_DIR: ~/release_files
+  EM_CONFIG: ${{ github.workspace }}/emscripten_config
 
 jobs:
   build:
@@ -32,15 +32,14 @@ jobs:
             sudo apt-get install gcc-mingw-w64
             rustup target add x86_64-pc-windows-gnu
             sudo apt-get install libsdl2-dev -y
-            mkdir -p ${{ env.RELEASE_PREP_DIR }}/sdl_mingw
-            curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ${{ env.RELEASE_PREP_DIR }}/sdl_mingw
-            cp -r ${{ env.RELEASE_PREP_DIR }}/sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
+            mkdir ../sdl_mingw
+            curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ../sdl_mingw
+            cp -r ../sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
 
-            mkdir -p ${{ env.RELEASE_PREP_DIR }}/sdl_dll
-            cd ${{ env.RELEASE_PREP_DIR }}/sdl_dll
+            mkdir ../sdl_dll
+            cd ../sdl_dll
             curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
             unzip SDL2-2.0.22-win32-x64.zip
-            rm SDL2-2.0.22-win32-x64.zip
 
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
@@ -52,29 +51,32 @@ jobs:
            emsdk activate latest
            source emsdk_env.sh
            cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
-    - name: Create emscripten release zip
-      run: |
-           cd ..
-           zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
-           mv emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{ env.RELEASE_PREP_DIR }}/
-
-    - name: Create windows release zip
-      run: |
-           cd ..
-           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette*.dat ${{ env.RELEASE_PREP_DIR }}/sdl_dll/*
-           mv windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{ env.RELEASE_PREP_DIR }}/
 
     - name: Artifact generation - Windows
       uses: actions/upload-artifact@v4
       with:
         name: windows_artifact_${{ env.AUTO_TAG_NAME }}
-        path: ${{ env.RELEASE_PREP_DIR }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-
+        path: |
+              target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
     - name: Artifact generation
       uses: actions/upload-artifact@v4
       with:
         name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
-        path: ${{ env.RELEASE_PREP_DIR }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        path: |
+              index.html
+              file_drop.js
+              run_sample_server.sh
+              target/**/rusted_atari2600.js
+
+    - name: Create emscripten release zip
+      run: |
+           cd ..
+           zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
+
+    - name: Create windows release zip
+      run: |
+           cd ..
+           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette_*.dat sdl_dll/*
 
     - name: release
       uses: actions/create-release@v1
@@ -89,21 +91,23 @@ jobs:
               - Trying to create a release via an action.
       env:
         GITHUB_TOKEN: ${{ github.token }}
+
     - name: release emscripten artifacts
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.RELEASE_PREP_DIR }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_path: ../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
+
     - name: release windows artifacts
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.RELEASE_PREP_DIR }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_path: ../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
