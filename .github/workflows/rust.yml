@@ -32,11 +32,11 @@ jobs:
             sudo apt-get install gcc-mingw-w64
             rustup target add x86_64-pc-windows-gnu
             sudo apt-get install libsdl2-dev -y
-            mkdir ${{ env.RELEASE_PREP_DIR }}/sdl_mingw
+            mkdir -p ${{ env.RELEASE_PREP_DIR }}/sdl_mingw
             curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ${{ env.RELEASE_PREP_DIR }}/sdl_mingw
             cp -r ${{ env.RELEASE_PREP_DIR }}/sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
 
-            mkdir ${{ env.RELEASE_PREP_DIR }}/sdl_dll
+            mkdir -p ${{ env.RELEASE_PREP_DIR }}/sdl_dll
             cd ${{ env.RELEASE_PREP_DIR }}/sdl_dll
             curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
             unzip SDL2-2.0.22-win32-x64.zip
