@@ -36,11 +36,10 @@ jobs:
             curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ../sdl_mingw
             cp -r ../sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
 
-            mkdir ${{ github.workspace }}/../sdl_dll
-            cd ${{ github.workspace }}/../sdl_dll
+            mkdir ../sdl_dll
+            cd ../sdl_dll
             curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
             unzip SDL2-2.0.22-win32-x64.zip
-            rm SDL2-2.0.22-win32-x64.zip
 
 
     - name: Build native
@@ -53,6 +52,22 @@ jobs:
            emsdk activate latest
            source emsdk_env.sh
            cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
+    - name: Artifact generation - Windows
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows_artifact_${{ env.AUTO_TAG_NAME }}
+        path: |
+              target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
+    - name: Artifact generation
+      uses: actions/upload-artifact@v4
+      with:
+        name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
+        path: |
+              index.html
+              file_drop.js
+              run_sample_server.sh
+              target/**/rusted_atari2600.js
+
     - name: Create emscripten release zip
       run: |
            cd ..
@@ -61,19 +76,7 @@ jobs:
     - name: Create windows release zip
       run: |
            cd ..
-           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette*.dat ${{ github.workspace }}/../sdl_dll/*
-
-    - name: Artifact generation - Windows
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows_artifact_${{ env.AUTO_TAG_NAME }}
-        path: ${{ github.workspace }}/../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-
-    - name: Artifact generation
-      uses: actions/upload-artifact@v4
-      with:
-        name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
-        path: ${{ github.workspace }}/../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
+           zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe sdl_dll/*
 
     - name: release
       uses: actions/create-release@v1
@@ -94,7 +97,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_path: ../emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
     - name: release windows artifacts
@@ -103,6 +106,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
+        asset_path: ../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
