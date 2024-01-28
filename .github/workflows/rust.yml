@@ -34,5 +34,5 @@ jobs:
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build javascript
-      run: cp $EM_CONFIG $HOME/.emscripten && cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
+      run: cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
     
