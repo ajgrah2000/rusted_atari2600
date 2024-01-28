@@ -38,7 +38,7 @@ jobs:
 
             mkdir ../sdl_dll
             cd ../sdl_dll
-            cp  -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
+            curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
             unzip SDL2-2.0.22-win32-x64.zip
 
 
