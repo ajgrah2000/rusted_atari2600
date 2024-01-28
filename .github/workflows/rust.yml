@@ -46,8 +46,8 @@ jobs:
 
     - name: Create release zip
       run: |
-           ls
-           zip -r emscripten_artifact.zip index.html file_drop.js run_sample_server.sh target/asmjs-unknown-emscripten/release/rusted_atari2600.js
+           cd ..
+           zip -r emscripten_artifact.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
 
     - name: release
       uses: actions/create-release@v1
@@ -68,6 +68,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./emscripten_artifact.zip
+        asset_path: ../emscripten_artifact.zip
         asset_name: emscripten_artifact.zip
         asset_content_type: application/zip
