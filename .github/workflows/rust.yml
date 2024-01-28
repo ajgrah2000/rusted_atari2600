@@ -8,7 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
-  RELEASE_PREP_DIR: ~/release_files/
+  RELEASE_PREP_DIR: ~/release_files
 
 jobs:
   build:
