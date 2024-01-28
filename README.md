@@ -46,10 +46,13 @@ Building/Running:
 
                 sudo apt-get install emscripten
                 rustup target add asmjs-unknown-emscripten
+
+                # Your experience may vary, adding explicit handling of 'EM_CONFIG'
+
                 EM_CONFIG=$HOME/.emscripten emcc --generate-config
                   Note: May have to manuall update/adjust available system versions in the '.emscripten' config file
 
-                cargo build-emscripten
+                EM_CONFIG=~/.emscripten cargo build-emscripten
                   Note: It's just an alias for 'cargo build --release --config projects/emscripten/'
 
                 # Start a web server and load in browser (point it to the location reported by the python server)
