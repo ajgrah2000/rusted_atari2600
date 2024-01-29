@@ -2,8 +2,6 @@ name: Rust
 
 on:
   push:
-    tags:
-      - '*'
   pull_request:
     branches: [ "master" ]
 
