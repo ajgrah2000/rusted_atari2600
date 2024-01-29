@@ -78,7 +78,7 @@ struct RustAtari2600Args {
     list_drivers: bool,
 
     /// name of cartridge to run
-    #[argh(positional,default="default_cart()")]
+    #[argh(positional)]
     cartridge_name: String,
 
     /// replay file

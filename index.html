@@ -86,7 +86,7 @@
     <script type="text/javascript">
       var display_data;
       var Module = {
-        arguments: ["-n"],
+        arguments: ["-n",'""'], // Provide an 'empty' cartridge name (as it's a required argument).
         onRuntimeInitialized: (function() {
             display_data = Module.cwrap('display_data', 'void', ['array', 'number']);
         }
