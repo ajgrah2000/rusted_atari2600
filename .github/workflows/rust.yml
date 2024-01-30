@@ -125,6 +125,8 @@ jobs:
         key: windows-zip
 
   create_releases:
+    name: Create release from cached results
+    runs-on: ubuntu-latest
     needs: [emscripten_build, windows_build]
     - name: Cache windows release
       uses: actions/cache@v3
