@@ -81,13 +81,13 @@ jobs:
               run_sample_server.sh
               target/**/rusted_atari2600.js
 
-    - name: Create Release Zip: emscripten 
+    - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
            zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
 
-    - name: Create Release Zip: windows 
+    - name: Create Release Zip - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
@@ -108,7 +108,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: Release Artifacts: emscripten 
+    - name: Release Artifacts - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
@@ -119,7 +119,7 @@ jobs:
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
 
-    - name: Release Artifacts: windows 
+    - name: Release Artifacts - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
