@@ -20,6 +20,7 @@ jobs:
 
     - name: Build native
       run: cargo build --release --verbose --config projects/native/.cargo/config.toml
+    - name: Test native
       run: cargo test --release --verbose --config projects/native/.cargo/config.toml
 
   non_linux_build:
