@@ -15,6 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
+    - name: Install Linux Dependencies
       run: sudo apt-get install libsdl2-dev 
 
     - name: Build native
