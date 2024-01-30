@@ -29,6 +29,8 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - uses: mymindstorm/setup-emsdk@v14
+      with:
+      version: 1.38.40
     - uses: actions/setup-node@v3
       with:
         node-version: '20.x'
