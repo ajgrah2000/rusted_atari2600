@@ -98,13 +98,6 @@ jobs:
 
     - name: Build windows
       run: cargo build --target x86_64-pc-windows-gnu --release
-    - name: Build emscripten (javascript)
-      run: |
-           emsdk install latest
-           emsdk activate latest
-           source emsdk_env.sh
-           cargo build --release --verbose --config projects/native/.cargo/config.toml
-           cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
 
     - name: Artifact generation - Windows
       if: startsWith(github.event.ref, 'refs/tags/')
