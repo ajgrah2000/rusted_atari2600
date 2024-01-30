@@ -24,7 +24,6 @@ jobs:
       run: cargo test --release --verbose --config projects/native/.cargo/config.toml
 
   non_linux_build:
-    needs: linux_build_and_test
     runs-on: ubuntu-latest
 
     steps:
