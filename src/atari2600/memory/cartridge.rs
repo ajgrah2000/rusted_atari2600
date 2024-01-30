@@ -281,13 +281,13 @@ mod tests {
     use crate::atari2600::memory::cartridge::GenericCartridge;
     #[test]
     fn test_simple_generic_cartridge() {
-        let mut sample_cartridge = GenericCartridge::new("dummy", 3, 0x200, 0xF9, 40);
+        let mut sample_cartridge = GenericCartridge::new("dummy", 3, 0, 0x200, 0xF9, 40);
         assert_eq!(sample_cartridge.cartridge_banks.len(), 0);
 
         // A slice implements 'Read'
-        let dummy_file_data = vec![0_u8; 0x100000];
+        let mut dummy_file_data = vec![0_u8; 0x100000];
 
-        sample_cartridge.load_banks(&mut &dummy_file_data[..]);
+        sample_cartridge.load_banks(&mut dummy_file_data);
 
         assert_eq!(sample_cartridge.cartridge_banks.len(), 3);
         assert_eq!(sample_cartridge.cartridge_banks[0].data.len(), 0x200);

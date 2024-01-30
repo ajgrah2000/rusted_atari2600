@@ -151,6 +151,4 @@ fn main() {
         atari_machine.power_atari2600();
         loop {if !atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine) { break;}} 
     }
-
-    println!("Finished.");
 }

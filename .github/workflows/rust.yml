@@ -10,8 +10,19 @@ env:
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
 
 jobs:
-  build:
+  linux_build_and_test:
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@main
+      run: sudo apt-get install libsdl2-dev 
+
+    - name: Build native
+      run: cargo build --release --verbose --config projects/native/.cargo/config.toml
+      run: cargo test --release --verbose --config projects/native/.cargo/config.toml
+
+  non_linux_build:
+    needs: linux_build_and_test
     runs-on: ubuntu-latest
 
     steps:
@@ -43,8 +54,6 @@ jobs:
             unzip SDL2-2.0.22-win32-x64.zip
             rm SDL2-2.0.22-win32-x64.zip
 
-    - name: Build native
-      run: cargo build --release --verbose --config projects/native/.cargo/config.toml
     - name: Build windows
       run: cargo build --target x86_64-pc-windows-gnu --release
     - name: Build javascript
@@ -72,19 +81,19 @@ jobs:
               run_sample_server.sh
               target/**/rusted_atari2600.js
 
-    - name: Create emscripten release zip
+    - name: Create Release Zip: emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
            zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
 
-    - name: Create windows release zip
+    - name: Create Release Zip: windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
            zip -r -j windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette_*.dat sdl_dll/*
 
-    - name: release
+    - name: Create Release
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/create-release@v1
       id: create_release
@@ -99,7 +108,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: release emscripten artifacts
+    - name: Release Artifacts: emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
@@ -110,7 +119,7 @@ jobs:
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
 
-    - name: release windows artifacts
+    - name: Release Artifacts: windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
@@ -120,3 +129,4 @@ jobs:
         asset_path: ../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
+

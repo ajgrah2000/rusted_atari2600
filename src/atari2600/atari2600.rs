@@ -215,6 +215,6 @@ impl Atari2600 {
 
 impl Drop for Atari2600 {
     fn drop(&mut self) {
-        println!("Atari2600 is being dropped");
+        println!("Done.");
     }
 }
