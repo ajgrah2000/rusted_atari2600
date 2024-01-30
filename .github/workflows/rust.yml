@@ -124,7 +124,7 @@ jobs:
         path: ../windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: windows-zip
 
-  create_releases:
+  release_job:
     name: Create release from cached results
     runs-on: ubuntu-latest
     needs: [emscripten_build, windows_build]
