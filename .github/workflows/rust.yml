@@ -29,10 +29,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
-    - name: Install rust stable
+    - name: Install rust nightly
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         override: true
         components: rustfmt, clippy
     - uses: mymindstorm/setup-emsdk@v14
