@@ -66,7 +66,7 @@ jobs:
               index.html
               file_drop.js
               run_sample_server.sh
-              target/**/rusted_atari2600.js
+              target/wasm32-unknown-emscripten/release/rusted_atari2600.js
     - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
