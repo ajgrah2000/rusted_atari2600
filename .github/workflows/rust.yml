@@ -57,6 +57,7 @@ jobs:
            source emsdk_env.sh
            cargo build --release --verbose --config projects/native/.cargo/config.toml
            cargo build --release --verbose --config projects/emscripten/.cargo/config.toml
+           ls -lR target
     - name: Artifact generation - emscripten
       if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-artifact@v4
