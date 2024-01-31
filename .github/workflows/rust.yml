@@ -29,8 +29,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
-    - name: rust latest
-      run: $ curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
+    - name: Install rust stable
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
     - uses: mymindstorm/setup-emsdk@v14
       with:
         version: ${{ env.EMSCRIPTEN_VERSION }}
