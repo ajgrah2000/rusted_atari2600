@@ -49,7 +49,7 @@ jobs:
     - name: install_emscripten_dependencies
       run: |
             sudo apt-get install binaryen llvm lld
-            rustup target add asmjs-unknown-emscripten
+            rustup target add wasm32-unknown-emscripten
     - name: Build emscripten (javascript)
       run: |
            emsdk install ${{ env.EMSCRIPTEN_VERSION }}
@@ -71,7 +71,7 @@ jobs:
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/asmjs-unknown-emscripten/release/rusted_atari2600.js
+           zip -r emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/wasm32-unknown-emscripten/release/rusted_atari2600.js
     - name: Cache emscripten release
       uses: actions/cache@v3
       with: 

@@ -55,7 +55,7 @@ Building/Running:
 
 
                 sudo apt-get install emscripten
-                rustup target add asmjs-unknown-emscripten
+                rustup target add wasm32-unknown-emscripten
 
                 # Your experience may vary, adding explicit handling of 'EM_CONFIG'
 
@@ -72,7 +72,7 @@ Building/Running:
 
                 # Note, the configuration file in 'projects/emscripten' are the same as running:
                 export EMCC_CFLAGS="-s USE_SDL=2"
-                cargo build --target asmjs-unknown-emscripten
+                cargo build --target wasm32-unknown-emscripten
 
 Build and run:
     cargo run --release <rom_file>
