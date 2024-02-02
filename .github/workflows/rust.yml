@@ -9,6 +9,7 @@ env:
   CARGO_TERM_COLOR: always
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
   EMSCRIPTEN_VERSION: 3.1.53
+  RUST_VERSION: nightly
 
 jobs:
   linux_build_and_test:
@@ -29,10 +30,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
-    - name: Install rust nightly
+    - name: Install rust ${{ env.RUST_VERSION }}
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ env.RUST_VERSION }}
         override: true
         components: rustfmt, clippy
     - uses: mymindstorm/setup-emsdk@v14
@@ -88,6 +89,13 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: '20.x'
+    - uses: actions/checkout@main
+    - name: Install rust ${{ env.RUST_VERSION }}
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+        override: true
+        components: rustfmt, clippy
     - name: install_linux_dependencies
       run: |
             sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse"
@@ -96,16 +104,13 @@ jobs:
     - name: install_windows_cross_compiler
       run: |
             sudo apt-get install gcc-mingw-w64
+            rustup default ${{ env.RUST_VERSION }}
             rustup target add x86_64-pc-windows-gnu
-            mkdir ../sdl_mingw
-            curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ../sdl_mingw
-            cp -r ../sdl_mingw/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
+            curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz  | tar xvz -C ${{ runner.temp }}
+            cp -r ${{ runner.temp }}/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/${{ env.RUST_VERSION }}-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
 
-            mkdir ../sdl_dll
-            cd ../sdl_dll
-            curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip
-            unzip SDL2-2.0.22-win32-x64.zip
-            rm SDL2-2.0.22-win32-x64.zip
+            curl -s -L -O https://github.com/libsdl-org/SDL/releases/download/release-2.0.22/SDL2-2.0.22-win32-x64.zip --output-dir ${{ runner.temp }}
+            unzip ${{ runner.temp }}/SDL2-2.0.22-win32-x64.zip -d ${{ runner.temp }}/sdl_dll
 
     - name: Build windows
       run: cargo build --target x86_64-pc-windows-gnu --release
@@ -121,7 +126,7 @@ jobs:
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette_*.dat sdl_dll/*
+           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette_*.dat ${{ runner.temp }}/sdl_dll/*
     - name: Cache windows release
       uses: actions/cache@v3
       with: 
