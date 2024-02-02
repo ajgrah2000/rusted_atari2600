@@ -140,6 +140,9 @@ jobs:
     name: Create release from cached results
     runs-on: ubuntu-latest
 
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
     steps:
     - name: Create Release
       if: startsWith(github.event.ref, 'refs/tags/')
@@ -174,7 +177,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        upload_url: ${{ needs.create_release.steps.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
         asset_path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
@@ -197,7 +200,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        upload_url: ${{ needs.create_release.steps.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
         asset_path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         asset_content_type: application/zip
