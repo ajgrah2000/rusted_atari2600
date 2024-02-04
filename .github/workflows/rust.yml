@@ -71,6 +71,10 @@ jobs:
               target/wasm32-unknown-emscripten/release/rusted_atari2600.js
               target/wasm32-unknown-emscripten/release/rusted_atari2600.wasm
 
+    - name: Upload Pages artifact - emscripten
+      if: startsWith(github.event.ref, 'refs/tags/')
+      uses: actions/upload-pages-artifact@v2
+
     - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
