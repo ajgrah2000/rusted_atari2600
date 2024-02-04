@@ -147,8 +147,8 @@ jobs:
       url: ${{steps.deployment.outputs.page_url}}
 
     steps:
-      if: startsWith(github.event.ref, 'refs/tags/')
     - uses: actions/download-artifact@master
+      if: startsWith(github.event.ref, 'refs/tags/')
       with:
         name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
         path: .
