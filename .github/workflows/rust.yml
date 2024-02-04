@@ -137,6 +137,9 @@ jobs:
         key: windows-zip
 
   deploy_emscripten_page:
+    permissions:
+      id-token: write
+
     runs-on: ubuntu-latest
     needs: [emscripten_build]
     environment:
