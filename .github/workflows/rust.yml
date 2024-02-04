@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [emscripten_build]
     environment:
-      name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
+      name: github-pages
       url: ${{steps.deployment.outputs.page_url}}
 
     steps:
