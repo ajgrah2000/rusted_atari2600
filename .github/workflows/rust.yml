@@ -141,7 +141,9 @@ jobs:
     needs: [emscripten_build]
     environment:
       name: github-pages
-      urn: ${{steps.deployment.outputs.page_url}}
+      url: ${{steps.deployment.outputs.page_url}}
+
+    steps:
     - name: actions/download-artifact@master
       with:
         name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
