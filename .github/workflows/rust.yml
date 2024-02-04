@@ -161,6 +161,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      actions: read
 
     needs: [deploy_emscripten_page]
     environment:
