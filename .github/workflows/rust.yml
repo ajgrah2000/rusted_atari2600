@@ -161,7 +161,6 @@ jobs:
     permissions:
       pages: write
       id-token: write
-      actions: read
 
     needs: [deploy_emscripten_page]
     environment:
@@ -171,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - id: deployment
-      uses: actions/deploy-pages@v4
+      uses: actions/deploy-pages@v3
 
   create_release:
     name: Create release from cached results
