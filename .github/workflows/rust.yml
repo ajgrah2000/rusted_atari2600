@@ -71,10 +71,6 @@ jobs:
               target/wasm32-unknown-emscripten/release/rusted_atari2600.js
               target/wasm32-unknown-emscripten/release/rusted_atari2600.wasm
 
-    - name: Upload Pages artifact - emscripten
-      if: startsWith(github.event.ref, 'refs/tags/')
-      uses: actions/upload-pages-artifact@v2
-
     - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
@@ -139,6 +135,24 @@ jobs:
       with: 
         path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: windows-zip
+
+  deploy_emscripten_page:
+    runs-on: ubuntu-latest
+    needs: [emscripten_build]
+    environment:
+      name: github-pages
+      urn: ${{steps.deployment.outputs.page_url}}
+    - name: actions/download-artifact@master
+      with:
+        name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
+        path: .
+    - name: Upload Pages artifact - emscripten
+      if: startsWith(github.event.ref, 'refs/tags/')
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: .
+    - id: deployment
+      uses: actions/deploy-pages@main
 
   create_release:
     name: Create release from cached results
