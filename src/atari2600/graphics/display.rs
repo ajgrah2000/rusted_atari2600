@@ -33,7 +33,7 @@ impl WindowSize {
         Self {
             frame_width,
             frame_height,
-            console_size: console_size,
+            console_size,
             fullscreen,
         }
     }
@@ -107,7 +107,6 @@ impl SDLUtility {
                         None
                         },
         }
-//        window.build().map_err(|e| e.to_string()).unwrap().into_canvas().accelerated().build().map_err(|e| e.to_string()).unwrap()
     }
 
     pub fn texture_creator(canvas: &render::Canvas<video::Window>) -> render::TextureCreator<video::WindowContext> {

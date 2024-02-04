@@ -241,7 +241,7 @@ pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize) {
 }
 
 
-pub fn get_new_carterage(filename: &String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
+pub fn get_new_cartridge(filename: &String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
     const NO_RAM: u16 = 0x0000;
     const RAM_128_BYTES: u16 = 0x0080;
     const RAM_256_BYTES: u16 = 0x0100;

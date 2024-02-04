@@ -19,11 +19,11 @@ impl Memory {
     const ROM_ADDRLINE: u16 = 0x1000;
 
     pub fn new(cartridge_name: &String, cartridge_type: &cartridge::CartridgeType, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::RiotIO>) -> Self {
-        Self { cartridge: cartridge::get_new_carterage(&cartridge_name, cartridge_type), stella, riot }
+        Self { cartridge: cartridge::get_new_cartridge(&cartridge_name, cartridge_type), stella, riot }
     }
 
     pub fn reset(&mut self, cartridge_name: &String, cartridge_type: &cartridge::CartridgeType) {
-        self.cartridge = cartridge::get_new_carterage(cartridge_name, cartridge_type);
+        self.cartridge = cartridge::get_new_cartridge(cartridge_name, cartridge_type);
     }
 
     pub fn write(&mut self, clock: &mut clocks::Clock, address: u16, data: u8) {
