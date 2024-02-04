@@ -147,12 +147,12 @@ jobs:
       url: ${{steps.deployment.outputs.page_url}}
 
     steps:
+      if: startsWith(github.event.ref, 'refs/tags/')
     - uses: actions/download-artifact@master
       with:
         name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
         path: .
     - name: Upload Pages artifact - emscripten
-      if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/upload-pages-artifact@v2
       with:
         path: .
