@@ -170,6 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - id: deployment
+      if: startsWith(github.event.ref, 'refs/tags/')
       uses: actions/deploy-pages@v3
 
   create_release:
