@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
+  <head><style>@keyframes blinker { 50%{opacity:0;}} .blink-text {animation: blinker 1s step-start infinite; } </style>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Emscripten-Generated Code</title>
@@ -67,8 +67,13 @@
     <article>
     </div>
     </article>
-    <div class="emscripten_border" id="rom_drop">
-      <canvas
+    <div class="emscripten_border" id="rom_drop" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Atari-2600-Wood-4Sw-Set.png/640px-Atari-2600-Wood-4Sw-Set.png');">
+      <style>div {} input:checked + div {mix-blend-mode: difference;animation: blinker 1s step-start infinite;}</style>
+      <h1 style="mix-blend-mode: difference;text-align:center;color:yellow">ATARI <span class="blink-text">2600</span>!</h1>
+      <input type="checkbox" id="90s" name="90s" checked />90s Style
+      <div>
+      <span>
+<canvas
         class="emscripten"
         id="canvas"
         oncontextmenu="event.preventDefault()"
@@ -79,8 +84,10 @@
           #rom_drop.highlight { border-color: purple; }
       </style>
       </canvas>
-      <p>Drop Atari 2600 ROM here to start emulation.</p>
-      <p>Refresh page to start again.</p>
+      </span>
+      </div>
+      <p style="mix-blend-mode: difference;">Drop Atari 2600 ROM here to start emulation.</p>
+      <p style="mix-blend-mode: difference;">Refresh page to start again.</p>
     </div>
     <textarea id="output" rows="8"></textarea>
     <script type="text/javascript">

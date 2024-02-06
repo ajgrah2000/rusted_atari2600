@@ -5,7 +5,7 @@ Building/Running:
 
     Install Rust:
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh	
- 
+
 	For windows, see: https://www.rust-lang.org/tools/install
 
     Install SDL:
@@ -22,6 +22,11 @@ Building/Running:
 
 		# 'pipewire' appears to be a good sound driver on the raspberry pi
 		# SDL_AUDIODRIVER=pipewire 
+
+	rasberry pi (all): 
+        # Tested on: Linux raspberrypi 6.1.0-rpi8-rpi-v8 #1 SMP PREEMPT Debian 1:6.1.73-1+rpt1 (2024-01-25) aarch64 GNU/Linux
+        rustup default stable-arm-unknown-linux-gnueabihf
+
 	OSX: 
 		brew install sdl2
 
