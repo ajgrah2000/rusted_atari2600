@@ -117,6 +117,11 @@ impl GenericCartridge {
                 self.num_banks += 1;
             }
         }
+        
+        if self.current_bank >= self.num_banks {
+            println!("Default 'current_bank:{}' exceeds number of banks {}. Setting current_bank to '0'", self.current_bank, self.num_banks);
+            self.current_bank = 0;
+        }
 
         // Consumes and counts the remaining bytes.
         let remaining_bytes = source.len();
@@ -249,7 +254,7 @@ pub fn get_new_cartridge(filename: &String, cartridge_type: &CartridgeType) -> B
         // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
         // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
         // TODO: Confirm initial/starting bank for each type.
-        CartridgeType::Default => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::Default => Box::new(GenericCartridge::new(&filename, 8, 1, 0x1000, 0xFF9, NO_RAM)),
         CartridgeType::F4 => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, NO_RAM)),
         CartridgeType::F4SC => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, RAM_128_BYTES)),
 

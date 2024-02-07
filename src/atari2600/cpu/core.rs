@@ -39,6 +39,7 @@ impl Core {
     pub fn reset(&mut self) {
         // Initialise the PC state with the program entry point.
         self.pc_state.set_pc(self.memory.read16(&self.clock, Core::PROGRAM_ENTRY_ADDR));
+        self.start_time = time::SystemTime::now();
     }
 
     pub fn step(&mut self, debug: bool, realtime: bool) {

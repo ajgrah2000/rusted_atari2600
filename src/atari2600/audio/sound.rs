@@ -61,9 +61,10 @@ pub struct SDLUtility {}
 impl SDLUtility {
     // TODO: Fix up values, make them more dynamic, do better comparisons
     // Not sure how they compare on different PCs
-    const TARGET_QUEUE_LENGTH: u32 = 4096; // This drives the 'delay' in audio, but too small for the speed and they aren't filled fast enough
+    const TARGET_QUEUE_LENGTH: u32 = 8192; // This drives the 'delay' in audio, but too small for the speed and they aren't filled fast enough
     const AUDIO_SAMPLE_SIZE: u16 = 1024; // 'Desired' sample size, too small and SDL buffer doesn't stay filled (pops/crackles).
-    const FRACTION_FILL: f32 = 0.05; // TODO: FUDGE FACTOR.  Don't completely fill, samples a removed 1 at a time, don't fill them immediately.
+    const FRACTION_FILL: f32 = 0.05; // TODO: FUDGE FACTOR.  Don't completely fill, samples are removed 1 at a time, don't fill them immediately.
+    pub const MAX_WORKING_STREAM_MS: u32 = 10; // The maximum amount of audio (in time) to hold in the working queue, extra data will be dropped.
 
     pub const MONO_STERO_FLAG: u8 = 2; // TODO: Make this configurable 1 - mono, 2 - stereo
 
