@@ -51,9 +51,23 @@
         font-family: 'Lucida Console', Monaco, monospace;
         outline: none;
       }
+      .marquee {
+         line-height: 30px;
+        text-align:center
+      }
+      .marquee p {
+          display: inline-block;
+          animation: marquee 15s linear infinite;
+      }
+      @keyframes marquee {
+          0% { transform: translate(0, 0);}
+        100% { transform: translate(-100%, 0);}
+      }
     </style>
   </head>
   <body>
+    <style>
+    </style>
     <span id="controls">
       <span>
       <input
@@ -86,7 +100,9 @@
       </canvas>
       </span>
       </div>
-      <p style="mix-blend-mode: difference;">Drop Atari 2600 ROM here to start emulation.</p>
+      <div class="marquee">
+      <p>Drop Atari 2600 ROM here to start emulation.</p>
+      </div>
       <p style="mix-blend-mode: difference;">Refresh page to start again.</p>
     </div>
     <textarea id="output" rows="8"></textarea>
