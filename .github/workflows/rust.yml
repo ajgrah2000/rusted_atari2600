@@ -8,7 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
-  EMSCRIPTEN_VERSION: 3.1.10
+  EMSCRIPTEN_VERSION: 3.1.53
   RUST_VERSION: nightly
 
 jobs:
@@ -146,6 +146,11 @@ jobs:
       with:
         name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}
         path: .
+    - name: Fix permissions
+      run: |
+           chmod -c -R +rX "_site/" | while read line; do
+             echo "::warning title=Invalid file permissions automatically fixed::$line"
+           done
     - uses: actions/configure-pages@v1
     - name: Upload Pages artifact - emscripten
       uses: actions/upload-pages-artifact@v2
