@@ -148,7 +148,7 @@ jobs:
         path: .
     - name: Fix permissions
       run: |
-           chmod -c -R +rX "_site/" | while read line; do
+           chmod -c -R +rX . | while read line; do
              echo "::warning title=Invalid file permissions automatically fixed::$line"
            done
     - uses: actions/configure-pages@v1
