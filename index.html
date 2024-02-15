@@ -92,7 +92,7 @@
   </span>
   <div class="emscripten_border" id="rom_drop" style=
   "background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Atari-2600-Wood-4Sw-Set.png/640px-Atari-2600-Wood-4Sw-Set.png');">
-    <h1 style="mix-blend-mode: difference;text-align:center;color:yellow">ATA<img id="rust_logo" src="https://www.rust-lang.org/static/images/rust-logo-blk.svg"></img>I <span class="blink-text">2600</span>!</h1>
+    <h1 style="mix-blend-mode: difference;text-align:center;color:yellow">ATA<img alt="R" id="rust_logo" src="https://www.rust-lang.org/static/images/rust-logo-blk.svg"></img>I <span class="blink-text">2600</span>!</h1>
     <p>ROM Type: <select name="cart_type" id="cart_type">
         <option value="Default">Default</option>
         <option value="F4">F4</option>
@@ -147,8 +147,6 @@
   </script> 
   <script type="text/javascript" src="target/wasm32-unknown-emscripten/release/rusted_atari2600.js"
           onerror="alert('Script not found: target/wasm32-unknown-emscripten/release/rusted_atari2600.js\nbuild with:\n(cd projects/emscripten &amp;&amp; cargo build --release)')">
-  </script>
-  <script>
   </script>
   <script>
     function handleNewFileData(data) {
