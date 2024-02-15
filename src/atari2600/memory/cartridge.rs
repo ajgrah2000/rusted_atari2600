@@ -1,5 +1,6 @@
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
+use std::str::FromStr;
 
 type BankSizeType = u16;
 type NumBanksType = u8;
@@ -7,7 +8,7 @@ type NumBanksType = u8;
 const BANK_SIZE: BankSizeType = 0x0400;
 const MAX_BANKS: NumBanksType = 8;
 
-#[derive(Debug, EnumIter, EnumString)]
+#[derive(Debug, EnumIter, EnumString, Clone, Copy)]
 pub enum CartridgeType {
     Default,
     F4,
@@ -215,11 +216,13 @@ impl Cartridge for GenericCartridge {
 
 struct JavaScriptData {
     pub raw_cart_data: Vec<u8>,
+    pub raw_cart_type: CartridgeType,
 }
 impl JavaScriptData {
     pub fn new() -> Self {
         Self {
             raw_cart_data: Vec::new(),
+            raw_cart_type: CartridgeType::Default,
         }
     }
 }
@@ -236,13 +239,24 @@ pub fn is_cart_ready() -> bool {
     is_ready
 }
 
+pub fn get_cart_type() -> CartridgeType {
+    let mut cart_type = CartridgeType::Default;
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { cart_type = ref_cell_data.borrow().raw_cart_type;});
+    cart_type
+}
+
 #[no_mangle]
-pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize) {
+pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize, cart_type_char_ptr: *const std::ffi::c_char) {
     // TODO: Although it's possible there's another way (alternate arguments), I'll just use the unsafe option for now.
     let v = unsafe {std::slice::from_raw_parts(raw_data_ptr, raw_data_length)};
-    println!("Called from javascript {:x} {}", v[0], v.len());
+    let cart_type_string = unsafe {std::ffi::CStr::from_ptr(cart_type_char_ptr)}.to_str().unwrap();
+    println!("Called from javascript. Rom size: {}, Cartridge Type: {}", v.len(), cart_type_string);
 
-    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { ref_cell_data.borrow_mut().raw_cart_data = v.to_vec()});
+    let cart_type = CartridgeType::from_str(cart_type_string).expect("Couldn't convert from string to CartType.");
+
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { ref_cell_data.borrow_mut().raw_cart_data = v.to_vec();
+                                                 ref_cell_data.borrow_mut().raw_cart_type = cart_type
+                                            });
 }
 
 

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head><style>@keyframes blinker { 50%{opacity:0;}} .blink-text {animation: blinker 1s step-start infinite; } </style>
+  <head>
+    <style>@keyframes blinker { 50%{opacity:0;}} .blink-text {animation: blinker 1s step-start infinite; } </style>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Emscripten-Generated Code</title>
@@ -38,7 +39,6 @@
       }
       #output {
         width: 100%;
-        height: 300px;
         margin: 0 auto;
         margin-top: 10px;
         border-left: 0px;
@@ -84,10 +84,25 @@
     <div class="emscripten_border" id="rom_drop" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Atari-2600-Wood-4Sw-Set.png/640px-Atari-2600-Wood-4Sw-Set.png');">
       <style>div {} input:checked + div {mix-blend-mode: difference;animation: blinker 1s step-start infinite;}</style>
       <h1 style="mix-blend-mode: difference;text-align:center;color:yellow">ATARI <span class="blink-text">2600</span>!</h1>
+      <p> ROM Type:
+      <select name="cart_type" id=cart_type>
+	<option value="Default">Default</option>
+	<option value="F4">F4</option>
+	<option value="F4SC">F4SC</option>
+	<option value="F6">F6</option>
+	<option value="F6SC">F6SC</option>
+	<option value="F8">F8</option>
+	<option value="F8SC">F8SC</option>
+	<option value="Cbs">Cbs</option>
+	<option value="Super">Super</option>
+      </select>
+      </p>
       <input type="checkbox" id="90s" name="90s" checked />90s Style
       <div>
       <span>
-<canvas
+      <canvas
+        width="0"
+        height="0"
         class="emscripten"
         id="canvas"
         oncontextmenu="event.preventDefault()"
@@ -106,12 +121,15 @@
       <p style="mix-blend-mode: difference;">Refresh page to start again.</p>
     </div>
     <textarea id="output" rows="8"></textarea>
+    <div style="text-align:center;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Under-Construction-Bulldozer.gif"/>
+    </div>
     <script type="text/javascript">
       var display_data;
       var Module = {
         arguments: ['""'], // Provide an 'empty' cartridge name (as it's a required argument).
         onRuntimeInitialized: (function() {
-            display_data = Module.cwrap('display_data', 'void', ['array', 'number']);
+            display_data = Module.cwrap('display_data', 'void', ['array', 'number', 'string']);
         }
         ),
         print: (function() {
@@ -139,7 +157,7 @@
     ></script>
     <script>
         function handleNewFileData(data) {
-          display_data(data, data.length);
+          display_data(data, data.length, document.getElementById("cart_type").value);
         }
     </script>
     <script type="module" src="file_drop.js"></script>
