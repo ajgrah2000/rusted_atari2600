@@ -141,19 +141,19 @@ impl GenericCartridge {
             0 => (None, 0),
             n if 2048 == n && 0 == self.num_banks => {
                 println!("Assuming this to be a '2k' cartridge with no bank switching.");
-                bank.data = source[0..self.bank_size as usize].try_into().unwrap();
+                bank.data = source[0..self.bank_size as usize].into();
                 self.bank_size = n as u16;
                 (Some(bank), n as NumBanksType)
             }
             n if n < bank.data.len() => {
-                bank.data = source[0..n as usize].try_into().unwrap();
+                bank.data = source[0..n].into();
                 source.drain(0..n);
                 self.bank_size = bank.data.len() as u16;
                 println!("Bank incomplete ({} bytes found in last bank), will be padded with zeros", n);
                 (Some(bank), n as NumBanksType)
             }
             n => {
-                bank.data = source[0..self.bank_size as usize].try_into().unwrap();
+                bank.data = source[0..self.bank_size as usize].into();
                 source.drain(0..self.bank_size as usize);
                 self.bank_size = bank.data.len() as u16;
                 (Some(bank), self.bank_size as NumBanksType)
@@ -202,7 +202,7 @@ impl Cartridge for GenericCartridge {
     fn summary(&self) {
         println!("cartridge read: {}", self.filename);
         println!(" num banks: {}", self.num_banks);
-        if self.cartridge_banks.len() > 0 {
+        if !self.cartridge_banks.is_empty() {
             println!(" bank size = {}", self.cartridge_banks[0].data.len());
         }
     }
@@ -274,18 +274,18 @@ pub fn get_new_cartridge(filename: &String, cartridge_type: &CartridgeType) -> B
         // filename,  max_banks (4K banks), bank_size, hot_swap, ram_size
         // 'hot_swap' values is the 'upper' value, generally, subsequent banks are selected via 'value - 1'.
         // TODO: Confirm initial/starting bank for each type.
-        CartridgeType::Default => Box::new(GenericCartridge::new(&filename, 8, 1, 0x1000, 0xFF9, NO_RAM)),
-        CartridgeType::F4 => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, NO_RAM)),
-        CartridgeType::F4SC => Box::new(GenericCartridge::new(&filename, 8, 0, 0x1000, 0xFFB, RAM_128_BYTES)),
+        CartridgeType::Default => Box::new(GenericCartridge::new(filename, 8, 1, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F4 => Box::new(GenericCartridge::new(filename, 8, 0, 0x1000, 0xFFB, NO_RAM)),
+        CartridgeType::F4SC => Box::new(GenericCartridge::new(filename, 8, 0, 0x1000, 0xFFB, RAM_128_BYTES)),
 
-        CartridgeType::F8 => Box::new(GenericCartridge::new(&filename, 2, 1, 0x1000, 0xFF9, NO_RAM)),
-        CartridgeType::F8SC => Box::new(GenericCartridge::new(&filename, 2, 1, 0x1000, 0xFF9, RAM_128_BYTES)),
+        CartridgeType::F8 => Box::new(GenericCartridge::new(filename, 2, 1, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F8SC => Box::new(GenericCartridge::new(filename, 2, 1, 0x1000, 0xFF9, RAM_128_BYTES)),
 
-        CartridgeType::F6 => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
-        CartridgeType::F6SC => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, RAM_128_BYTES)),
+        CartridgeType::F6 => Box::new(GenericCartridge::new(filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::F6SC => Box::new(GenericCartridge::new(filename, 4, 0, 0x1000, 0xFF9, RAM_128_BYTES)),
 
-        CartridgeType::Cbs => Box::new(GenericCartridge::new(&filename, 3, 0, 0x1000, 0xFFA, RAM_256_BYTES)),
-        CartridgeType::Super => Box::new(GenericCartridge::new(&filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
+        CartridgeType::Cbs => Box::new(GenericCartridge::new(filename, 3, 0, 0x1000, 0xFFA, RAM_256_BYTES)),
+        CartridgeType::Super => Box::new(GenericCartridge::new(filename, 4, 0, 0x1000, 0xFF9, NO_RAM)),
     };
 
     // Load the cartridge.

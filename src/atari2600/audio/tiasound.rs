@@ -63,14 +63,12 @@ impl TiaSound {
             }
         }
 
-        if stream.len() == stream.capacity() {
-            if stream.len() == stream.capacity() {
-                // For 'normal' realtime, let the sound help maintain time
-                if !self.realtime {
-                    // If the stream is at capacity, then drain it (so as to not slow down
-                    // the emulation, as it's behind where it wants to be)
-                    stream.drain(0..stream.len() / 2);
-                }
+        if stream.len() == stream.capacity() && stream.len() == stream.capacity() {
+            // For 'normal' realtime, let the sound help maintain time
+            if !self.realtime {
+                // If the stream is at capacity, then drain it (so as to not slow down
+                // the emulation, as it's behind where it wants to be)
+                stream.drain(0..stream.len() / 2);
             }
         }
 

@@ -20,7 +20,7 @@ impl Memory {
 
     pub fn new(cartridge_name: &String, cartridge_type: &cartridge::CartridgeType, stella: Box<dyn io::StellaIO>, riot: Box<dyn io::RiotIO>) -> Self {
         Self {
-            cartridge: cartridge::get_new_cartridge(&cartridge_name, cartridge_type),
+            cartridge: cartridge::get_new_cartridge(cartridge_name, cartridge_type),
             stella,
             riot,
         }

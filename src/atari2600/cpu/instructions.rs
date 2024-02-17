@@ -202,48 +202,100 @@ impl Instruction {
 
         let mut op = |op_arg, addr| {
             match (addr, op_arg) {
-                (Imp(r, w), o) => Ok(instruction_set::single_byte_instruction(clock, pc_state, memory, read_fn(r), write_fn(w), op_fn(o))),
+                (Imp(r, w), o) => {
+                    instruction_set::single_byte_instruction(clock, pc_state, memory, read_fn(r), write_fn(w), op_fn(o));
+                    Ok(())
+                },
 
                 (read_null @ (IzxR | IzyR | ImmR | ZpR | ZpxR | ZpyR | IzyRD | AbsR | AbxR | AbyR | AbxRD | AbyRD), o) => {
-                    Ok(instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_null), MEMORY_READ, MEMORY_NULL, op_fn(o)))
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_null), MEMORY_READ, MEMORY_NULL, op_fn(o));
+                    Ok(())
                 }
-                (read_write @ (IzxW | IzyW | ZpW | ZpxW | AbsW | AbxWD | AbxW | AbyW), o) => Ok(instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_write), MEMORY_READ, MEMORY_WRITE, op_fn(o))),
-                (Acc, o) => Ok(instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Accumulator, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o))),
-                (reg_write @ (IzxRegW | ZpRegW | ZpxRegW | IzyRegW | AbsRegW | ZpyRegW), o) => Ok(instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(reg_write), NULL_READ, REG_WRITE, op_fn(o))),
+                (read_write @ (IzxW | IzyW | ZpW | ZpxW | AbsW | AbxWD | AbxW | AbyW), o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(read_write), MEMORY_READ, MEMORY_WRITE, op_fn(o));
+                    Ok(())
+                },
+                (Acc, o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, &Addressing::Accumulator, ACCUMULATOR_READ, ACCUMULATOR_WRITE, op_fn(o));
+                    Ok(())
+                },
+                (reg_write @ (IzxRegW | ZpRegW | ZpxRegW | IzyRegW | AbsRegW | ZpyRegW), o) => {
+                    instruction_set::read_write_instruction(clock, pc_state, memory, addressing_fn(reg_write), NULL_READ, REG_WRITE, op_fn(o));
+                    Ok(())
+                },
 
-                (AbxRegWD, o) => Ok(instruction_set::read_write_instruction_additional_delay(
-                    clock,
-                    pc_state,
-                    memory,
-                    &Addressing::Abx,
-                    NULL_READ,
-                    REG_WRITE,
-                    op_fn(o),
-                    pc_state::PcState::CYCLES_TO_CLOCK,
-                )),
-                (AbyRegWD, o) => Ok(instruction_set::read_write_instruction_additional_delay(
-                    clock,
-                    pc_state,
-                    memory,
-                    &Addressing::Aby,
-                    NULL_READ,
-                    REG_WRITE,
-                    op_fn(o),
-                    pc_state::PcState::CYCLES_TO_CLOCK,
-                )),
+                (AbxRegWD, o) => {
+                    instruction_set::read_write_instruction_additional_delay(
+                        clock,
+                        pc_state,
+                        memory,
+                        &Addressing::Abx,
+                        NULL_READ,
+                        REG_WRITE,
+                        op_fn(o),
+                        pc_state::PcState::CYCLES_TO_CLOCK,
+                    );
+                    Ok(())
+                },
+                (AbyRegWD, o) => {
+                    instruction_set::read_write_instruction_additional_delay(
+                        clock,
+                        pc_state,
+                        memory,
+                        &Addressing::Aby,
+                        NULL_READ,
+                        REG_WRITE,
+                        op_fn(o),
+                        pc_state::PcState::CYCLES_TO_CLOCK,
+                    );
+                    Ok(())
+                },
 
-                (None, Jsr) => Ok(instruction_set::jump_sub_routine_instruction(clock, pc_state, memory)),
-                (None, Brk) => Ok(instruction_set::break_instruction(clock, pc_state, memory)),
-                (None, Rti) => Ok(instruction_set::return_from_interrupt(clock, pc_state, memory)),
-                (None, Rts) => Ok(instruction_set::return_from_sub_routine_instruction(clock, pc_state, memory)),
-                (None, JmpAbs) => Ok(instruction_set::jump_instruction(clock, pc_state, memory, &Addressing::Abs)),
-                (None, JmpInd) => Ok(instruction_set::jump_instruction(clock, pc_state, memory, &Addressing::Indirect)),
-                (None, Php) => Ok(instruction_set::php_instruction(clock, pc_state, memory)),
-                (None, Plp) => Ok(instruction_set::plp_instruction(clock, pc_state, memory)),
-                (None, Pha) => Ok(instruction_set::pha_instruction(clock, pc_state, memory)),
-                (None, Pla) => Ok(instruction_set::pla_instruction(clock, pc_state, memory)),
+                (None, Jsr) => {
+                    instruction_set::jump_sub_routine_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Brk) => {
+                    instruction_set::break_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Rti) => {
+                    instruction_set::return_from_interrupt(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Rts) => {
+                    instruction_set::return_from_sub_routine_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, JmpAbs) => {
+                    instruction_set::jump_instruction(clock, pc_state, memory, &Addressing::Abs);
+                    Ok(())
+                },
+                (None, JmpInd) => {
+                    instruction_set::jump_instruction(clock, pc_state, memory, &Addressing::Indirect);
+                    Ok(())
+                },
+                (None, Php) => {
+                    instruction_set::php_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Plp) => {
+                    instruction_set::plp_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Pha) => {
+                    instruction_set::pha_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
+                (None, Pla) => {
+                    instruction_set::pla_instruction(clock, pc_state, memory);
+                    Ok(())
+                },
 
-                (None, Br(m, v)) => Ok(instruction_set::branch_instruction(clock, pc_state, memory, 1 << m, (1 << m) * (v as u8))), // N == 1
+                (None, Br(m, v)) => {
+                    instruction_set::branch_instruction(clock, pc_state, memory, 1 << m, (1 << m) * (v as u8));
+                    Ok(())
+                }, // N == 1
                 _ => Err(format!("Unexpected address operator combination {:?} {:?}", addr, op_arg)),
             }
         };

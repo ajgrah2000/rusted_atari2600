@@ -318,7 +318,7 @@ impl MissileState {
                 let width = 1 << ((self.nusiz & 0x30) >> 4);
                 // Uses similar position to 'player'
                 for i in 0..width as u16 {
-                    let x = ((i + self.resm as u16 + n as u16 * self.gap as u16 * 8 - Stella::HORIZONTAL_BLANK as u16) % Stella::FRAME_WIDTH as u16) as u8;
+                    let x = ((i + self.resm as u16 + n as u16 * self.gap as u16 * 8 - Stella::HORIZONTAL_BLANK) % Stella::FRAME_WIDTH) as u8;
                     self.scan_line[x as usize] = true;
                 }
             }
@@ -672,7 +672,7 @@ impl Colours {
 
         let lines: Vec<String> = std::str::from_utf8(&buffer).unwrap().split('\n').map(|x| x.to_string()).collect();
         for (i, line) in lines.iter().enumerate() {
-            if line.len() > 0 {
+            if !line.is_empty() {
                 let line_without_comments = &line[0..line.find('#').unwrap_or(line.len())].trim_end_matches(' ');
                 let values: Vec<u8> = line_without_comments.split(' ').collect::<Vec<&str>>().iter().map(|x| x.parse::<u8>().unwrap()).collect::<Vec<u8>>();
                 self.colours[i] = display::Colour::new(values[0], values[1], values[2]);
