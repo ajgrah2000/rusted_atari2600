@@ -38,7 +38,7 @@ Building/Running:
                 # For 'sdl'
                 sudo apt-get install libsdl2-dev -y
                 curl -s https://www.libsdl.org/release/SDL2-devel-2.0.22-mingw.tar.gz | tar xvz -C /tmp
-                cp -r /tmp/SDL2-2.0.22/x86_64-w64-mingw32/lib/* ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/
+                cp -r /tmp/SDL2-2.0.22/x86_64-w64-mingw32/lib/* $(dirname $(rustup which rustc))/../lib/rustlib/x86_64-pc-windows-gnu/lib/
 
 	Windows:
 		Install a Visual Studio Compiler:
