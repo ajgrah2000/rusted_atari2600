@@ -14,10 +14,7 @@ pub struct ConsoleSize {
 
 impl ConsoleSize {
     pub fn new(console_width: u16, console_height: u16) -> Self {
-        Self {
-            console_width,
-            console_height,
-        }
+        Self { console_width, console_height }
     }
 }
 
@@ -29,7 +26,7 @@ pub struct WindowSize {
 }
 
 impl WindowSize {
-    pub fn new(frame_width: u16, frame_height: u16, console_size:ConsoleSize, fullscreen: bool) -> Self {
+    pub fn new(frame_width: u16, frame_height: u16, console_size: ConsoleSize, fullscreen: bool) -> Self {
         Self {
             frame_width,
             frame_height,
@@ -94,18 +91,17 @@ impl SDLUtility {
         let window = if fullscreen { renderer.fullscreen() } else { renderer.position_centered().resizable() };
 
         match window.build().map_err(|e| e.to_string()) {
-                Ok(built_window) => { 
-                    match built_window.into_canvas().accelerated().build().map_err(|e| e.to_string())  {
-                        Ok(canvas) => { Some(canvas)},
-                        Err(e) => { 
-                            println!("Error while building accelerated canvas, will leave canvas empty. {}", e);
-                            None
-                        },
-                    }},
-                    Err(e) => {
-                        println!("Error while building window, will leave canvas empty. {}", e);
-                        None
-                        },
+            Ok(built_window) => match built_window.into_canvas().accelerated().build().map_err(|e| e.to_string()) {
+                Ok(canvas) => Some(canvas),
+                Err(e) => {
+                    println!("Error while building accelerated canvas, will leave canvas empty. {}", e);
+                    None
+                }
+            },
+            Err(e) => {
+                println!("Error while building window, will leave canvas empty. {}", e);
+                None
+            }
         }
     }
 
@@ -122,7 +118,6 @@ impl SDLUtility {
         if let event::Event::Window {
             win_event: event::WindowEvent::Resized(w, h), ..
         } = event
-        {
-        }
+        {}
     }
 }

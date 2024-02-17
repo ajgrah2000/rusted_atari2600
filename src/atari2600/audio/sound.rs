@@ -83,7 +83,7 @@ impl SDLUtility {
                 audio_queue.resume(); // Start the audio (nothing in the queue at this point).
 
                 Some(Box::new(audio_queue))
-            },
+            }
             Err(e) => {
                 println!("Error while opening audio.  Setting audio queue to None/no audio. {}", e);
                 None

@@ -1,6 +1,6 @@
+use std::str::FromStr;
 use strum_macros::EnumIter;
 use strum_macros::EnumString;
-use std::str::FromStr;
 
 type BankSizeType = u16;
 type NumBanksType = u8;
@@ -84,7 +84,7 @@ impl GenericCartridge {
         let mut buffer = Vec::new();
 
         #[cfg(not(target_os = "emscripten"))]
-        { 
+        {
             use std::fs::File;
             use std::io::Read;
 
@@ -99,7 +99,9 @@ impl GenericCartridge {
 
         #[cfg(target_os = "emscripten")]
         {
-            JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { buffer = ref_cell_data.borrow().raw_cart_data.clone();});
+            JAVASCRIPT_DATA_STORE.with(|ref_cell_data| {
+                buffer = ref_cell_data.borrow().raw_cart_data.clone();
+            });
         }
 
         self.load_banks(&mut buffer);
@@ -118,7 +120,7 @@ impl GenericCartridge {
                 self.num_banks += 1;
             }
         }
-        
+
         if self.current_bank >= self.num_banks {
             println!("Default 'current_bank:{}' exceeds number of banks {}. Setting current_bank to '0'", self.current_bank, self.num_banks);
             self.current_bank = 0;
@@ -235,30 +237,34 @@ thread_local! {
 
 pub fn is_cart_ready() -> bool {
     let mut is_ready = false;
-    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { is_ready = !ref_cell_data.borrow().raw_cart_data.is_empty();});
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| {
+        is_ready = !ref_cell_data.borrow().raw_cart_data.is_empty();
+    });
     is_ready
 }
 
 pub fn get_cart_type() -> CartridgeType {
     let mut cart_type = CartridgeType::Default;
-    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { cart_type = ref_cell_data.borrow().raw_cart_type;});
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| {
+        cart_type = ref_cell_data.borrow().raw_cart_type;
+    });
     cart_type
 }
 
 #[no_mangle]
-pub extern fn display_data(raw_data_ptr: *const u8, raw_data_length: usize, cart_type_char_ptr: *const std::ffi::c_char) {
+pub extern "C" fn display_data(raw_data_ptr: *const u8, raw_data_length: usize, cart_type_char_ptr: *const std::ffi::c_char) {
     // TODO: Although it's possible there's another way (alternate arguments), I'll just use the unsafe option for now.
-    let v = unsafe {std::slice::from_raw_parts(raw_data_ptr, raw_data_length)};
-    let cart_type_string = unsafe {std::ffi::CStr::from_ptr(cart_type_char_ptr)}.to_str().unwrap();
+    let v = unsafe { std::slice::from_raw_parts(raw_data_ptr, raw_data_length) };
+    let cart_type_string = unsafe { std::ffi::CStr::from_ptr(cart_type_char_ptr) }.to_str().unwrap();
     println!("Called from javascript. Rom size: {}, Cartridge Type: {}", v.len(), cart_type_string);
 
     let cart_type = CartridgeType::from_str(cart_type_string).expect("Couldn't convert from string to CartType.");
 
-    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| { ref_cell_data.borrow_mut().raw_cart_data = v.to_vec();
-                                                 ref_cell_data.borrow_mut().raw_cart_type = cart_type
-                                            });
+    JAVASCRIPT_DATA_STORE.with(|ref_cell_data| {
+        ref_cell_data.borrow_mut().raw_cart_data = v.to_vec();
+        ref_cell_data.borrow_mut().raw_cart_type = cart_type
+    });
 }
-
 
 pub fn get_new_cartridge(filename: &String, cartridge_type: &CartridgeType) -> Box<GenericCartridge> {
     const NO_RAM: u16 = 0x0000;

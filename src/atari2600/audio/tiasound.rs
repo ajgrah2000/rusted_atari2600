@@ -2,8 +2,6 @@ use super::super::clocks;
 use super::super::cpu::core;
 use super::sound;
 use super::soundchannel;
-use std::thread;
-use std::time;
 
 pub struct TiaSound {
     realtime: bool,
@@ -52,7 +50,7 @@ impl TiaSound {
         // If there's too much of a backlog of sound data for the sound card, then sleep a little longer.
         let sound_delay_ms = 1_000 * self.working_stream.len() / TiaSound::SAMPLERATE as usize;
         if sound_delay_ms as u32 > sound::SDLUtility::MAX_WORKING_STREAM_MS {
-            self.working_stream.drain(((sound::SDLUtility::MAX_WORKING_STREAM_MS as usize) * TiaSound::SAMPLERATE as usize / 1_000).. );
+            self.working_stream.drain(((sound::SDLUtility::MAX_WORKING_STREAM_MS as usize) * TiaSound::SAMPLERATE as usize / 1_000)..);
         }
 
         if length > 0 {
@@ -71,7 +69,7 @@ impl TiaSound {
                 if !self.realtime {
                     // If the stream is at capacity, then drain it (so as to not slow down
                     // the emulation, as it's behind where it wants to be)
-                    stream.drain(0..stream.len()/2);
+                    stream.drain(0..stream.len() / 2);
                 }
             }
         }

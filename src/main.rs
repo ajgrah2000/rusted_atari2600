@@ -1,11 +1,11 @@
 //! Main function for the emulator (argument parsing and re-entrant main for webassembly).
-//! 
+//!
 //! Intent is to handle the command line arguments/flags and overall loop.
 //! Trying to avoid emulation functionality.
-//! 
+//!
 //! Looking to make this as 'portable/common' as possible.  
 //!
-//! # Javascript 
+//! # Javascript
 //!
 //!   To expose functions to javascript (other than what's automatically handled via 'emscripten'):
 //!   
@@ -22,7 +22,7 @@
 //!   
 //!   `display_data(data, data.length);`
 //!
-//! # TODO 
+//! # TODO
 //!   - There are more 'emscripten' tags/switches than
 //!     desirable. Prefer it to be more 'common', may look to split it further
 //!     (particularly if the args get promoted to be switches/nobs/dials via some
@@ -48,7 +48,9 @@ impl Drop for Core {
     }
 }
 
-fn default_cart() -> String {"".to_string()}
+fn default_cart() -> String {
+    "".to_string()
+}
 
 /// Rusty Atari 2600 Emulator.
 #[derive(FromArgs)]
@@ -113,7 +115,6 @@ fn full_description_string() -> String {
 }
 
 fn main() {
-
     let args: RustAtari2600Args = argh::from_env();
 
     if args.list_drivers {
@@ -138,18 +139,24 @@ fn main() {
             }
         };
 
-        use emscripten::{emscripten};
+        use emscripten::emscripten;
 
         // After some 'static' wrangling, having the 'set_main_loop_callback' exist
         // in main appears to appease the lifetime checks.
         #[cfg(target_os = "emscripten")]
-        emscripten::set_main_loop_callback(move ||{main_loop();});
+        emscripten::set_main_loop_callback(move || {
+            main_loop();
+        });
     }
 
     #[cfg(not(target_os = "emscripten"))]
     {
         atari_machine.power_atari2600();
-        loop {if !atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine) { break;}} 
+        loop {
+            if !atari2600::atari2600::Atari2600::run_atari2600(&mut atari_machine) {
+                break;
+            }
+        }
     }
 
     println!("Finished");

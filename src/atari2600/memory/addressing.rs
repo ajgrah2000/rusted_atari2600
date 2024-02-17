@@ -91,14 +91,24 @@ impl AllAddressingModes {
 }
 
 pub enum Addressing {
-    Imm, Zp, Izy, IZYPageDelay, Izx, Zpx, Zpy,
-    Abs, Indirect, Aby, Abx, Accumulator,
-    AbyPageDelay, AbxPageDelay,
+    Imm,
+    Zp,
+    Izy,
+    IZYPageDelay,
+    Izx,
+    Zpx,
+    Zpy,
+    Abs,
+    Indirect,
+    Aby,
+    Abx,
+    Accumulator,
+    AbyPageDelay,
+    AbxPageDelay,
 }
 
 impl Address16 for Addressing {
     fn address16(&self, clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) -> u16 {
-    
         match self {
             Addressing::Imm => AllAddressingModes::address_imm(clock, pc_state, memory, false),
             Addressing::Zp => AllAddressingModes::address_zp(clock, pc_state, memory, false),
@@ -107,13 +117,13 @@ impl Address16 for Addressing {
             Addressing::Izx => AllAddressingModes::address_izx(clock, pc_state, memory, false),
             Addressing::Zpx => AllAddressingModes::address_zpx(clock, pc_state, memory, false),
             Addressing::Zpy => AllAddressingModes::address_zpy(clock, pc_state, memory, false),
-            
+
             Addressing::Abs => AllAddressingModes::address_abs(clock, pc_state, memory, false),
-            Addressing::Indirect=> AllAddressingModes::address_indirect(clock, pc_state, memory, false),
+            Addressing::Indirect => AllAddressingModes::address_indirect(clock, pc_state, memory, false),
             Addressing::Aby => AllAddressingModes::address_aby(clock, pc_state, memory, false),
             Addressing::Abx => AllAddressingModes::address_abx(clock, pc_state, memory, false),
             Addressing::Accumulator => AllAddressingModes::address_accumulator(clock, pc_state, memory, false),
-            
+
             Addressing::AbyPageDelay => AllAddressingModes::address_aby(clock, pc_state, memory, true),
             Addressing::AbxPageDelay => AllAddressingModes::address_abx(clock, pc_state, memory, true),
         }
@@ -128,24 +138,25 @@ impl Address16 for Addressing {
     }
 
     fn get_addressing_time(&self) -> u8 {
-         pc_state::PcState::CYCLES_TO_CLOCK * match self {
-            Addressing::Imm => 0,
-            Addressing::Zp => 1,
-            Addressing::Izy => 3,
-            Addressing::IZYPageDelay => 3,
-            Addressing::Izx => 4,
-            Addressing::Zpx => 2,
-            Addressing::Zpy => 2,
-            
-            Addressing::Abs => 2,
-            Addressing::Indirect => 4,
-            Addressing::Aby => 2,
-            Addressing::Abx => 2,
-            Addressing::Accumulator => 0,
-            
-            Addressing::AbyPageDelay => 2,
-            Addressing::AbxPageDelay => 2,
-        }
+        pc_state::PcState::CYCLES_TO_CLOCK
+            * match self {
+                Addressing::Imm => 0,
+                Addressing::Zp => 1,
+                Addressing::Izy => 3,
+                Addressing::IZYPageDelay => 3,
+                Addressing::Izx => 4,
+                Addressing::Zpx => 2,
+                Addressing::Zpy => 2,
+
+                Addressing::Abs => 2,
+                Addressing::Indirect => 4,
+                Addressing::Aby => 2,
+                Addressing::Abx => 2,
+                Addressing::Accumulator => 0,
+
+                Addressing::AbyPageDelay => 2,
+                Addressing::AbxPageDelay => 2,
+            }
     }
 }
 

@@ -116,7 +116,18 @@ impl Atari2600 {
 
     pub fn new(debug: bool, realtime: bool, stop_clock: clocks::ClockType, cartridge_name: &String, cartridge_type: &memory::cartridge::CartridgeType, fullscreen: bool, pal_palette: bool) -> Self {
         let core = Self::build_atari2600(cartridge_name, cartridge_type, debug, realtime, pal_palette);
-        Self { core, debug, realtime, stop_clock, fullscreen, counter:0, powered:false, sdl_context:None , canvas:None, audio_queue:None}
+        Self {
+            core,
+            debug,
+            realtime,
+            stop_clock,
+            fullscreen,
+            counter: 0,
+            powered: false,
+            sdl_context: None,
+            canvas: None,
+            audio_queue: None,
+        }
     }
 
     pub fn reset(&mut self, cartridge_name: &String, cartridge_type: &memory::cartridge::CartridgeType) {
@@ -124,7 +135,7 @@ impl Atari2600 {
         self.core.reset();
     }
 
-    pub fn draw_loop(&mut self,  pixel_format: pixels::PixelFormatEnum, console_size: &graphics::display::ConsoleSize, iterations: u32) -> bool {
+    pub fn draw_loop(&mut self, pixel_format: pixels::PixelFormatEnum, console_size: &graphics::display::ConsoleSize, iterations: u32) -> bool {
         // Number of iterations to do before getting a new texture.
         // These loops will update the display, but currently events aren't checked in this time.
 
@@ -147,7 +158,7 @@ impl Atari2600 {
 
                 if 0 == audio_steps % Atari2600::CPU_STEPS_PER_AUDIO_UPDATE {
                     // Top-up the audio queue
-                    // TODO: Change this thing of beauty to something even better. 
+                    // TODO: Change this thing of beauty to something even better.
                     if self.audio_queue.is_some() {
                         let audio_queue = self.audio_queue.as_mut().expect("Optional audio not set");
                         sound::SDLUtility::top_up_audio_queue(&mut **audio_queue, |fill_size| self.core.memory.stella.get_next_audio_chunk(fill_size));
@@ -160,17 +171,17 @@ impl Atari2600 {
 
                     canvas.clear();
                     canvas
-                            .copy(
-                                &texture,
-                                None,
-                                Some(rect::Rect::new(0, 0, graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * console_size.console_width as u32, console_size.console_height as u32)),
-                                )
-                            .unwrap();
+                        .copy(
+                            &texture,
+                            None,
+                            Some(rect::Rect::new(0, 0, graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * console_size.console_width as u32, console_size.console_height as u32)),
+                        )
+                        .unwrap();
                     canvas.present();
                 }
                 display_refreshes += 1;
             }
-            true 
+            true
         } else {
             while display_refreshes < iterations {
                 if self.stop_clock > 0 && self.core.clock.ticks > self.stop_clock {
@@ -181,7 +192,7 @@ impl Atari2600 {
 
                 if 0 == audio_steps % Atari2600::CPU_STEPS_PER_AUDIO_UPDATE {
                     // Top-up the audio queue
-                    // TODO: Change this thing of beauty to something even better. 
+                    // TODO: Change this thing of beauty to something even better.
                     if self.audio_queue.is_some() {
                         let audio_queue = self.audio_queue.as_mut().expect("Optional audio not set");
                         sound::SDLUtility::top_up_audio_queue(&mut **audio_queue, |fill_size| self.core.memory.stella.get_next_audio_chunk(fill_size));
@@ -196,14 +207,18 @@ impl Atari2600 {
     }
 
     pub fn configure_sdl(&mut self, window_size: graphics::display::WindowSize, pixel_format: pixels::PixelFormatEnum) {
-
         let mut sdl_context = sdl2::init().unwrap();
 
         self.canvas = graphics::display::SDLUtility::create_canvas(&mut sdl_context, "rust-atari2600 emulator", window_size.frame_width, window_size.frame_height, window_size.fullscreen);
 
         match self.canvas {
-            Some(ref mut v) => { v.set_logical_size(graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_size.console_width as u32, window_size.console_size.console_height as u32).unwrap();
-            },
+            Some(ref mut v) => {
+                v.set_logical_size(
+                    graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_size.console_width as u32,
+                    window_size.console_size.console_height as u32,
+                )
+                .unwrap();
+            }
             None => {}
         }
 

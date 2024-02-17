@@ -18,11 +18,7 @@ pub mod emscripten {
     type em_callback_func = unsafe extern "C" fn();
 
     extern "C" {
-        pub fn emscripten_set_main_loop(
-            func: em_callback_func,
-            fps: c_int,
-            simulate_infinite_loop: c_int,
-        );
+        pub fn emscripten_set_main_loop(func: em_callback_func, fps: c_int, simulate_infinite_loop: c_int);
         pub fn emscripten_cancel_main_loop();
     }
 
@@ -60,7 +56,6 @@ pub mod emscripten {
                     (*closure)();
                 }
             });
-
         }
 
         // Schedule the above wrapper function to be called regularly with Emscripten

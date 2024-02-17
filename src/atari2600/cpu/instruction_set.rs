@@ -169,8 +169,7 @@ pub fn return_from_sub_routine_instruction(clock: &mut clocks::Clock, pc_state: 
     pc_state.increment_pc(1);
 }
 
-pub fn jump_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &addressing::Addressing)
-{
+pub fn jump_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, address: &addressing::Addressing) {
     clock.increment(pc_state::PcState::CYCLES_TO_CLOCK as u32);
     let addr = address.address16(clock, pc_state, memory);
     let execute_time = address.get_addressing_time();
@@ -449,8 +448,8 @@ pub fn slo(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: 
 }
 
 pub fn lax(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
-     lda(clock, pc_state, memory, data);
-     ldx(clock, pc_state, memory, data)
+    lda(clock, pc_state, memory, data);
+    ldx(clock, pc_state, memory, data)
 }
 
 pub fn t_no_status(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {

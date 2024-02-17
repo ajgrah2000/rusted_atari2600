@@ -318,7 +318,7 @@ impl MissileState {
                 let width = 1 << ((self.nusiz & 0x30) >> 4);
                 // Uses similar position to 'player'
                 for i in 0..width as u16 {
-                    let x = ((i + self.resm as u16 + n as u16  * self.gap as u16 * 8 - Stella::HORIZONTAL_BLANK as u16) % Stella::FRAME_WIDTH as u16) as u8;
+                    let x = ((i + self.resm as u16 + n as u16 * self.gap as u16 * 8 - Stella::HORIZONTAL_BLANK as u16) % Stella::FRAME_WIDTH as u16) as u8;
                     self.scan_line[x as usize] = true;
                 }
             }
@@ -416,8 +416,7 @@ impl PlayerState {
         self.update();
     }
 
-    fn calculate_player_scan(number:u8, size:u8, gap:u8, reflect:u8, g:u8) -> Vec<bool> {
-
+    fn calculate_player_scan(number: u8, size: u8, gap: u8, reflect: u8, g: u8) -> Vec<bool> {
         // Create enough empty lists to allow direct indexing.
         // Create the 8-bit 'graphic'
         let mut graphic = [false; 8];
@@ -434,7 +433,7 @@ impl PlayerState {
         // Scale the graphic, so each pixel is 'size' big
         let mut scaled_graphic = vec![false; graphic.len() * size as usize];
         for i in 0..graphic.len() {
-            for s in 0..size as usize{
+            for s in 0..size as usize {
                 scaled_graphic[i * size as usize + s] = graphic[i];
             }
         }
@@ -481,7 +480,7 @@ impl PlayerState {
     fn calc_player_scan(&mut self) {
         // Rotate the scan.
         let rotation = Stella::FRAME_WIDTH - self.pos_start;
-//        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize][self.gap as usize][self.reflect as usize][self.grp as usize];
+        //        let scan = &self.player_scan_unshifted[self.number as usize][self.size as usize][self.gap as usize][self.reflect as usize][self.grp as usize];
         let scan = PlayerState::calculate_player_scan(self.number, self.size, self.gap, self.reflect, self.grp);
         self.scan_line = scan[rotation as usize..].to_vec();
         self.scan_line.append(&mut scan[..rotation as usize].to_vec());
@@ -651,18 +650,17 @@ impl Colours {
     }
 
     pub fn load(&mut self, pal_palette: bool) {
-
         #[cfg(target_os = "emscripten")]
         let buffer = {
-             if pal_palette { 
-                 include_bytes!("../../../palette_pal.dat").to_vec() 
-             } else {
-                 include_bytes!("../../../palette_ntsc.dat").to_vec() 
-             }
+            if pal_palette {
+                include_bytes!("../../../palette_pal.dat").to_vec()
+            } else {
+                include_bytes!("../../../palette_ntsc.dat").to_vec()
+            }
         };
 
         #[cfg(not(target_os = "emscripten"))]
-        let buffer = { 
+        let buffer = {
             let mut inner_buffer = Vec::new();
             use std::fs::File;
             use std::io::Read;

@@ -217,19 +217,37 @@ pub fn set_status_nz(pc_state: &mut PcState, value: u8) {
 
 type ReadFunc = fn(&PcState) -> u8; // Unused: Switch to 'trait alias' when available
 
-pub fn read_null(pc_state: &PcState) -> u8 { 0 }
-pub fn read_x(pc_state: &PcState) -> u8 { pc_state.get_x() }
-pub fn read_y(pc_state: &PcState) -> u8 { pc_state.get_y() }
-pub fn read_a(pc_state: &PcState) -> u8 { pc_state.get_a() }
-pub fn read_s(pc_state: &PcState) -> u8 { pc_state.get_s() }
+pub fn read_null(pc_state: &PcState) -> u8 {
+    0
+}
+pub fn read_x(pc_state: &PcState) -> u8 {
+    pc_state.get_x()
+}
+pub fn read_y(pc_state: &PcState) -> u8 {
+    pc_state.get_y()
+}
+pub fn read_a(pc_state: &PcState) -> u8 {
+    pc_state.get_a()
+}
+pub fn read_s(pc_state: &PcState) -> u8 {
+    pc_state.get_s()
+}
 
 type WriteFunc = fn(&mut PcState, u8); // Unused: Switch to 'trait alias' when available
 
-pub fn write_null(pc_state: &mut PcState, input: u8) { }
-pub fn write_x(pc_state: &mut PcState, input: u8) { pc_state.set_x(input); }
-pub fn write_y(pc_state: &mut PcState, input: u8) { pc_state.set_y(input); }
-pub fn write_a(pc_state: &mut PcState, input: u8) { pc_state.set_a(input); }
-pub fn write_s(pc_state: &mut PcState, input: u8) { pc_state.set_s(input); }
+pub fn write_null(pc_state: &mut PcState, input: u8) {}
+pub fn write_x(pc_state: &mut PcState, input: u8) {
+    pc_state.set_x(input);
+}
+pub fn write_y(pc_state: &mut PcState, input: u8) {
+    pc_state.set_y(input);
+}
+pub fn write_a(pc_state: &mut PcState, input: u8) {
+    pc_state.set_a(input);
+}
+pub fn write_s(pc_state: &mut PcState, input: u8) {
+    pc_state.set_s(input);
+}
 
 #[cfg(test)]
 mod tests {
