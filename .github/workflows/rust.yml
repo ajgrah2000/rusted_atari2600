@@ -10,6 +10,7 @@ env:
   AUTO_TAG_NAME: ${{ github.ref_name }}_${{ github.sha }}
   EMSCRIPTEN_VERSION: 3.1.10
   RUST_VERSION: nightly
+  PROJ_NAME: rusted_atari2600
 
 jobs:
   linux_build_and_test:
@@ -68,14 +69,14 @@ jobs:
               index.html
               file_drop.js
               run_sample_server.sh
-              target/wasm32-unknown-emscripten/release/rusted_atari2600.js
-              target/wasm32-unknown-emscripten/release/rusted_atari2600.wasm
+              target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.js
+              target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.wasm
 
     - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/index.html rusted_atari2600/file_drop.js rusted_atari2600/run_sample_server.sh rusted_atari2600/target/wasm32-unknown-emscripten/release/rusted_atari2600.wasm rusted_atari2600/target/wasm32-unknown-emscripten/release/rusted_atari2600.js
+           zip -r ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/index.html ${{env.PROJ_NAME }}/file_drop.js ${{env.PROJ_NAME }}/run_sample_server.sh ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.wasm ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.js
 
     - name: Cache emscripten release
       uses: actions/cache@v3
@@ -123,13 +124,13 @@ jobs:
       with:
         name: windows_artifact_${{ env.AUTO_TAG_NAME }}
         path: |
-              target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe
+              target/x86_64-pc-windows-gnu/release/${{env.PROJ_NAME }}.exe
 
     - name: Create Release Zip - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip rusted_atari2600/target/x86_64-pc-windows-gnu/release/rusted_atari2600.exe rusted_atari2600/palette_*.dat ${{ runner.temp }}/sdl_dll/*
+           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/target/x86_64-pc-windows-gnu/release/${{env.PROJ_NAME }}.exe ${{env.PROJ_NAME }}/palette_*.dat ${{ runner.temp }}/sdl_dll/*
     - name: Cache windows release
       uses: actions/cache@v3
       with: 

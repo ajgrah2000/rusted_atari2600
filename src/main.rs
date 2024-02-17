@@ -127,7 +127,7 @@ fn main() {
         let mut main_loop = move || {
             if atari2600::memory::cartridge::is_cart_ready() {
                 if !atari_machine.powered {
-                    atari_machine.reset(&args.cartridge_name, &args.cartridge_type);
+                    atari_machine.reset(&args.cartridge_name, &atari2600::memory::cartridge::get_cart_type());
                     atari_machine.power_atari2600();
                     false
                 } else {
