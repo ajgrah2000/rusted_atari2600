@@ -4,6 +4,21 @@ use super::super::memory::addressing::Address16;
 use super::super::memory::memory;
 use super::pc_state;
 
+// Creating a struct for 'convinience' simply groups mutable state data to
+// reduce the number of arguments required for subsequent function calls.
+// TODO: Use more widely/consistently.
+pub struct PcStateCollection<'a> {
+    pub clock: &'a mut clocks::Clock,
+    pub pc_state: &'a mut pc_state::PcState,
+    pub memory: &'a mut memory::Memory,
+}
+
+impl<'a> PcStateCollection<'a> {
+    pub fn new(clock: &'a mut clocks::Clock, pc_state: &'a mut pc_state::PcState, memory: &'a mut memory::Memory) -> Self {
+        Self { clock, pc_state, memory }
+    }
+}
+
 pub fn nop(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory, data: u8) -> u8 {
     data
 }
@@ -36,13 +51,12 @@ pub fn read_write_instruction<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcS
     R: addressing::ReadData,
     W: addressing::WriteData,
 {
-    read_write_instruction_additional_delay(clock, pc_state, memory, address, read, write, instruction, 0);
+    let mut my_pc_state = PcStateCollection::new(clock, pc_state, memory);
+    read_write_instruction_additional_delay(&mut my_pc_state, address, read, write, instruction, 0);
 }
 
 pub fn read_write_instruction_additional_delay<R, W, I: Fn(&mut clocks::Clock, &mut pc_state::PcState, &mut memory::Memory, u8) -> u8>(
-    clock: &mut clocks::Clock,
-    pc_state: &mut pc_state::PcState,
-    memory: &mut memory::Memory,
+    pc_state_collection: &mut PcStateCollection,
     address: &addressing::Addressing,
     read: R,
     write: W,
@@ -52,22 +66,22 @@ pub fn read_write_instruction_additional_delay<R, W, I: Fn(&mut clocks::Clock, &
     R: addressing::ReadData,
     W: addressing::WriteData,
 {
-    let addr = address.address16(clock, pc_state, memory);
+    let addr = address.address16(pc_state_collection.clock, pc_state_collection.pc_state, pc_state_collection.memory);
     let mut execute_time = address.get_addressing_time();
 
-    let value = read.read(clock, pc_state, memory, addr);
+    let value = read.read(pc_state_collection.clock, pc_state_collection.pc_state, pc_state_collection.memory, addr);
     execute_time += read.get_reading_time();
 
     execute_time += write.get_writing_time();
 
-    let data = instruction(clock, pc_state, memory, value);
+    let data = instruction(pc_state_collection.clock, pc_state_collection.pc_state, pc_state_collection.memory, value);
 
-    clock.increment(execute_time as u32);
-    clock.increment(additional_delay as u32);
+    pc_state_collection.clock.increment(execute_time as u32);
+    pc_state_collection.clock.increment(additional_delay as u32);
 
-    write.write(clock, pc_state, memory, addr, data);
+    write.write(pc_state_collection.clock, pc_state_collection.pc_state, pc_state_collection.memory, addr, data);
 
-    pc_state.increment_pc((address.get_addressing_size() + 1) as i16);
+    pc_state_collection.pc_state.increment_pc((address.get_addressing_size() + 1) as i16);
 }
 
 pub fn break_instruction(clock: &mut clocks::Clock, pc_state: &mut pc_state::PcState, memory: &mut memory::Memory) {

@@ -211,15 +211,12 @@ impl Atari2600 {
 
         self.canvas = graphics::display::SDLUtility::create_canvas(&mut sdl_context, "rust-atari2600 emulator", window_size.frame_width, window_size.frame_height, window_size.fullscreen);
 
-        match self.canvas {
-            Some(ref mut v) => {
-                v.set_logical_size(
-                    graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_size.console_width as u32,
-                    window_size.console_size.console_height as u32,
-                )
-                .unwrap();
-            }
-            None => {}
+        if let Some(ref mut v) = self.canvas {
+            v.set_logical_size(
+                graphics::stella::Constants::PIXEL_WIDTH_STRETCH as u32 * window_size.console_size.console_width as u32,
+                window_size.console_size.console_height as u32,
+            )
+            .unwrap();
         }
 
         // Set members once update/modifications have been done.
