@@ -50,7 +50,29 @@ function handleFiles(files) {
   ([...files]).forEach(processDroppedFile);
 }
 
+function sleep(ms) {
+//  await new Promise(r => setTimeout(r, ms));
+  var elem = document.getElementById("cart_bar");
+  var progress = 0;
+  setInterval(() => {
+    progress = progress + 1
+    if (100 < progress) {
+      elem.style.display = "none";
+      return;
+    }
+    setTimeout(() => {
+      //
+      elem.style.width = progress + "%";
+      }, 100);
+    }, 100);
+}
+
 function processDroppedFile(file) {
+  var elem = document.getElementById("cart_bar");
+  elem.style.display = "block";
+
+  sleep(1000);
+
   let reader = new FileReader();
   reader.onload = function (event) { 
     handleNewFileData(new Uint8Array(event.target.result));

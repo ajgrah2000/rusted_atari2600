@@ -73,6 +73,18 @@
         margin: 0 -0.3em 0; /* The icon has a 'large' area, so setting a negative margine. */
         filter: invert(96%) sepia(54%) saturate(6594%) hue-rotate(356deg) brightness(105%) contrast(104%);*/ /* Somehow this is yellow */
       }
+      #cart_progress_bar {
+        width: 100%;
+        background-color: grey;
+        color: blue;
+      }
+      #cart_bar {
+        width: 1%;
+        height:30px;
+        background-color: blue;
+        display: inline;
+        text-align:center
+      }
   </style>
   <style>
     div {} input:checked + div {mix-blend-mode: difference;animation: blinker 1s step-start infinite;}
@@ -115,6 +127,9 @@
     </div>
     <p style="mix-blend-mode: difference;">Refresh page to start again.</p>
   </div>
+      <div id="cart_progress_bar">
+        <div id="cart_bar"><p class="center">fake progress bar</p></div>
+      </div>
   <textarea id="output" rows="8"></textarea>
   <div style="text-align:center;">
     <img alt="An amazing animation depicting the evolution of mankind." src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Under-Construction-Bulldozer.gif">
