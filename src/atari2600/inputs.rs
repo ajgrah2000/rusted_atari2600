@@ -50,8 +50,9 @@ impl Joystick {
         }
     }
 
-    pub fn toggle_input(initial: &mut u8, mask: u8) {
+    pub fn toggle_input(initial: &mut u8, mask: u8) -> bool {
         *initial ^= mask;
+        0 != *initial & mask
     }
 
     pub fn j1_up(&mut self, value: bool) {
@@ -93,12 +94,12 @@ impl Joystick {
         Joystick::set_input(value, &mut self.input.swchb, 0x02);
     }
     pub fn p0_difficulty(&mut self) {
-        println!("difficulty 0");
-        Joystick::toggle_input(&mut self.input.swchb, 0x40);
+        let new_value = Joystick::toggle_input(&mut self.input.swchb, 0x40);
+        println!("difficulty p0: {}", new_value);
     }
     pub fn p1_difficulty(&mut self) {
-        println!("difficulty 1");
-        Joystick::toggle_input(&mut self.input.swchb, 0x80);
+        let new_value = Joystick::toggle_input(&mut self.input.swchb, 0x80);
+        println!("difficulty p1: {}", new_value);
     }
 }
 
@@ -124,13 +125,16 @@ impl UserInput {
     const KEY_QUIT: keyboard::Keycode = keyboard::Keycode::Escape;
 
     pub fn print_keys() {
-        println!("Key mappings (Joystick 1):");
+        print!("Key mappings (Joystick 1): ");
         println!("Up: {}, Down: {}, Left: {}, Right: {}", UserInput::KEY_1_UP, UserInput::KEY_1_DOWN, UserInput::KEY_1_LEFT, UserInput::KEY_1_RIGHT);
         println!("Fire: {}", UserInput::KEY_1_FIRE);
-        println!("Key mappings (Joystick 2):");
+        println!();
+        print!("Key mappings (Joystick 2): ");
         println!("Up: {}, Down: {}, Left: {}, Right: {}", UserInput::KEY_2_UP, UserInput::KEY_2_DOWN, UserInput::KEY_2_LEFT, UserInput::KEY_2_RIGHT);
         println!("Fire: {}", UserInput::KEY_2_FIRE);
-        println!("Reset: {}", UserInput::KEY_RESET);
+        println!();
+        println!("P0 Difficulty: {}, P1 Difficulty: {}", UserInput::KEY_P0_DIFFICULTY, UserInput::KEY_P1_DIFFICULTY);
+        println!("Reset: {}, Select: {}", UserInput::KEY_RESET, UserInput::KEY_SELECT);
         println!();
         println!("Quit: {}", UserInput::KEY_QUIT);
     }
