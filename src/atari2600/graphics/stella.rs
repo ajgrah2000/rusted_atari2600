@@ -134,8 +134,8 @@ impl PlayfieldState {
         self.pf_lookup.append(&mut field.clone());
     }
 
-    fn get_playfield_scan(&self) -> Vec<bool> {
-        self.pf_lookup.clone()
+    fn get_playfield_scan(&self) -> &Vec<bool> {
+        &self.pf_lookup
     }
 
     pub fn update_pf0(&mut self, data: u8) {
@@ -245,8 +245,8 @@ impl BallState {
         }
     }
 
-    fn get_ball_scan(&self) -> Vec<bool> {
-        self.scan_line.clone()
+    fn get_ball_scan(&self) -> &Vec<bool> {
+        &self.scan_line
     }
 }
 
@@ -325,8 +325,8 @@ impl MissileState {
         }
     }
 
-    fn get_missile_scan(&self) -> Vec<bool> {
-        self.scan_line.clone()
+    fn get_missile_scan(&self) -> &Vec<bool> {
+        &self.scan_line
     }
 }
 
@@ -486,8 +486,8 @@ impl PlayerState {
         self.scan_line.append(&mut scan[..rotation as usize].to_vec());
     }
 
-    fn get_player_scan(&self) -> Vec<bool> {
-        self.scan_line.clone()
+    fn get_player_scan(&self) -> &Vec<bool> {
+        &self.scan_line
     }
 }
 
@@ -713,6 +713,8 @@ pub struct Stella {
     ball: BallState,
 
     scanline_debug: bool,
+
+    bytes_per_pixel: u16,
 }
 
 #[rustfmt::skip]
@@ -740,7 +742,7 @@ impl Stella {
     pub fn new(scanline_debug: bool, realtime: bool, pal_palette: bool) -> Self {
         let mut colours = Colours::new();
         colours.load(pal_palette);
-
+        
         Self {
             tiasound: tiasound::TiaSound::new(realtime),
             input: inputs::Input::new(),
@@ -764,6 +766,9 @@ impl Stella {
             missile1: MissileState::new(),
             ball: BallState::new(),
             scanline_debug,
+            // Gettign bytes_per_pixel once as an optimisation, to reduce call count (was taking ~10% of emulation time with no delay).
+            bytes_per_pixel: display::SDLUtility::bytes_per_pixel(),
+
         }
     }
 
@@ -1333,8 +1338,8 @@ impl io::StellaIO for Stella {
         for y in 0..Stella::FRAME_HEIGHT {
             let display_line = &self.display_lines[(y + Stella::START_DRAW_Y) as usize];
             for x in display_line {
-                x.convert_rgb888(&mut buffer[index..(index + display::SDLUtility::bytes_per_pixel() as usize)]);
-                index += display::SDLUtility::bytes_per_pixel() as usize;
+                x.convert_rgb888(&mut buffer[index..(index + self.bytes_per_pixel as usize)]);
+                index += self.bytes_per_pixel as usize;
             }
         }
     }
