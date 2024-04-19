@@ -186,8 +186,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
             gh release create "${{ env.AUTO_TAG_NAME }}" \
-                --title="${{ github.event.repository.name }} ${{ github.ref_name}} " \
-                --generate-notes
+                --title="${{ github.event.repository.name }} ${{ github.ref_name}} "
 
   create_windows_release:
     name: Create windows release from cached results
