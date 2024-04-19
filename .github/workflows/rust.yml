@@ -185,9 +185,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-            release create "${{ env.AUTO_TAG_NAME }}" \
-                --repo="$GITHUB_REPOSITORY" \
-                --title="${GITHUB_REPOSITORY#*/} ${{ github.ref_name}} " \
+            gh release create "${{ env.AUTO_TAG_NAME }}" \
+                --repo="${{ github.event.repository.name }}" \
+                --title="${{ github.event.repository.name }} ${{ github.ref_name}} " \
                 --generate-notes
 
   create_windows_release:
