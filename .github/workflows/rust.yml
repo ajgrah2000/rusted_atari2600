@@ -186,7 +186,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
             gh release create "${{ env.AUTO_TAG_NAME }}" \
-                --repo="${{ github.event.repository.name }}" \
                 --title="${{ github.event.repository.name }} ${{ github.ref_name}} " \
                 --generate-notes
 
