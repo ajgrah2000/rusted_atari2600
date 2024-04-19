@@ -178,24 +178,17 @@ jobs:
     name: Create release from cached results
     runs-on: ubuntu-latest
 
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-
     steps:
     - name: Create Release
       if: startsWith(github.event.ref, 'refs/tags/')
-      uses: actions/create-release@v1
       id: create_release
-      with:
-        draft: true
-        prerelease: true
-        release_name: ${{ github.ref_name }}
-        tag_name: ${{ env.AUTO_TAG_NAME }}
-        body: |
-              Change Log
-              - Trying to create a release via an action.
       env:
         GITHUB_TOKEN: ${{ github.token }}
+      run: |
+            release create "${{ env.AUTO_TAG_NAME }}" \
+                --repo="$GITHUB_REPOSITORY" \
+                --title="${GITHUB_REPOSITORY#*/} ${github.ref_name} " \
+                --generate-notes
 
   create_windows_release:
     name: Create windows release from cached results
