@@ -175,10 +175,11 @@ jobs:
       uses: actions/deploy-pages@v3
 
   create_release:
-    name: Create release from cached results
+    name: Create release
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@main
     - name: Create Release
       if: startsWith(github.event.ref, 'refs/tags/')
       id: create_release
