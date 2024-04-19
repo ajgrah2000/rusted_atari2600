@@ -35,7 +35,6 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ env.RUST_VERSION }}
-        override: true
         components: rustfmt, clippy
     - uses: mymindstorm/setup-emsdk@v14
       with:
@@ -97,7 +96,6 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ env.RUST_VERSION }}
-        override: true
         components: rustfmt, clippy
     - name: install_linux_dependencies
       run: |
@@ -152,7 +150,7 @@ jobs:
            chmod -c -R +rX . | while read line; do
              echo "::warning title=Invalid file permissions automatically fixed::$line"
            done
-    - uses: actions/configure-pages@v1
+    - uses: actions/configure-pages@v5
     - name: Upload Pages artifact - emscripten
       uses: actions/upload-pages-artifact@v2
       with:
