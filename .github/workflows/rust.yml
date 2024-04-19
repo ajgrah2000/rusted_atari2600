@@ -32,7 +32,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Install rust ${{ env.RUST_VERSION }}
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ env.RUST_VERSION }}
         override: true
@@ -40,7 +40,7 @@ jobs:
     - uses: mymindstorm/setup-emsdk@v14
       with:
         version: ${{ env.EMSCRIPTEN_VERSION }}
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: '20.x'
     - name: install_linux_dependencies
@@ -79,7 +79,7 @@ jobs:
            zip -r ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/index.html ${{env.PROJ_NAME }}/file_drop.js ${{env.PROJ_NAME }}/run_sample_server.sh ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.wasm ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.js
 
     - name: Cache emscripten release
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: emscripten-zip
@@ -89,12 +89,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@main
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: '20.x'
     - uses: actions/checkout@main
     - name: Install rust ${{ env.RUST_VERSION }}
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ env.RUST_VERSION }}
         override: true
@@ -132,7 +132,7 @@ jobs:
            cd ..
            zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/target/x86_64-pc-windows-gnu/release/${{env.PROJ_NAME }}.exe ${{env.PROJ_NAME }}/palette_*.dat ${{ runner.temp }}/sdl_dll/*
     - name: Cache windows release
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: windows-zip
@@ -198,7 +198,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Cache windows release
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: windows-zip
@@ -218,7 +218,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Cache emscripten release
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
         key: emscripten-zip
