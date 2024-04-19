@@ -187,7 +187,7 @@ jobs:
       run: |
             release create "${{ env.AUTO_TAG_NAME }}" \
                 --repo="$GITHUB_REPOSITORY" \
-                --title="${GITHUB_REPOSITORY#*/} ${github.ref_name} " \
+                --title="${GITHUB_REPOSITORY#*/} ${{ github.ref_name}} " \
                 --generate-notes
 
   create_windows_release:
