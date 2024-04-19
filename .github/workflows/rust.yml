@@ -204,14 +204,10 @@ jobs:
 
     - name: Release Artifacts - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        asset_name: windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        asset_content_type: application/zip
+      run: |
+            gh release upload "${{ env.AUTO_TAG_NAME }}" ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
 
   create_emscripten_release:
     name: Create emscripten release from cached results
@@ -227,11 +223,7 @@ jobs:
 
     - name: Release Artifacts - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        asset_name: emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        asset_content_type: application/zip
+      run: |
+            gh release upload "${{ env.AUTO_TAG_NAME }}" ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
