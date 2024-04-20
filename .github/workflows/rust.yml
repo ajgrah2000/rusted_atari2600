@@ -170,7 +170,7 @@ jobs:
     steps:
     - id: deployment
       if: startsWith(github.event.ref, 'refs/tags/')
-      uses: actions/deploy-pages@v3
+      uses: actions/deploy-pages@v4
 
   create_release:
     name: Create release
