@@ -68,14 +68,14 @@ jobs:
               index.html
               file_drop.js
               run_sample_server.sh
-              target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.js
-              target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.wasm
+              target/wasm32-unknown-emscripten/release/${{ env.PROJ_NAME }}.js
+              target/wasm32-unknown-emscripten/release/${{ env.PROJ_NAME }}.wasm
 
     - name: Create Release Zip - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/index.html ${{env.PROJ_NAME }}/file_drop.js ${{env.PROJ_NAME }}/run_sample_server.sh ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.wasm ${{env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{env.PROJ_NAME }}.js
+           zip -r ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{ env.PROJ_NAME }}/index.html ${{ env.PROJ_NAME }}/file_drop.js ${{ env.PROJ_NAME }}/run_sample_server.sh ${{ env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{ env.PROJ_NAME }}.wasm ${{ env.PROJ_NAME }}/target/wasm32-unknown-emscripten/release/${{ env.PROJ_NAME }}.js
 
     - name: Cache emscripten release
       uses: actions/cache@v4
@@ -122,13 +122,13 @@ jobs:
       with:
         name: windows_artifact_${{ env.AUTO_TAG_NAME }}
         path: |
-              target/x86_64-pc-windows-gnu/release/${{env.PROJ_NAME }}.exe
+              target/x86_64-pc-windows-gnu/release/${{ env.PROJ_NAME }}.exe
 
     - name: Create Release Zip - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
       run: |
            cd ..
-           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{env.PROJ_NAME }}/target/x86_64-pc-windows-gnu/release/${{env.PROJ_NAME }}.exe ${{env.PROJ_NAME }}/palette_*.dat ${{ runner.temp }}/sdl_dll/*
+           zip -r -j ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip ${{ env.PROJ_NAME }}/target/x86_64-pc-windows-gnu/release/${{ env.PROJ_NAME }}.exe ${{ env.PROJ_NAME }}/palette_*.dat ${{ runner.temp }}/sdl_dll/*
     - name: Cache windows release
       uses: actions/cache@v4
       with: 
