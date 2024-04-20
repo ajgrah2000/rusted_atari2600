@@ -81,7 +81,7 @@ jobs:
       uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        key: emscripten-zip
+        key: emscripten-zip_${{ github.sha }}
 
   windows_build:
     runs-on: ubuntu-latest
@@ -133,7 +133,7 @@ jobs:
       uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        key: windows-zip
+        key: windows-zip_${{ github.sha }}
 
   deploy_emscripten_page:
     runs-on: ubuntu-latest
@@ -199,7 +199,7 @@ jobs:
       uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/windows_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        key: windows-zip
+        key: windows-zip_${{ github.sha }}
 
     - name: Release Artifacts - windows 
       if: startsWith(github.event.ref, 'refs/tags/')
@@ -219,7 +219,7 @@ jobs:
       uses: actions/cache@v4
       with: 
         path: ${{ runner.temp }}/emscripten_artifact_${{ env.AUTO_TAG_NAME }}.zip
-        key: emscripten-zip
+        key: emscripten-zip_${{ github.sha }}
 
     - name: Release Artifacts - emscripten 
       if: startsWith(github.event.ref, 'refs/tags/')
